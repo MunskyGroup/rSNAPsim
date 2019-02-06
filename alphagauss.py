@@ -59,15 +59,42 @@ alphas = Normalize(0, 1, clip=True)(np.abs(weights))
 # Normalize the colors b/w 0 and 1, we'll then pass an MxNx4 array to imshow
 colors = Normalize(vmin, vmax)(weights)
 colors = cmap(colors)
+print(colors.shape)
 
 # Now set the alpha channel to the one we created above
 colors[..., -1] = alphas
+print(colors.shape)
 
 # Create the figure and image
 # Note that the absolute values may be slightly different
 fig, ax = plt.subplots()
+#ax.imshow(greys)
+#ax.imshow(colors, extent=(xmin, xmax, ymin, ymax))
+
+greys = np.empty(weights.shape + (3,), dtype=np.uint8)
+greys.fill(0)
 ax.imshow(greys)
-ax.imshow(colors, extent=(xmin, xmax, ymin, ymax))
+
+
+n_bins = 100
+xx = np.linspace(xmin, xmax, n_bins)
+yy = np.linspace(ymin, ymax, n_bins)        
+
+
+weights = np.array(np.meshgrid(xx, yy)).prod(0)
+greys = np.empty(weights.shape + (4,), dtype=np.float32)
+greys.fill(100)  
+ 
+
+greys = greys + np.random.poisson(greys)
+alphas = Normalize(0, 1, clip=True)(np.abs(greys))
+alphas[:,:,:] = .5
+
+
+greys = Normalize(0, 256)(greys)
+greys[..., -1] = .3
+ax.imshow(colors,extent=(xmin, xmax, ymin, ymax))
+ax.imshow(greys,extent=(xmin, xmax, ymin, ymax))
 
 # Add contour lines to further highlight different levels.
 #ax.contour(weights[::-1], levels=[-.1, .1], colors='k', linestyles='-')
@@ -89,6 +116,12 @@ plt.show()
 import time
 
 
+n_bins = 5000
+xx = np.linspace(xmin, xmax, n_bins)
+yy = np.linspace(ymin, ymax, n_bins)        
+
+
+weights = np.array(np.meshgrid(xx, yy)).prod(0)
 
 def plot_gauss(centers,rs,weight):
     st = time.time()

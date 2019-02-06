@@ -419,7 +419,13 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
 
     R = cell_radius
     squarelen = float(R/np.sqrt(2))
-
+    
+    theta = np.linspace(0,2*np.pi,1000)
+    rnuc = 1.*R-2.*R/3
+    
+    ncircx,ncircy = rnuc*np.cos(theta), rnuc*np.sin(theta)
+    
+    
     n_RNA_t = np.zeros((len(t),int(np.max(rna_creation_data[1]))))
 
     nRNA = 0
@@ -484,11 +490,13 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
     for i in range(nparticles):
         x = np.empty((2,len(t) - np.where(rna_exist[i] != 0 )[0][0]  ))
         centers = np.zeros(x.shape)
-        x[:,0] = np.random.random()*squarelen
-        x0 = [  ((R+squarelen/4) - (R-squarelen/4))*np.random.random() + (R-squarelen/4),((R+squarelen/4) - (R-squarelen/4))*np.random.random() + (R-squarelen/4) ]
+        #x[:,0] = ncircx[int(np.random.uniform(0,1000))]
+        x0 = [ncircx[int(np.random.uniform(0,1000))],  ncircy[int(np.random.uniform(0,1000))]]
+        #x0 = [  ((R+squarelen/4) - (R-squarelen/4))*np.random.random() + (R-squarelen/4),((R+squarelen/4) - (R-squarelen/4))*np.random.random() + (R-squarelen/4) ]
 
 
-        x0 = x0 - np.array([R, R])
+        #x0 = x0 - np.array([0, 0])
+        
         x[:,0] =x0
         r = scipy.stats.norm.rvs(size=np.array(x0).shape + (len(t) - np.where(rna_exist[i] !=0 )[0][0],), scale=delta*np.sqrt(dt))
 
@@ -542,11 +550,11 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
 
 
         data = ((out.T).T*rna_exist[i][np.where(rna_exist[i] != 0)[0][0]:].T).T
-        data[np.where(rna_exist[i] != 0)[0][-1]- np.where(rna_exist[i] != 0)[0][0]+1 :] = -R
+        data[np.where(rna_exist[i] != 0)[0][-1]- np.where(rna_exist[i] != 0)[0][0]+1 :] = -R-1
 
 
         rna_locations[i, np.where(rna_exist[i] != 0)[0][0]:, :] =  data
-        rna_locations[i, :np.where(rna_exist[i] != 0)[0][0], :] =  -R
+        rna_locations[i, :np.where(rna_exist[i] != 0)[0][0], :] =  -R-1
 
 
     print(nparticles)
@@ -580,7 +588,7 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
 
     
     import time
-  
+    print(time.time())
     print('making movie...')
     #simulate brownian motion
     
@@ -592,14 +600,18 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
                 if isinstance(child, mpl.image.AxesImage):
                     
                     child.remove()
+        if num == 1:
+            print(time.time() - st )*len(t)
+            
        
-        radi = 3*ivec[inds[num]]+.0001   
+        radi = 5*ivec[inds[num]]+.0001   
         xmin, xmax, ymin, ymax = (-R-10, R+10, -R-10, R+10)
-        n_bins = 100
+        n_bins = 300
         xx = np.linspace(xmin, xmax, n_bins)
         yy = np.linspace(ymin, ymax, n_bins)
         ncount = 0
         cmap = plt.cm.viridis
+        cmap2 = plt.cm.OrRd
         
         for x1, y1, r in zip(xpos[inds[num]],ypos[inds[num]], radi):   #make circle objects of radius based on ivec
  
@@ -619,7 +631,7 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
                 
             if r > .001:
                 
-                if x1 !=-R and y1 !=-R:
+                if x1 !=-R-1 and y1 !=-R-1:
                     
                     weightsx = normal_pdf(xx, x1, r)
                     weightsy = normal_pdf(yy, -y1, r)
@@ -634,27 +646,76 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
                     
                     
                     alphas = Normalize(0, 1, clip=True)(np.abs(weights))
-                    #alphas = np.clip(alphas,0.00001, 1)
                     
                     colors = Normalize(vmin, vmax)(weights)
                     colors = cmap(colors)
                     
-                    # Now set the alpha channel to the one we created above
                     colors[..., -1] = alphas
         
-                # Note that the absolute values may be slightly different
                 
-                    ax.imshow(colors, extent=(xmin, xmax, ymin, ymax),zorder=3) 
+                
+                    ax.imshow(colors, extent=(xmin, xmax, ymin, ymax),zorder=4) 
                     
-            # Create the figure and image
-            # Note that the absolute values may be slightly different
+                    
+            weightsx = normal_pdf(xx, x1, .5)
+            weightsy = normal_pdf(yy, -y1, .5)
+            
+            weights = np.array(np.meshgrid(weightsx, weightsy)).prod(0)
+         
+
+
         
+            vmax = np.abs(weights).max()
+            vmin = -vmax
+            
+            
+            alphas = Normalize(0, 1, clip=True)(np.abs(weights))
+            
+            colors = Normalize(vmin, vmax)(weights)
+            colors = cmap2(colors)
+            
+            colors[..., -1] = alphas
+    
+        
+        
+            ax.imshow(colors, extent=(xmin, xmax, ymin, ymax),zorder=3)   
+        
+        
+        theta = np.linspace(0,2*np.pi,1000)
+        rnuc = R
+    
+        ncircx,ncircy = rnuc*np.cos(theta), rnuc*np.sin(theta)
+        
+        n_bins = 140
+        xx = np.linspace(xmin, xmax, n_bins)
+        yy = np.linspace(ymin, ymax, n_bins)        
+        
+        
+        weights = np.array(np.meshgrid(xx, yy)).prod(0)
+        greys = np.empty(weights.shape + (4,), dtype=np.float32)
+        greys.fill(70)  
+         
+        
+        greys = greys + np.random.poisson(greys)
+        alphas = Normalize(0, 1, clip=True)(np.abs(greys))
+        alphas[:,:,:] = .5
+        
+        
+        greys = Normalize(0, 256)(greys)
+        greys[..., -1] = .4
+
+        
+        ax.imshow(greys, extent=(xmin, xmax, ymin, ymax),zorder=5)  
+        
+        
+        '''
         line.set_data(xpos[inds[num]], ypos[inds[num]])
         line.set_linewidth(0)
         line.set_marker('o')
         line.set_markersize(1)
         line.set_color(rnacolor)
         line.set      
+        '''
         
         
                
@@ -712,7 +773,13 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
     xpos = rna_loc_compressed.T[0]
     ypos = rna_loc_compressed.T[1]
 
-    
+    for i in range(int(rna_loc_compressed.shape[0])):
+        start = np.where(xpos[:,i] !=-R-1)[0][0]
+
+     
+        ivec[:,i][start:] = ivec[:,i][:ivec[:,i].shape[0]-start]
+        ivec[:,i][:start] = 0
+            
     
     filetype='.gif'
 
@@ -733,9 +800,56 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
     ax= fig1.add_subplot('111')
     plt.yticks([])
     plt.xticks([])
+    p = mpatches.Rectangle((-R-10,-R-10),width=(R+10)*2,height=(R+10)*2,color='black',zorder=1)
+    ax.add_patch(p)
+    p = mpatches.Circle((0, 0), radius=R+1, color='white',zorder=1)
+    ax.add_patch(p)
     p = mpatches.Circle((0, 0), radius=R, color='black',zorder=1)  #add the black circle
     ax.add_patch(p)
+    
+    
+    
+    p = mpatches.Circle((0, 0), radius=R*1.-2.*R/3, color='#014abf',zorder=1)  #add the black circle
+    ax.add_patch(p)
     plt.gca().set_aspect('equal', adjustable='box')
+    
+    
+    xmin, xmax, ymin, ymax = (-R-10, R+10, -R-10, R+10)
+    n_bins = 300
+    xx = np.linspace(xmin, xmax, n_bins)
+    yy = np.linspace(ymin, ymax, n_bins)
+    weightsx = normal_pdf(xx, 0, 20)
+    weightsy = normal_pdf(yy, 0, 20)
+    
+    weights = np.array(np.meshgrid(weightsx, weightsy)).prod(0)
+ 
+
+
+
+    vmax = np.abs(weights).max()
+    vmin = -vmax
+    
+    
+    alphas = Normalize(0, 1, clip=True)(np.abs(weights))
+    
+    colors = Normalize(vmin, vmax)(weights)
+    cmap = plt.cm.YlGnBu
+    colors = cmap(colors)
+    
+    colors[..., -1] = alphas
+
+
+
+    ax.imshow(colors, extent=(xmin, xmax, ymin, ymax),zorder=2)   
+            
+            
+    p = mpatches.Circle((-R-1, -R-1), radius=8, color='black',zorder=5)  #add the black circle
+    ax.add_patch(p)
+    plt.gca().set_aspect('equal', adjustable='box')
+    
+    
+    
+    
 
     l, = plt.plot([], [], 'r-',zorder=2)
     plt.xlim(-R-10, R+10)
@@ -744,6 +858,7 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
     plt.title('Simulated Cell')
 
     inds = np.linspace(0, len(t)-1, len(t)).astype(int)
+    st = time.time()
     itercount = 0
     #creates the animation
     
@@ -801,9 +916,9 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
     line_ani.save((filename + filetype), writer=writer)  #save the animation
 
 
-
+    print(time.time())
     #return solver_instance,n_RNA_t,rna_creation_data,data,rna_locations
-    return rna_locations, rna_loc_compressed, rna_particles, rna_creation_data, rna_exist, rnaonoff, rnaex
+    return rna_locations, rna_loc_compressed, rna_particles, rna_creation_data, rna_exist, rnaonoff, rnaex,ivec
 
 
 
@@ -821,7 +936,7 @@ sms.analyze_poi(sms.pois[0],sms.pois_seq[0])
 ssa_obj = rSNAPsim.ssa()
 ssa_obj.load_from_txt('simcelltestobj.txt')
 
-simulate_cell(.3,3,1,.03,.01,ssa_obj=ssa_obj)
+rna_locations, rna_loc_compressed, rna_particles, rna_creation_data, rna_exist, rnaonoff, rnaex,ivec = simulate_cell(.3,3,1,.03,.01,ssa_obj=ssa_obj,tf=1000,tstep=1000)
 
 
 
