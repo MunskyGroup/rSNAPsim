@@ -17,6 +17,7 @@ import matplotlib.patches as mpatches
 import matplotlib.animation as animation
 from matplotlib.collections import PatchCollection
 
+from matplotlib.colors import LinearSegmentedColormap
 import scipy
 
 
@@ -585,6 +586,13 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
 
 
 
+            
+    def customcmap(color1,color2):
+    
+        ccmap = LinearSegmentedColormap.from_list('custom', [(0,color1),(.75,color1),(1,color2)], N=256)
+        
+        
+        return ccmap
 
     
     import time
@@ -611,6 +619,7 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
         yy = np.linspace(ymin, ymax, n_bins)
         ncount = 0
         cmap = plt.cm.viridis
+        cmap = customcmap('#b619ff','#fbff28')
         cmap2 = plt.cm.OrRd
         
         for x1, y1, r in zip(xpos[inds[num]],ypos[inds[num]], radi):   #make circle objects of radius based on ivec
@@ -696,7 +705,7 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
         greys.fill(70)  
          
         
-        greys = greys + np.random.poisson(greys)
+        greys = greys + .01*np.random.poisson(greys)
         alphas = Normalize(0, 1, clip=True)(np.abs(greys))
         alphas[:,:,:] = .5
         
@@ -936,7 +945,7 @@ sms.analyze_poi(sms.pois[0],sms.pois_seq[0])
 ssa_obj = rSNAPsim.ssa()
 ssa_obj.load_from_txt('simcelltestobj.txt')
 
-rna_locations, rna_loc_compressed, rna_particles, rna_creation_data, rna_exist, rnaonoff, rnaex,ivec = simulate_cell(.3,3,1,.03,.01,ssa_obj=ssa_obj,tf=1000,tstep=1000)
+rna_locations, rna_loc_compressed, rna_particles, rna_creation_data, rna_exist, rnaonoff, rnaex,ivec = simulate_cell(.3,3,1,.03,.01,ssa_obj=ssa_obj,tf=300,tstep=300)
 
 
 
@@ -979,3 +988,5 @@ def plot_gauss(centers,rs,weight):
         
        
         ax.imshow(colors, extent=(xmin, xmax, ymin, ymax))
+        
+        
