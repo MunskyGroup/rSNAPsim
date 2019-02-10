@@ -1126,9 +1126,8 @@ class rSNAPsim():
         #solt = solutions.T
 
         #flatt = solt[solt>0]
-        '''
-        #ind = [next(j for j in range(0,solutions) if int(solutions[j,i]) == 0 or int(solutions[j,i]) == -1) for i in range(0,1001) ]
         fragmented_trajectories = []
+        fragtimes = []
         maxlen = 0
         kes = []
         for k in range(0, n_traj):
@@ -1136,7 +1135,7 @@ class rSNAPsim():
             changes = ind[1:] - ind[:-1]
             addindexes = np.where(changes > 0)[0]
             subindexes = np.where(changes < 0)[0]
-
+            
             if len(subindexes) < len(addindexes):
                 for m in range(len(subindexes)):
                     traj = solutions[k][:, addindexes[m]:subindexes[m]]
@@ -1164,15 +1163,19 @@ class rSNAPsim():
               
 
                             fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
+                           
                             
                             #print(traj[0, minusloc[-1]:].flatten())
                             
                         else:
                             fragment = solutions[k][startind][addindexes[m]:subindexes[m]].flatten()
-                            
+                            print([addindexes[m]])
+                        
+                        fragtimes.append(addindexes[m])
                            
                         
                         fragmented_trajectories.append(fragment)
+                        
                         kes.append(genelength/truetime[len(fragment)])
 
                         if len(fragment) > maxlen:
@@ -1197,6 +1200,7 @@ class rSNAPsim():
                         else:
                             fragment = solutions[k][startind][addindexes[m]:subindexes[m]].flatten()
                         fragmented_trajectories.append(fragment)
+                        fragtimes.append(addindexes[m])
                      
                         kes.append(genelength/truetime[len(fragment)])
 
@@ -1209,8 +1213,9 @@ class rSNAPsim():
             fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
             
         ssa_obj.fragments = fragarray
-        #if evaluating_inhibitor == False:
-        '''
+        ssa_obj.fragtimes = fragtimes
+        
+        
         autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
@@ -2283,6 +2288,33 @@ class rSNAPsim():
             f.write(self.gb_rec.format('gb'))
 
             f.close()
+
+
+    def kymograph(self,ssa_obj):
+        '''
+        Constructs a kymograph of ribosome locations
+        '''
+        
+        fragments = ssa_obj.fragments
+        nfrag = ssa_obj.fragments.shape[0]
+        maxlen= ssa_obj.fragments.shape[1]
+        time = ssa_obj.time
+        ftimes = ssa_obj.fragtimes
+        plt.figure(figsize=(20,10))
+        
+        for i in range(nfrag):
+            
+            timeseg = time[ftimes[i]:ftimes[i]+maxlen]
+            
+            if maxlen <= np.where(fragments[i] > 0 )[0][-1]:       
+              
+                plt.plot(fragments[i][0:len(timeseg)] ,timeseg[::-1] )
+            else:
+                stop = np.where(fragments[i] > 0 )[0][-1]+1
+                timelen = len(fragments[i][0:stop]) 
+                
+                plt.plot(fragments[i][0:stop]   ,timeseg[::-1][0:timelen],color='blue' )
+            
 
 
     def get_autocorr(self, intensity_vec, time_vec, totalSimulationTime, geneLength):
