@@ -2313,7 +2313,11 @@ class rSNAPsim():
                 stop = np.where(fragments[i] > 0 )[0][-1]+1
                 timelen = len(fragments[i][0:stop]) 
                 
-                plt.plot(fragments[i][0:stop]   ,timeseg[::-1][0:timelen],color='blue' )
+                plt.plot(fragments[i][0:stop]   ,timeseg[0:timelen],color='blue' )
+                
+        plt.xlabel('ribosome position')
+        plt.ylabel('time')
+        plt.ylim(time[-1], time[0])
             
 
 
