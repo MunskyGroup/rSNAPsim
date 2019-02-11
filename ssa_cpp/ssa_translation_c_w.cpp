@@ -12,7 +12,7 @@ using Eigen::MatrixXd;
 using Eigen::MatrixXi;
 using Eigen::VectorXd;
 
-void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_result, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize)
+void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_result, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result)
 {
     // Declare the variables
     int R = 9; // ribosome exclusion.
@@ -20,6 +20,8 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 	srand(seed);
     int it = 0;
 	int number_ribs = 0;
+	int fit = 0;
+	std::cout << fNt << std::endl;
 	
     // int N = 10; // gene length
     //bool Inhibitor = 0;
@@ -60,12 +62,14 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
     // Create an eigen matrix that stores the results. 
     Eigen::Map<Eigen::MatrixXi> X_array(SSA_result,Nt,N_rib);
 	
+	Eigen::Map<Eigen::MatrixXi> frap_array(frap_result,fNt,N_rib);
+	
+	
 	Eigen::Map<Eigen::VectorXd> T_array(SSA_ribtimes,ribtimesize);
 	Eigen::Map<Eigen::VectorXi> n_ribs(nribs,1);
 
 	int tsize = T_array.size();
-	std::cout << tsize << std::endl;
-	std::cout << sizeof(*SSA_ribtimes) << std::endl;
+
     while( t < tf)
     {
         //std::cout << "-------t=" << t << "-------" << std::endl;
@@ -82,16 +86,8 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
             Inhibit_condition=1;
         }
 
-        // Determine FRAP stuff 
-        if (FRAP_pres) {
-            if ( (t>= inhibit_time) && (t< inhibit_time+20)) {
-				for(int i =0; i <=N_rib; i++){
-					X(0,i) = 0;
-					T(0,i) = 0;
-				}			
-				
-            }}
 
+		
         // Update the number of ribosomes, always making sure to have
         // a zero on the right side of X (space for a new ribosome) 
 		
@@ -196,6 +192,15 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
         while( (it<=Nt-1) && (t>t_array[it])) {
 			//std::cout << it << std::endl;
             X_array.row(it) = X.row(0);
+			
+			if (FRAP_pres){
+				std::cout << "addingfrap" << std::endl;
+				if ( (t>= inhibit_time) && (t< inhibit_time+20)) {
+					frap_array.row(fit) = X.row(0);
+					fit +=1;
+				}
+			}			
+			
             it+=1;
 			//std::cout << it << std::endl;
 			
