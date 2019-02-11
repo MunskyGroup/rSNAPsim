@@ -1080,17 +1080,41 @@ class rSNAPsim():
         I = np.zeros((n_traj, len(time_vec_fixed[startindex:])))
 
         #I = np.zeros((1,tstep+1))
-
-        for i in range(n_traj):
-
-            traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
-
-            I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
-
-
-        intensity_vec = I
-
-
+        
+        if evaluating_frap == False:
+    
+            for i in range(n_traj):
+    
+                traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+    
+                I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
+    
+    
+            intensity_vec = I
+        
+        else:
+            fraptime = time_inhibit
+            
+            inds = np.where(truetime > fraptime)
+            inds2 = np.where(truetime  < fraptime+20)
+            inds = np.intersect1d(inds,inds2)
+            endfrap = inds[-1]
+            
+            for i in range(n_traj):
+    
+                traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+                
+                nribs = np.sum(solutionssave[i][:,endfrap]!=0)
+             
+                ribloc = solutionssave[i][:,endfrap]
+                adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
+    
+                I[i, :inds[0]] = np.sum(pv[traj], axis=1)[startindex:inds[0]].T
+                I[i,inds[0]:endfrap] = 0
+                I[i,endfrap:] = np.sum(pv[traj],axis=1)[endfrap:].T
+    
+    
+            intensity_vec = I
 
 
 
