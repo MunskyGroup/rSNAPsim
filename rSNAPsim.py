@@ -1160,6 +1160,10 @@ class rSNAPsim():
             addindexes = np.where(changes > 0)[0]
             subindexes = np.where(changes < 0)[0]
             
+            sub = solutions[k][:,1:] - solutions[k][:,:-1]
+            neutralindexes = np.unique(np.where(sub < 0)[1])
+            neutralindexes = np.setxor1d(neutralindexes, subindexes)
+
             if len(subindexes) < len(addindexes):
                 for m in range(len(subindexes)):
                     traj = solutions[k][:, addindexes[m]:subindexes[m]]
@@ -1192,6 +1196,14 @@ class rSNAPsim():
                             #print(traj[0, minusloc[-1]:].flatten())
                             
                         else:
+                            if True in (neutralindexes < subindexes[m]).tolist(): 
+                               nindexes = []
+                               for index in neutralindexes:
+                                   
+                                   if index < subindexes[m] and index > addindexes[m]:
+                                       nindexes.append(index)
+                                       
+                                       
                             fragment = solutions[k][startind][addindexes[m]:subindexes[m]].flatten()
                             print([addindexes[m]])
                         
