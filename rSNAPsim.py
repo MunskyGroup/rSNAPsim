@@ -231,7 +231,7 @@ class rSNAPsim():
             'TGC':'C', 'TGT':'C', 'TGA':'*', 'TGG':'W',}
 
         self.aatable_r = {'A':['GCA', 'GCC', 'GCG', 'GCT'],
-                          'R':['CGA', 'CGC', 'CGG', 'CGT'],
+                          'R':['CGA', 'CGC', 'CGG', 'CGT','AGG','AGA'],
                           'N':['AAC', 'AAT'],
                           'D':['GAC', 'GAT'],
                           'C':['TGC', 'TGT'],
@@ -245,7 +245,7 @@ class rSNAPsim():
                           'M':['ATG'],
                           'F':['TTC', 'TTT'],
                           'P':['CCT', 'CCC', 'CCG', 'CCA'],
-                          'S':['TCA', 'TCC', 'TCG', 'TCT'],
+                          'S':['TCA', 'TCC', 'TCG', 'TCT','AGC','AGT'],
                           'T':['ACA', 'ACC', 'ACG', 'ACT'],
                           'W':['TGG'],
                           'Y':['TAT', 'TAC'],
