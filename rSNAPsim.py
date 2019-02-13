@@ -1149,12 +1149,12 @@ class rSNAPsim():
 
         #solt = solutions.T
 
-        #flatt = solt[solt>0]
         fragmented_trajectories = []
         fragtimes = []
         maxlen = 0
         kes = []
-        for k in range(0, n_traj):
+        fragmentspertraj= []
+        for k in range(n_traj):
             ind = np.array([next(j for j in range(0,solutions[k].shape[0]) if int(solutions[k][j, i]) == 0 or int(solutions[k][j, i]) == -1) for i in range(0, solutions[k].shape[1])])
             changes = ind[1:] - ind[:-1]
             addindexes = np.where(changes > 0)[0]
@@ -1163,93 +1163,89 @@ class rSNAPsim():
             sub = solutions[k][:,1:] - solutions[k][:,:-1]
             neutralindexes = np.unique(np.where(sub < 0)[1])
             neutralindexes = np.setxor1d(neutralindexes, subindexes)
-
-            if len(subindexes) < len(addindexes):
-                for m in range(len(subindexes)):
-                    traj = solutions[k][:, addindexes[m]:subindexes[m]]
+            
+            for index in neutralindexes:
+                pre = solutions[k][:,index]
+                post = solutions[k][:,index+1]
+                changecount = 0
+                while len(np.where(post - pre < 0)[0]) > 0:
+    
+                    post = np.append([genelength],post)
+                    pre = np.append(pre,0)
+                    
+                    changecount+=1
                 
-                    traj_ind = changes[addindexes[m]:subindexes[m]]
-
-                    startind = ind[addindexes[m]]
-                    minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
-                    fragment = np.array([])
-
-
-                    if subindexes[m]-addindexes[m] > 0:
-                        if len(minusloc) > 1:
-                            for n in range(len(minusloc)-1):
-                                potential_frag = traj[startind-n, minusloc[n]+1:minusloc[n+1]].flatten()
-                                
-                                discontinuity = np.where(potential_frag[1:]-potential_frag[:-1]<0)[0]
-                                #if len(discontinuity) !=0:
-                                    
-                                
-                                fragment = np.append(fragment, traj[startind-n, minusloc[n]+1:minusloc[n+1]].flatten())
-                                
-                                
-                                
-              
-
-                            fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
-                           
-                            
-                            #print(traj[0, minusloc[-1]:].flatten())
-                            
-                        else:
-                            if True in (neutralindexes < subindexes[m]).tolist(): 
-                               nindexes = []
-                               for index in neutralindexes:
-                                   
-                                   if index < subindexes[m] and index > addindexes[m]:
-                                       nindexes.append(index)
-                                       
-                                       
-                            fragment = solutions[k][startind][addindexes[m]:subindexes[m]].flatten()
-                            print([addindexes[m]])
-                        
-                        fragtimes.append(addindexes[m])
-                           
-                        
-                        fragmented_trajectories.append(fragment)
-                        
-                        kes.append(genelength/truetime[len(fragment)])
-
-                        if len(fragment) > maxlen:
-                            maxlen = len(fragment)
-
-            else:
-                for m in range(len(addindexes)):
-                    traj = solutions[k][:, addindexes[m]:subindexes[m]]
-                    traj_ind = changes[addindexes[m]:subindexes[m]]
-                 
-                    startind = ind[addindexes[m]]
-                    minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
-                    fragment = np.array([])
-
-
-                    if subindexes[m]-addindexes[m] > 0:
-                        if len(minusloc) > 1:
-                            for n in range(len(minusloc)-1):
-                                fragment = np.append(fragment, traj[startind-n, minusloc[n]:minusloc[n+1]].flatten())
-
-                            fragment = np.append(fragment, traj[0, minusloc[-1]:].flatten())
-                        else:
-                            fragment = solutions[k][startind][addindexes[m]:subindexes[m]].flatten()
-                        fragmented_trajectories.append(fragment)
-                        fragtimes.append(addindexes[m])
-                     
-                        kes.append(genelength/truetime[len(fragment)])
-
-                        if len(fragment) > maxlen:
-                            maxlen = len(fragment)
+                for i in range(changecount):
+                    addindexes = np.sort(np.append(addindexes,index))
+                    subindexes = np.sort(np.append(subindexes,index))
+                    
+                changes[index] = -changecount
+                
+            truefrags = len(subindexes)
+            
+                
         
-
-        fragarray = np.zeros((len(fragmented_trajectories), maxlen))
-        for i in range(len(fragmented_trajectories)):
-            fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
+            print(changes)
+            if len(subindexes) < len(addindexes):
+                subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(truetime)-1)).astype(int))
+                
+            print(addindexes)
+            print(subindexes)
+                
+            fragmentspertraj.append(len(subindexes))
+            
+            for m in range(min(len(subindexes),len(addindexes))):
+                traj = solutions[k][:, addindexes[m]:subindexes[m]+1]
+                traj_ind = changes[addindexes[m]:subindexes[m]+1]
+                
+                startind = ind[addindexes[m]]
+                minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
+                fragment = np.array([])
+            
+                    
+                if subindexes[m] == 999:
+                    print(minusloc)
+                
+                
+                if subindexes[m]-addindexes[m] > 0:
+                    if len(minusloc) > 1:
+                        for n in range(len(minusloc)-1):
+                            
+                            fragment = np.append(fragment, traj[startind-n, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                            
+                            
+                            
+              
+                        if m <= truefrags:
+                            fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
+                        else:
+                            fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
+                        
+                        #print(traj[0, minusloc[-1]:].flatten())
+                        
+                    else:
+            
+                        fragment = solutions[k][startind][addindexes[m]:subindexes[m]].flatten()
+                        
+                    
+                    fragtimes.append(addindexes[m])
+                       
+                    
+                    fragmented_trajectories.append(fragment)
+                    #if m <= truefrags:
+                        #kes.append(genelength/truetime[len(fragment)])
+            
+                    if len(fragment) > maxlen:
+                        maxlen = len(fragment)
+                    
+    
+            fragarray = np.zeros((len(fragmented_trajectories), maxlen))
+            for i in range(len(fragmented_trajectories)):
+                fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
             
         ssa_obj.fragments = fragarray
         ssa_obj.fragtimes = fragtimes
+        ssa_obj.frag_per_traj = fragmentspertraj
         
         
         autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
@@ -2326,17 +2322,22 @@ class rSNAPsim():
             f.close()
 
 
-    def kymograph(self,ssa_obj):
+    def kymograph(self,ssa_obj,n_traj,*args,**kwargs):
         '''
         Constructs a kymograph of ribosome locations
         '''
+        startfrags = 0
+        for i in range(n_traj):
+            startfrags += ssa_obj.frag_per_traj[i]
+            
+        endfrags = startfrags + ssa_obj.frag_per_traj[n_traj]
+        fragments = ssa_obj.fragments[startfrags:startfrags+endfrags]
         
-        fragments = ssa_obj.fragments
-        nfrag = ssa_obj.fragments.shape[0]
-        maxlen= ssa_obj.fragments.shape[1]
+        nfrag = fragments.shape[0]
+        maxlen= fragments.shape[1]
         time = ssa_obj.time
-        ftimes = ssa_obj.fragtimes
-        plt.figure(figsize=(20,10))
+        ftimes = ssa_obj.fragtimes[startfrags:startfrags+endfrags]
+        plt.figure(figsize=(5,10))
         
         for i in range(nfrag):
             
@@ -2349,7 +2350,7 @@ class rSNAPsim():
                 stop = np.where(fragments[i] > 0 )[0][-1]+1
                 timelen = len(fragments[i][0:stop]) 
                 
-                plt.plot(fragments[i][0:stop]   ,timeseg[0:timelen],color='blue' )
+                plt.plot(fragments[i][0:stop]   ,timeseg[0:timelen],**kwargs )
                 
         plt.xlabel('ribosome position')
         plt.ylabel('time')

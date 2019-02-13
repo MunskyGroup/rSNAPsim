@@ -44,53 +44,68 @@ ind = np.array([next(j for j in range(0,solutions[k].shape[0]) if int(solutions[
 changes = ind[1:] - ind[:-1]
 addindexes = np.where(changes > 0)[0]
 subindexes = np.where(changes < 0)[0]
+genelength = 25
+sub = solutions[k][:,1:] - solutions[k][:,:-1]
+neutralindexes = np.unique(np.where(sub < 0)[1])
+neutralindexes = np.setxor1d(neutralindexes, subindexes)
 
-if len(subindexes) <= len(addindexes):
-    for m in range(len(subindexes)):
-        traj = solutions[k][:, addindexes[m]:subindexes[m]+1]
+for index in neutralindexes:
+    pre = solutions[k][:,index]
+    post = solutions[k][:,index+1]
+    changecount = 0
+    while len(np.where(post - pre < 0)[0]) > 0:
+        post = np.append([genelength],post)
+        pre = np.append(pre,0)
+        changecount+=1
     
-        traj_ind = changes[addindexes[m]:subindexes[m]+1]
+    for i in range(changecount):
+        addindexes = np.sort(np.append(addindexes,index))
+        subindexes = np.sort(np.append(subindexes,index))
+        
+    changes[index] = -changecount
 
-        startind = ind[addindexes[m]]
-        minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
-        fragment = np.array([])
 
+for m in range(min(len(subindexes),len(addindexes))):
+    traj = solutions[k][:, addindexes[m]:subindexes[m]+1]
+    traj_ind = changes[addindexes[m]:subindexes[m]+1]
+    startind = ind[addindexes[m]]
+    minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
+    fragment = np.array([])
 
-        if subindexes[m]-addindexes[m] > 0:
-            if len(minusloc) > 1:
-                for n in range(len(minusloc)-1):
-                    print(fragment)
-                    potential_frag = traj[startind-n, minusloc[n]+1:minusloc[n+1]].flatten()
-                    
-                    discontinuity = np.where(potential_frag[1:]-potential_frag[:-1]<0)[0]
-                    #if len(discontinuity) !=0:
-                        
-                    
-                    fragment = np.append(fragment, traj[startind-n, minusloc[n]+1:minusloc[n+1]+1].flatten())
-                    
-                    
-                    
+        
+        
+    
+    
+    if subindexes[m]-addindexes[m] > 0:
+        if len(minusloc) > 1:
+            for n in range(len(minusloc)-1):
+                
+                fragment = np.append(fragment, traj[startind-n, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                
+                
+                
   
 
-                fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
-                print(fragment)
-                
-                #print(traj[0, minusloc[-1]:].flatten())
-                
-            else:
-                fragment = solutions[k][startind][addindexes[m]:subindexes[m]].flatten()
-                print([addindexes[m]])
+            fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
+            print(fragment)
             
-            fragtimes.append(addindexes[m])
-               
+            #print(traj[0, minusloc[-1]:].flatten())
             
-            fragmented_trajectories.append(fragment)
-            
-            #kes.append(genelength/truetime[len(fragment)])
+        else:
 
-            if len(fragment) > maxlen:
-                maxlen = len(fragment)
+            fragment = solutions[k][startind][addindexes[m]:subindexes[m]].flatten()
+            print([addindexes[m]])
+        
+        fragtimes.append(addindexes[m])
+           
+        
+        fragmented_trajectories.append(fragment)
+        
+        #kes.append(genelength/truetime[len(fragment)])
 
+        if len(fragment) > maxlen:
+            maxlen = len(fragment)
+'''
 else:
     for m in range(len(addindexes)):
         traj = solutions[k][:, addindexes[m]:subindexes[m]]
@@ -117,7 +132,7 @@ else:
             if len(fragment) > maxlen:
                 maxlen = len(fragment)
 
-
+'''
 fragarray = np.zeros((len(fragmented_trajectories), maxlen))
 for i in range(len(fragmented_trajectories)):
     fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
