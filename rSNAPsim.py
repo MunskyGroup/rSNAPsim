@@ -53,7 +53,7 @@ import numpy as np
 import matplotlib.patches as mpatches
 import matplotlib.animation as animation
 from matplotlib.collections import PatchCollection
-
+from matplotlib import cm
 
 #import scipy.stats.trim_mean as tmean
 
@@ -2362,8 +2362,13 @@ class rSNAPsim():
         nfrag = fragments.shape[0]
         maxlen= fragments.shape[1]
         time = ssa_obj.time
+        ivec = ssa_obj.intensity_vec[n_traj]
         ftimes = ssa_obj.fragtimes[startfrags:startfrags+endfrags]
         plt.figure(figsize=(5,10))
+        lenplot = np.max(fragments)
+        maxin = np.max(ivec)
+        for i in range(len(time)):
+            plt.plot([0,lenplot],[time[i],time[i]],color = cm.summer(1.*ivec[i]/maxin))
         
         for i in range(nfrag):
             
@@ -2372,6 +2377,7 @@ class rSNAPsim():
             if maxlen <= np.where(fragments[i] > 0 )[0][-1]:       
               
                 plt.plot(fragments[i][0:len(timeseg)] ,timeseg[::-1] )
+                
             else:
                 stop = np.where(fragments[i] > 0 )[0][-1]+1
                 timelen = len(fragments[i][0:stop]) 
