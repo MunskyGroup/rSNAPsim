@@ -54,6 +54,7 @@ import matplotlib.patches as mpatches
 import matplotlib.animation as animation
 from matplotlib.collections import PatchCollection
 from matplotlib import cm
+from matplotlib import gridspec
 
 #import scipy.stats.trim_mean as tmean
 
@@ -753,6 +754,10 @@ class rSNAPsim():
 
         self.POI.gene_seq = gs
         self.POI.gene_length = len(gs)
+        codons = []
+        for i in range(0, len(sequence), 3):
+            codons.append(sequence[i:i+3])
+        self.POI.codons = codons
 
         self.POI.codon_sensitivity, self.POI.CAI, self.POI.CAI_codons = self.codon_usage(self.POI.nt_seq)
 
@@ -1192,17 +1197,13 @@ class rSNAPsim():
                         addindexes = np.sort(np.append(addindexes,index))   
                 
             truefrags = len(subindexes)
-            print(truefrags)
-            
+     
                 
         
            
             if len(subindexes) < len(addindexes):
                 subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(truetime)-1)).astype(int))
                 
-            print(addindexes)
-            print(subindexes)
-            print(len(subindexes))
             
             fragmentspertraj.append(len(subindexes))
             
@@ -1235,17 +1236,14 @@ class rSNAPsim():
                             
                         else:
                             for n in range(len(minusloc)-1):
-                                if n ==0:
-                                    iterind = -1
-                                else:
-                                    iterind = iterind + min(-1,traj_ind[minusloc[n]])
+
+                                iterind = iterind + min(0,traj_ind[minusloc[n]])
                                 
                                 fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
-                                print(traj)
-                                print(fragment)
+                  
                                 
                             fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
-                            print(fragment)
+          
                         
                     
                     else:
@@ -2348,7 +2346,7 @@ class rSNAPsim():
             f.close()
 
 
-    def kymograph(self,ssa_obj,n_traj,*args,**kwargs):
+    def kymograph(self,ssa_obj,n_traj,bg_intense=True,*args,**kwargs):
         '''
         Constructs a kymograph of ribosome locations
         '''
@@ -2365,11 +2363,16 @@ class rSNAPsim():
         ivec = ssa_obj.intensity_vec[n_traj]
         ftimes = ssa_obj.fragtimes[startfrags:startfrags+endfrags]
         plt.figure(figsize=(5,10))
+        gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
+        plt.subplot(gs[0])
         lenplot = np.max(fragments)
         maxin = np.max(ivec)
-        for i in range(len(time)):
-            plt.plot([0,lenplot],[time[i],time[i]],color = cm.summer(1.*ivec[i]/maxin))
-        
+        ax = plt.gca()
+        ax.set_facecolor('black')
+        if bg_intense == True:
+            for i in range(len(time)):
+                plt.plot([0,lenplot],[time[i],time[i]],color = cm.summer(1.*ivec[i]/maxin))
+            
         for i in range(nfrag):
             
             timeseg = time[ftimes[i]:ftimes[i]+maxlen]
@@ -2383,10 +2386,24 @@ class rSNAPsim():
                 timelen = len(fragments[i][0:stop]) 
                 
                 plt.plot(fragments[i][0:stop]   ,timeseg[0:timelen],**kwargs )
-                
-        plt.xlabel('ribosome position')
-        plt.ylabel('time')
+
+        plt.xlabel('Ribosome position (residue)')
+        plt.ylabel('Time')
         plt.ylim(time[-1], time[0])
+                
+    
+        plt.subplot(gs[1])
+        ax = plt.gca()
+        ax.set_facecolor('black')
+        plt.plot(ivec.T,time,**kwargs)
+        plt.xlabel('Intensity (AU)')
+        
+        plt.ylim(time[-1], time[0])
+        plt.yticks([])
+        plt.xlim(0,maxin+5)
+        plt.tight_layout()
+                
+
             
 
 

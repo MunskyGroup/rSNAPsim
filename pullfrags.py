@@ -32,7 +32,7 @@ case2[0,36:51] = np.linspace(11,25,15)
 
 
 
-case3 = np.loadtxt('fragerror.txt')
+case3 = np.loadtxt('fragerror2.txt')
 
 
 solutions = [case1,case2,case3]
@@ -51,7 +51,7 @@ genelength = 465
 sub = solutions[k][:,1:] - solutions[k][:,:-1]
 neutralindexes = np.unique(np.where(sub < 0)[1])
 neutralindexes = np.setxor1d(neutralindexes, subindexes)
-print(neutralindexes)
+
 
 for index in neutralindexes:
     pre = solutions[k][:,index]
@@ -64,7 +64,7 @@ for index in neutralindexes:
         
         changecount+=1
         
-    print(changecount)
+    
     
     for i in range(changecount):
         addindexes = np.sort(np.append(addindexes,index))
@@ -96,7 +96,7 @@ if len(subindexes) < len(addindexes):
 for m in range(min(len(subindexes),len(addindexes))):
     traj = solutions[k][:, addindexes[m]:subindexes[m]+1]
     traj_ind = changes[addindexes[m]:subindexes[m]+1]
-    print(traj_ind)
+    
     
     startind = ind[addindexes[m]]
     minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
@@ -118,6 +118,7 @@ for m in range(min(len(subindexes),len(addindexes))):
                     
                     
                     
+                    
       
     
           
@@ -125,12 +126,15 @@ for m in range(min(len(subindexes),len(addindexes))):
                 fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
                 
             else:
+                print('above m')
+                print(addindexes[m])
+                print(subindexes[m])
                 for n in range(len(minusloc)-1):
-                    if n ==0:
-                        iterind = -1
-                    else:
-                        iterind = iterind + min(-1,traj_ind[minusloc[n]])
                     
+
+                    iterind = iterind + min(0,traj_ind[minusloc[n]])
+                    
+                   
                     fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
                     
                     
