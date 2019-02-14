@@ -1152,7 +1152,7 @@ class rSNAPsim():
         fragmented_trajectories = []
         fragtimes = []
         maxlen = 0
-        kes = []
+    
         fragmentspertraj= []
         for k in range(n_traj):
             ind = np.array([next(j for j in range(0,solutions[k].shape[0]) if int(solutions[k][j, i]) == 0 or int(solutions[k][j, i]) == -1) for i in range(0, solutions[k].shape[1])])
@@ -1180,18 +1180,30 @@ class rSNAPsim():
                     subindexes = np.sort(np.append(subindexes,index))
                     
                 changes[index] = -changecount
+                ind[index] += changecount
+             
+                
+            for index in np.where(np.abs(changes)>1)[0]:
+                if changes[index] < 0:
+                    for i in range(np.abs(changes[index])-1):
+                        subindexes = np.sort(np.append(subindexes,index))
+                else:
+                    for i in range(np.abs(changes[index])-1):
+                        addindexes = np.sort(np.append(addindexes,index))   
                 
             truefrags = len(subindexes)
+            print(truefrags)
             
                 
         
-            print(changes)
+           
             if len(subindexes) < len(addindexes):
                 subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(truetime)-1)).astype(int))
                 
             print(addindexes)
             print(subindexes)
-                
+            print(len(subindexes))
+            
             fragmentspertraj.append(len(subindexes))
             
             for m in range(min(len(subindexes),len(addindexes))):
@@ -1203,30 +1215,44 @@ class rSNAPsim():
                 fragment = np.array([])
             
                     
-                if subindexes[m] == 999:
-                    print(minusloc)
                 
+                iterind = startind
                 
                 if subindexes[m]-addindexes[m] > 0:
                     if len(minusloc) > 1:
-                        for n in range(len(minusloc)-1):
-                            
-                            fragment = np.append(fragment, traj[startind-n, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
-                            
-                            
-                            
-              
                         if m <= truefrags:
+                            for n in range(len(minusloc)-1):
+                                iterind = iterind + min(0,traj_ind[minusloc[n]])
+                                fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                                
+                                
+                                
+                  
+                
+                      
+                            
                             fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
+                            
                         else:
+                            for n in range(len(minusloc)-1):
+                                if n ==0:
+                                    iterind = -1
+                                else:
+                                    iterind = iterind + min(-1,traj_ind[minusloc[n]])
+                                
+                                fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                                print(traj)
+                                print(fragment)
+                                
                             fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
+                            print(fragment)
                         
-                        #print(traj[0, minusloc[-1]:].flatten())
-                        
+                    
                     else:
-            
-                        fragment = solutions[k][startind][addindexes[m]:subindexes[m]].flatten()
-                        
+
+                        fragment = solutions[k][startind][addindexes[m]:subindexes[m]+1].flatten()
+                   
+                
                     
                     fragtimes.append(addindexes[m])
                        
