@@ -1019,13 +1019,14 @@ class rSNAPsim():
             print('C++ library failed, Using Python Implementation')
 
             N_rib = 200
+            collisions = np.array([[]])
             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
             for i in range(n_traj):
 
                 soln,all_ribtimes,Ncol = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
                 #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
                 
-                
+                collisions = np.append(collisions,Ncol)
                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
                 if np.max(validind) != N_rib-1:
                     validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
@@ -1144,7 +1145,7 @@ class rSNAPsim():
         ssa_obj.time_inhibit = time_inhibit
         ssa_obj.solutions = solutionssave
         ssa_obj.solvetime = sttime
-        ssa_obj.Ncol = Ncol
+        ssa_obj.collisions = collisions
         
         
         try:
@@ -2383,7 +2384,7 @@ class rSNAPsim():
         ax.set_facecolor('black')
         if bg_intense == True:
             for i in range(len(time)):
-                plt.plot([0,lenplot],[time[i],time[i]],color = cm.summer(1.*ivec[i]/maxin))
+                plt.plot([0,lenplot],[time[i],time[i]],color = cm.summer(1.*ivec[i]/maxin),lw=1)
             
         for i in range(nfrag):
             
