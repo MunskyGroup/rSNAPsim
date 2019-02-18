@@ -1022,7 +1022,7 @@ class rSNAPsim():
             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
             for i in range(n_traj):
 
-                soln,all_ribtimes = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
+                soln,all_ribtimes,Ncol = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
                 #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
                 
                 
@@ -1144,6 +1144,7 @@ class rSNAPsim():
         ssa_obj.time_inhibit = time_inhibit
         ssa_obj.solutions = solutionssave
         ssa_obj.solvetime = sttime
+        ssa_obj.Ncol = Ncol
         
         
         try:
@@ -1488,6 +1489,9 @@ class rSNAPsim():
         kcompl = k[-1]     #rate for a ribosome at the end of the mRNA to unbind
         X = np.array([0, 0], dtype=int)   #the updating ribosome posistion vector that is changed in the simulation
 
+
+        Ncol = np.zeros((1,0))
+        
         #example X arrays and how its formatted:
         # X = [423 30 10 0 ]  read from left to right theres a ribosome in position 423 30 and 10, with a 0 kept as a buffer for simulation
 
@@ -1495,6 +1499,7 @@ class rSNAPsim():
         Nt = len(t_array)  #number of time points to record over
         tf = t_array[-1]  #final time point
         N_rib = 200  #Maximum number of ribosomes on a single mRNA (hard limit for the simulation not a physical constant)
+        col = np.zeros((1,N_rib))
         X_array = np.zeros((N_rib, Nt))  #recording array that records the ribosome posistions over time array points
         NR = 0  #number of ribosomes bound
         it = 1  #number of iterations
@@ -1620,10 +1625,17 @@ class rSNAPsim():
                 
                 ribtimes = np.vstack((ribtimes,[T[0],t]))
                 T[:-1] = T[1:]
+                Ncol = np.append(Ncol,col[0][0] )
+                col = np.atleast_2d(np.append(col[:,1:],[0]))
+                
+            else:
+                
+                if X[event-1] == X[event] + R:
+                    col[0][event] +=1
+                    
                 
             
-      
-        return X_array,ribtimes[1:,:]  #return the completed simulation
+        return X_array,ribtimes[1:,:],Ncol  #return the completed simulation
 
 
     def get_acc2(self, data, trunc=False):
