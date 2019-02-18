@@ -2359,7 +2359,7 @@ class rSNAPsim():
             f.close()
 
 
-    def kymograph(self,ssa_obj,n_traj,bg_intense=True,*args,**kwargs):
+    def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True, *args,**kwargs):
         '''
         Constructs a kymograph of ribosome locations
         '''
@@ -2375,8 +2375,12 @@ class rSNAPsim():
         time = ssa_obj.time
         ivec = ssa_obj.intensity_vec[n_traj]
         ftimes = ssa_obj.fragtimes[startfrags:startfrags+endfrags]
-        plt.figure(figsize=(5,10))
-        gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
+        #plt.figure(figsize=(5,10))
+        if show_intense == True:
+            gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
+        else:
+            gs = gridspec.GridSpec(1, 1)
+        
         plt.subplot(gs[0])
         lenplot = np.max(fragments)
         maxin = np.max(ivec)
@@ -2404,17 +2408,18 @@ class rSNAPsim():
         plt.ylabel('Time')
         plt.ylim(time[-1], time[0])
                 
-    
-        plt.subplot(gs[1])
-        ax = plt.gca()
-        ax.set_facecolor('black')
-        plt.plot(ivec.T,time,**kwargs)
-        plt.xlabel('Intensity (AU)')
+        if show_intense == True:
+            plt.subplot(gs[1])
+            ax = plt.gca()
+            ax.set_facecolor('black')
         
-        plt.ylim(time[-1], time[0])
-        plt.yticks([])
-        plt.xlim(0,maxin+5)
-        plt.tight_layout()
+            plt.plot(ivec.T,time,**kwargs)
+            plt.xlabel('Intensity (AU)')
+            
+            plt.ylim(time[-1], time[0])
+            plt.yticks([])
+            plt.xlim(0,maxin+5)
+            plt.tight_layout()
                 
 
             
