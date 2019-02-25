@@ -1198,11 +1198,14 @@ class GUI(Frame):
         
         
 
+        kymtopframe = tk.Frame(kym_frame)
+        kymtopframe.grid(row=0,column=0,sticky=tk.W+tk.E+tk.N+tk.S,padx=gpx,pady=gpy)     
         
+
         
         self.kym_fig = mpl.figure.Figure(figsize=(1,1))#figsize=(2,5),dpi=60)
         self.kym_fig.set_tight_layout(True)
-        self.kymax = self.kym_fig.add_subplot(211)
+        self.kymax = self.kym_fig.add_subplot(111)
         self.kym_fig.patch.set_facecolor(self.default_color)
         self.kym_fig.tight_layout(h_pad=1.0)
 
@@ -1212,35 +1215,41 @@ class GUI(Frame):
 
 
 
-        self.kym_canvas = FigureCanvasTkAgg(self.kym_fig,master=kym_frame)
+        self.kym_canvas = FigureCanvasTkAgg(self.kym_fig,master=kymtopframe)
         self.kym_canvas.draw()
         self.kym_canvas.get_tk_widget().pack(expand=True,fill='both',side='left') #stickying this way it makes it fill all avaliable space
 
-
+        
         self.kym_fig2 = mpl.figure.Figure(figsize=(1,1))#figsize=(2,5),dpi=60)
         self.kym_fig2.set_tight_layout(True)
-        self.kymax2 = self.kym_fig2.add_subplot(211)
+        self.kymax2 = self.kym_fig2.add_subplot(111)
         self.kym_fig2.patch.set_facecolor(self.default_color)
         self.kym_fig2.tight_layout(h_pad=1.0)
 
         #self.kymax.set_xlabel('time (sec)')
         #self.kymax.set_ylabel('Intensity (a.u.)')
         self.kymax2.set_title("")
+        
+        figframe = tk.Frame(kymtopframe,bg='#00ff00')
+        #figframe.pack(expand=True,fill='both',side='left')
 
 
-
-        self.kym_canvas2 = FigureCanvasTkAgg(self.kym_fig2,master=kym_frame)
+        self.kym_canvas2 = FigureCanvasTkAgg(self.kym_fig2,master=kymtopframe)
         self.kym_canvas2.draw()
         self.kym_canvas2.get_tk_widget().pack(expand=True,fill='both',side='left') 
-
+        
 
         kymsmallframe = tk.Frame(kym_frame)
-        kymsmallframe.pack(side='right')
+        kymsmallframe.grid(row=1,column=0,sticky=tk.NW)
         self.traj_select = tk.Entry(kymsmallframe,width=10)
         self.traj_select.grid(row=0,column=0)
         
         plot_kym = tk.Button(kymsmallframe,text='Plot',command=self.kymograph)
         plot_kym.grid(row=1,column=0)
+        
+        kym_frame.rowconfigure(0,weight=3)
+        kym_frame.columnconfigure(0,weight=3)
+    
         
         
         gs_input_l = tk.Label(ss_frame,text='Stochastic Simulations',font=('SystemButtonText',11,'bold'),bg='#888888',fg='#FFFFFF')
@@ -3608,7 +3617,8 @@ class GUI(Frame):
         if self.ss_rates[2].get() == '':
             self.ss_rates[2].insert(tk.END,'0.03')
 
-
+        if self.time_res_e.get() == '':
+            self.time_res_e.insert(tk.END,'1000')
 
         cmnorm = self.sms.POI.codon_sensitivity/np.max(self.sms.POI.codon_sensitivity).flatten().tolist()
         #colors = self.__cmap_map(lambda x: .9*x +.2,cm.Wistia)(cmnorm[0])
@@ -4936,7 +4946,7 @@ class GUI(Frame):
         all_k_design = [k_init] + k_elongation_design.flatten().tolist() + [10]
 
 
-        tvec = np.linspace(0,  float(self.ssa_inputs[6].get())+float(self.ssa_inputs[1].get()), int(self.ssa_inputs[6].get())+int(self.ssa_inputs[1].get())+1)
+        tvec = np.linspace(0,  float(self.ssa_inputs[6].get())+float(self.ssa_inputs[1].get()), int(self.time_res_e.get())  + int(self.ssa_inputs[1].get())+1)
 
 
         pt = self.perturb.get()

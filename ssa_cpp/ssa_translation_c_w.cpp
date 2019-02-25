@@ -53,6 +53,9 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
     MatrixXi X(1,N_rib);
     X.setZero(1,N_rib);
 	
+	MatrixXi col(1,N_rib);
+	col.setZero(1,N_rib);
+	
     MatrixXi T(1,N_rib); //ribosome travel time array
     T.setZero(1,N_rib);
 	
@@ -63,6 +66,8 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
     Eigen::Map<Eigen::MatrixXi> X_array(SSA_result,Nt,N_rib);
 	
 	Eigen::Map<Eigen::MatrixXi> frap_array(frap_result,fNt,N_rib);
+	
+	
 	
 	
 	Eigen::Map<Eigen::VectorXd> T_array(SSA_ribtimes,ribtimesize);
@@ -230,9 +235,10 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 				T(0,NR) = 0;				
 				
 			}
-
-			
-
+		}
+		else {
+			if X[ind-2] == X[ind-1] + R:
+				col[0][event] +=1
 
 
 		}

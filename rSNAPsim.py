@@ -994,12 +994,17 @@ class rSNAPsim():
             nribs = np.array([0],dtype=np.int32)
             k = np.array(all_k)
             seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+            all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
+            collisions = np.array([[]])
+            
             for i in range(n_traj):
                 result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
                 ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+                frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
+                ssa_translation.run_SSA(result, ribtimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
                 
-                ssa_translation.run_SSA(result, ribtimes, k[1:-1], truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
                 all_results[i, :] = result
+                all_frapresults[i,:] = frapresult
                 all_ribtimes[i,:] = ribtimes
 
             for i in range(n_traj):
