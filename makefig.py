@@ -45,17 +45,11 @@ sms = rSNAPsim.rSNAPsim()
 
 
 
-
-
-
-
 #sms.strGeneCopy['ACC'] = 3
 sms.open_seq_file("gene_files/Bactin_withTags.txt")
 sms.get_orfs(sms.sequence_str, min_codons = 80)
 sms.get_temporal_proteins()
 sms.analyze_poi(sms.pois[0],sms.pois_seq[0])
-
-
 
 
 for codon in changes:

@@ -1137,6 +1137,7 @@ class rSNAPsim():
         ssa_obj.intensity_vec = intensity_vec
         ssa_obj.time_vec_fixed = time_vec_fixed
         ssa_obj.time = truetime
+        ssa_obj.time_rec = truetime[startindex:]
         ssa_obj.start_time = non_consider_time
 
 
@@ -2369,12 +2370,31 @@ class rSNAPsim():
             
         endfrags = startfrags + ssa_obj.frag_per_traj[n_traj]
         fragments = ssa_obj.fragments[startfrags:startfrags+endfrags]
+
         
-        nfrag = fragments.shape[0]
-        maxlen= fragments.shape[1]
-        time = ssa_obj.time
+
+        time = ssa_obj.time#[0:len(ssa_obj.time_rec)-1]
+        
+        startindex = np.where(ssa_obj.time > ssa_obj.start_time)[0][0]
+        
+        
+        
+        
+        
+        
         ivec = ssa_obj.intensity_vec[n_traj]
         ftimes = ssa_obj.fragtimes[startfrags:startfrags+endfrags]
+        start = len(ftimes)
+        #ftimes = np.array(ftimes)[np.where(np.array(ftimes) > startindex)].astype(int).tolist()
+        
+        #ignore = start - len(ftimes)
+
+        #fragments = fragments[ignore:]
+
+        nfrag = fragments.shape[0]
+        maxlen= fragments.shape[1]
+
+        
         #plt.figure(figsize=(5,10))
         if show_intense == True:
             gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
@@ -2392,31 +2412,37 @@ class rSNAPsim():
             
         for i in range(nfrag):
             
-            timeseg = time[ftimes[i]:ftimes[i]+maxlen]
+            
             
             if maxlen <= np.where(fragments[i] > 0 )[0][-1]:       
-              
+                timeseg = time[ftimes[i]:ftimes[i]+maxlen]
+                
                 plt.plot(fragments[i][0:len(timeseg)] ,timeseg[::-1] )
                 
             else:
+                timeseg = time[ftimes[i]:]
+                
                 stop = np.where(fragments[i] > 0 )[0][-1]+1
                 timelen = len(fragments[i][0:stop]) 
-                
+
                 plt.plot(fragments[i][0:stop]   ,timeseg[0:timelen],**kwargs )
 
         plt.xlabel('Ribosome position (residue)')
         plt.ylabel('Time')
-        plt.ylim(time[-1], time[0])
+        segtime = ssa_obj.time[0:len(ssa_obj.time_rec)]
+        plt.ylim(ssa_obj.time_rec[-1], ssa_obj.time_rec[0])
                 
+
+        
         if show_intense == True:
             plt.subplot(gs[1])
             ax = plt.gca()
             ax.set_facecolor('black')
         
-            plt.plot(ivec.T,time,**kwargs)
+            plt.plot(ivec.T,segtime,**kwargs)
             plt.xlabel('Intensity (AU)')
             
-            plt.ylim(time[-1], time[0])
+            plt.ylim(segtime[-1], segtime[0])
             plt.yticks([])
             plt.xlim(0,maxin+5)
             plt.tight_layout()

@@ -69,7 +69,7 @@ except:
 
 import ast
 import operator as op
-
+from matplotlib import gridspec
 
 
 import PIL.Image
@@ -533,6 +533,9 @@ class GUI(Frame):
 
         sim_frame = tk.Frame(self.stoc_Nb,name="sim") #elongation notebook Frame
         sim_frame.pack(expand=True,side='top', fill='both')
+        
+        kym_frame = tk.Frame(self.stoc_Nb,name='kym')
+        kym_frame.pack(expand=True,side='top', fill='both')
 
 
         #ccodon_frame = tk.Frame(self.stoc_Nb,name="codon")        #codon notebook Frame
@@ -543,6 +546,8 @@ class GUI(Frame):
         #self.stoc_Nb.add(elon_frame,text= "   Elongation Assays   ")
         #self.stoc_Nb.add(ccodon_frame,text="   Codon Optimization  ")
         self.stoc_Nb.add(sim_frame, text="   Simulated Cell  ")
+        self.stoc_Nb.add(kym_frame, text="   Kymographs   ")
+        
 
 
         '''
@@ -1189,6 +1194,55 @@ class GUI(Frame):
         #topframe.grid_columnconfigure(2,weight=2)
 
         '''
+        
+        
+        
+
+        
+        
+        self.kym_fig = mpl.figure.Figure(figsize=(1,1))#figsize=(2,5),dpi=60)
+        self.kym_fig.set_tight_layout(True)
+        self.kymax = self.kym_fig.add_subplot(211)
+        self.kym_fig.patch.set_facecolor(self.default_color)
+        self.kym_fig.tight_layout(h_pad=1.0)
+
+        #self.kymax.set_xlabel('time (sec)')
+        #self.kymax.set_ylabel('Intensity (a.u.)')
+        self.kymax.set_title("")
+
+
+
+        self.kym_canvas = FigureCanvasTkAgg(self.kym_fig,master=kym_frame)
+        self.kym_canvas.draw()
+        self.kym_canvas.get_tk_widget().pack(expand=True,fill='both',side='left') #stickying this way it makes it fill all avaliable space
+
+
+        self.kym_fig2 = mpl.figure.Figure(figsize=(1,1))#figsize=(2,5),dpi=60)
+        self.kym_fig2.set_tight_layout(True)
+        self.kymax2 = self.kym_fig2.add_subplot(211)
+        self.kym_fig2.patch.set_facecolor(self.default_color)
+        self.kym_fig2.tight_layout(h_pad=1.0)
+
+        #self.kymax.set_xlabel('time (sec)')
+        #self.kymax.set_ylabel('Intensity (a.u.)')
+        self.kymax2.set_title("")
+
+
+
+        self.kym_canvas2 = FigureCanvasTkAgg(self.kym_fig2,master=kym_frame)
+        self.kym_canvas2.draw()
+        self.kym_canvas2.get_tk_widget().pack(expand=True,fill='both',side='left') 
+
+
+        kymsmallframe = tk.Frame(kym_frame)
+        kymsmallframe.pack(side='right')
+        self.traj_select = tk.Entry(kymsmallframe,width=10)
+        self.traj_select.grid(row=0,column=0)
+        
+        plot_kym = tk.Button(kymsmallframe,text='Plot',command=self.kymograph)
+        plot_kym.grid(row=1,column=0)
+        
+        
         gs_input_l = tk.Label(ss_frame,text='Stochastic Simulations',font=('SystemButtonText',11,'bold'),bg='#888888',fg='#FFFFFF')
         gs_input_l.grid(row=4,column=0,columnspan=11,sticky=tk.W+tk.E+tk.N+tk.S)
 
@@ -4560,13 +4614,15 @@ class GUI(Frame):
             print('C++ library failed, Using Python Implementation')
 
             N_rib = 200
+            collisions = np.array([[]])
             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
             sstime = time.time()
             updatetime = time.time()
             for i in range(n_traj):
                 stime = time.time()
-                soln,all_ribtimes = self.sms.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
+                soln,all_ribtimes,Ncol = self.sms.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
 
+                collisions = np.append(collisions,Ncol)
                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
                 if np.max(validind) != N_rib-1:
                     validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
@@ -4665,6 +4721,7 @@ class GUI(Frame):
         ssa_obj.intensity_vec = intensity_vec
         ssa_obj.time_vec_fixed = time_vec_fixed
         ssa_obj.time = truetime
+        ssa_obj.time_rec = truetime[startindex:]
         ssa_obj.start_time = non_consider_time
 
 
@@ -4672,7 +4729,8 @@ class GUI(Frame):
         ssa_obj.evaluating_frap = evaluating_frap
         ssa_obj.time_inhibit = time_inhibit
         ssa_obj.solutions = solutions
-
+        
+        ssa_obj.collisions = collisions
 
         #solt = solutions.T
 
@@ -4682,69 +4740,120 @@ class GUI(Frame):
         fragmented_trajectories = []
         maxlen = 0
         kes = []
-        for k in range(0, n_traj):
+        fragtimes = []
+        fragmentspertraj=[]
+        
+        for k in range(n_traj):
             ind = np.array([next(j for j in range(0,solutions[k].shape[0]) if int(solutions[k][j, i]) == 0 or int(solutions[k][j, i]) == -1) for i in range(0, solutions[k].shape[1])])
             changes = ind[1:] - ind[:-1]
             addindexes = np.where(changes > 0)[0]
             subindexes = np.where(changes < 0)[0]
-
+            
+            sub = solutions[k][:,1:] - solutions[k][:,:-1]
+            neutralindexes = np.unique(np.where(sub < 0)[1])
+            neutralindexes = np.setxor1d(neutralindexes, subindexes)
+            
+            for index in neutralindexes:
+                pre = solutions[k][:,index]
+                post = solutions[k][:,index+1]
+                changecount = 0
+                while len(np.where(post - pre < 0)[0]) > 0:
+    
+                    post = np.append([genelength],post)
+                    pre = np.append(pre,0)
+                    
+                    changecount+=1
+                
+                for i in range(changecount):
+                    addindexes = np.sort(np.append(addindexes,index))
+                    subindexes = np.sort(np.append(subindexes,index))
+                    
+                changes[index] = -changecount
+                ind[index] += changecount
+             
+                
+            for index in np.where(np.abs(changes)>1)[0]:
+                if changes[index] < 0:
+                    for i in range(np.abs(changes[index])-1):
+                        subindexes = np.sort(np.append(subindexes,index))
+                else:
+                    for i in range(np.abs(changes[index])-1):
+                        addindexes = np.sort(np.append(addindexes,index))   
+                
+            truefrags = len(subindexes)
+     
+                
+        
+           
             if len(subindexes) < len(addindexes):
-                for m in range(len(subindexes)):
-                    traj = solutions[k][:, addindexes[m]:subindexes[m]]
-                    traj_ind = changes[addindexes[m]:subindexes[m]]
-
-                    startind = ind[addindexes[m]]
-                    minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
-                    fragment = np.array([])
-
-
-                    if subindexes[m]-addindexes[m]> 0:
-                        if len(minusloc) > 1:
+                subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(truetime)-1)).astype(int))
+                
+            
+            fragmentspertraj.append(len(subindexes))
+            
+            for m in range(min(len(subindexes),len(addindexes))):
+                traj = solutions[k][:, addindexes[m]:subindexes[m]+1]
+                traj_ind = changes[addindexes[m]:subindexes[m]+1]
+                
+                startind = ind[addindexes[m]]
+                minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
+                fragment = np.array([])
+            
+                    
+                
+                iterind = startind
+                
+                if subindexes[m]-addindexes[m] > 0:
+                    if len(minusloc) > 1:
+                        if m <= truefrags:
                             for n in range(len(minusloc)-1):
-                                fragment = np.append(fragment, traj[startind-n, minusloc[n]:minusloc[n+1]].flatten())
-
-                            fragment = np.append(fragment, traj[0, minusloc[-1]:].flatten())
+                                iterind = iterind + min(0,traj_ind[minusloc[n]])
+                                fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                                
+                                
+                                
+                  
+                
+                      
+                            
+                            fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
+                            
                         else:
-                            fragment = solutions[k][startind][addindexes[m]:subindexes[m]].flatten()
-                        fragmented_trajectories.append(fragment)
-                        kes.append(genelength/truetime[len(fragment)] )
-
-                        if len(fragment) > maxlen:
-                            maxlen = len(fragment)
-
-            else:
-                for m in range(len(addindexes)):
-                    traj = solutions[k][:, addindexes[m]:subindexes[m]]
-                    traj_ind = changes[addindexes[m]:subindexes[m]]
-
-                    startind = ind[addindexes[m]]
-                    minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
-                    fragment = np.array([])
-
-
-                    if subindexes[m]-addindexes[m]> 0:
-                        if len(minusloc) > 1:
                             for n in range(len(minusloc)-1):
-                                fragment = np.append(fragment, traj[startind-n, minusloc[n]:minusloc[n+1]].flatten())
 
-                            fragment = np.append(fragment, traj[0, minusloc[-1]:].flatten())
-                        else:
-                            fragment = solutions[k][startind][addindexes[m]:subindexes[m]].flatten()
-                        fragmented_trajectories.append(fragment)
-                        kes.append(genelength/truetime[len(fragment)]   )
+                                iterind = iterind + min(0,traj_ind[minusloc[n]])
+                                
+                                fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                  
+                                
+                            fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
+          
+                        
+                    
+                    else:
 
-                        if len(fragment) > maxlen:
-                            maxlen = len(fragment)
-
-        fragarray = np.zeros((len(fragmented_trajectories), maxlen))
-        for i in range(len(fragmented_trajectories)):
-            fragarray[i][0:len(fragmented_trajectories[i])]  = fragmented_trajectories[i]
-
-
-
-
+                        fragment = solutions[k][startind][addindexes[m]:subindexes[m]+1].flatten()
+                   
+                
+                    
+                    fragtimes.append(addindexes[m])
+                       
+                    
+                    fragmented_trajectories.append(fragment)
+                    #if m <= truefrags:
+                        #kes.append(genelength/truetime[len(fragment)])
+            
+                    if len(fragment) > maxlen:
+                        maxlen = len(fragment)
+                    
+    
+            fragarray = np.zeros((len(fragmented_trajectories), maxlen))
+            for i in range(len(fragmented_trajectories)):
+                fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
+            
         ssa_obj.fragments = fragarray
-        #if evaluating_inhibitor == False:
+        ssa_obj.fragtimes = fragtimes
+        ssa_obj.frag_per_traj = fragmentspertraj
         autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec, truetime, 0, genelength)
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
@@ -5474,6 +5583,82 @@ class GUI(Frame):
 
         ax.legend(handles=p)
         #ax.text(int(2*len(t)/3),-.4,'time (sec)')
+        
+    def kymograph(self):
+        
+        self.kymax.clear()
+        self.kymax2.clear()
+        n_traj = int(self.traj_select.get())
+        self.kymograph_internal(self.kymax,self.kymax2,self.ssa,n_traj,color=self.main_color)
+
+
+        self.kym_canvas.draw()
+        self.kym_canvas2.draw()
+    def kymograph_internal(self,ax,ax1,ssa_obj,n_traj,bg_intense=True,show_intense = True, *args,**kwargs):
+        '''
+        Constructs a kymograph of ribosome locations
+        '''
+        startfrags = 0
+        for i in range(n_traj):
+            startfrags += ssa_obj.frag_per_traj[i]
+            
+        endfrags = startfrags + ssa_obj.frag_per_traj[n_traj]
+        fragments = ssa_obj.fragments[startfrags:startfrags+endfrags]
+        
+        nfrag = fragments.shape[0]
+        maxlen= fragments.shape[1]
+        time  = ssa_obj.time
+        
+        ivec = ssa_obj.intensity_vec[n_traj]
+        
+        ftimes = ssa_obj.fragtimes[startfrags:startfrags+endfrags]
+        #plt.figure(figsize=(5,10))
+
+        #plt.subplot(gs[0])
+        lenplot = np.max(fragments)
+        maxin = np.max(ivec)
+        
+        #ax.set_facecolor('black')
+        if bg_intense == True:
+            for i in range(len(ssa_obj.time_rec)):
+                ax.plot([0,lenplot],[ssa_obj.time_rec[i],ssa_obj.time_rec[i]],color = cm.summer(1.*ivec[i]/maxin),lw=1)
+            
+        for i in range(nfrag):
+            
+           
+            
+            if maxlen <= np.where(fragments[i] > 0 )[0][-1]:       
+                timeseg = time[ftimes[i]:ftimes[i]+maxlen]
+                ax.plot(fragments[i][0:len(timeseg)] ,timeseg[::-1] )
+                
+            else:
+                timeseg = time[ftimes[i]:]
+                stop = np.where(fragments[i] > 0 )[0][-1]+1
+                timelen = len(fragments[i][0:stop]) 
+                
+                ax.plot(fragments[i][0:stop]   ,timeseg[0:timelen],**kwargs )
+
+        segtime = ssa_obj.time[0:len(ssa_obj.time_rec)]
+        
+
+        ax.set_xlabel('Ribosome position (residue)')
+        ax.set_ylabel('Time')
+        ax.set_ylim(ssa_obj.time_rec[-1], ssa_obj.time_rec[0])
+                
+
+            
+
+       # ax.set_facecolor('black')
+    
+        ax1.plot(ivec.T,segtime,**kwargs)
+        ax1.set_xlabel('Intensity (AU)')
+        
+        ax1.set_ylim(segtime[-1], segtime[0])
+        ax1.set_yticks([])
+        ax1.set_xlim(0,maxin+5)
+       
+            
+
 
     def plot_ssa_acc(self,ax,mean_acc,error_acc,color=None,name=None):
 
