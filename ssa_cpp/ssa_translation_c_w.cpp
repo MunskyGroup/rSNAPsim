@@ -12,7 +12,7 @@ using Eigen::MatrixXd;
 using Eigen::MatrixXi;
 using Eigen::VectorXd;
 
-void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_result, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result)
+void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_result, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result)
 {
     // Declare the variables
     int R = 9; // ribosome exclusion.
@@ -71,6 +71,7 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 	
 	
 	Eigen::Map<Eigen::VectorXd> T_array(SSA_ribtimes,ribtimesize);
+	Eigen::Map<Eigen::VectorXi> col_array(col_result,cNt);
 	Eigen::Map<Eigen::VectorXi> n_ribs(nribs,1);
 
 	int tsize = T_array.size();
@@ -199,7 +200,7 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
             X_array.row(it) = X.row(0);
 			
 			if (FRAP_pres){
-				std::cout << "addingfrap" << std::endl;
+				
 				if ( (t>= inhibit_time) && (t< inhibit_time+20)) {
 					frap_array.row(fit) = X.row(0);
 					fit +=1;
@@ -230,15 +231,21 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 
 			if (t_counter < tsize){
 				T_array(t_counter) = t - T(0,0);
-				t_counter +=1;				
+						
 				T.block(0,0,1,NR) = T.block(0,1,1,NR);
-				T(0,NR) = 0;				
+				T(0,NR) = 0;	
+				
+				col_array(t_counter) = col(0,0);	
+				col.block(0,0,1,NR) = col.block(0,1,1,NR);	
+				col(0,NR)= 0;
+				t_counter +=1;		
 				
 			}
 		}
 		else {
-			if X[ind-2] == X[ind-1] + R:
-				col[0][event] +=1
+			if (X(0,ind-2) == X(0,ind-1) + R){
+				col(0,ind-1) +=1;
+			}
 
 
 		}
