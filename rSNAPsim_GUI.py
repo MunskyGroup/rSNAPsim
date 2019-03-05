@@ -81,7 +81,7 @@ try:
     from Tkinter import OptionMenu as OM
 
 
-    from ttk import Frame, Label, Entry, Progressbar, Notebook, Separator, Widget #import necessary tkk functions
+    from ttk import Frame, Label, Entry, Progressbar, Notebook, Separator, Widget, Combobox #import necessary tkk functions
     import numpy as np
     from Tkinter import Entry as tkEntry
     import tkMessageBox as tmb  #import tkitner file dialogs for opening and errors
@@ -94,7 +94,7 @@ except ImportError:  # Python 3
     from tkinter import OptionMenu as OM
 
 
-    from tkinter.ttk import Frame, Label, Entry, Progressbar, Notebook, Separator, Widget #import necessary tkk functions
+    from tkinter.ttk import Frame, Label, Entry, Progressbar, Notebook, Separator, Widget, Combobox #import necessary tkk functions
     import numpy as np
     from tkinter import Entry as tkEntry
 
@@ -114,6 +114,76 @@ import threading  #import threading for multithreaded ssa
 import copy
 import scipy as sci
 from scipy import sparse
+
+
+
+
+
+class AutocompleteComboBox(Combobox):
+        '''
+        Autocompleting Combo Box adpated
+        '''
+        def set_completion_list(self, completion_list):
+            self.completion_list = completion_list
+            self.matches = []
+            self.match_locs = []
+            self.posistion = 0
+            self.select_index = 0
+            self.bind('<KeyRelease>', self.handle_keys)
+            self['values'] = self.completion_list  # Setup our popup menu
+            self.typed = ''
+            self.prev_len = 0
+            
+
+
+        def fill(self):
+    
+            self.matches = []
+            current_str = self.typed
+
+                
+            init = len(current_str)
+
+            
+            for i in range(len(self.completion_list)):
+                if self.completion_list[i].lower().startswith(current_str):
+                   
+                    self.matches.append(self.completion_list[i])
+                    self.match_locs.append(i)
+                
+
+            if len(self.matches) > 0 :
+                self.delete(0,tk.END)
+                self.insert(0,self.matches[0])
+                self.select_range(init,tk.END)
+                self.posistion = init
+                
+            self.prev_len = init
+                
+
+    
+        def handle_keys(self, event):
+
+            if self.get().lower() == '':
+                self.typed = ''
+            
+            if event.keysym == 'BackSpace':
+                self.posistion = self.posistion-1 
+                self.typed = self.get().lower()
+                
+            if event.keysym == "Left":
+                self.posistion = self.posistion-1                               
+            if event.keysym == "Right":
+                self.posistion = self.index(tk.END) 
+            
+            if len(event.keysym) == 1:
+                self.typed = (self.typed + event.keysym)
+                self.fill()
+                    
+            if event.keysym == "Return":
+                self.select_range(tk.END,tk.END)
+                self.typed = self.get().lower()
+              
 
 
 class ScrollingFrame(Frame):
@@ -1198,8 +1268,41 @@ class GUI(Frame):
         
         
 
+        kyminfoframe = tk.Frame(kym_frame)
+        kyminfoframe.grid(row=0,column=0,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
+
+
         kymtopframe = tk.Frame(kym_frame)
-        kymtopframe.grid(row=0,column=0,sticky=tk.W+tk.E+tk.N+tk.S,padx=gpx,pady=gpy)     
+        kymtopframe.grid(row=1,column=0,sticky=tk.W+tk.E+tk.N+tk.S,padx=gpx,pady=gpy)     
+        
+
+
+        self.kym_cmap_list=np.array(cm.datad.keys()).astype(str).tolist()
+        
+        kym_menu = AutocompleteComboBox(kyminfoframe)
+        kym_menu.set_completion_list(self.kym_cmap_list)
+        
+        
+        
+        kym_menu.grid(row=0,column=1,sticky=tk.W,pady=2,padx=2)
+        kym_menu.config(width=20)        
+        
+        kymcmaplabel = tk.Label(kyminfoframe, text = 'Intensity color map:', )
+        kymcmaplabel.grid(row=0,column=0,sticky = tk.W)
+        
+        
+        kym_traj_color = tk.Label(kyminfoframe,text='Line color:', )
+        kym_traj_color.grid(row=0,column=3,sticky=tk.W)
+        
+        self.kymlinecolor = tk.Button(kyminfoframe,text='      ',command=self.kymline_color_picker,bg='#550c7c',relief=tk.FLAT)
+        self.kymbgcolor = tk.Button(kyminfoframe,text='      ',command=self.kymbg_color_picker,bg='#FFFFFF',relief=tk.FLAT)
+        self.kymlinecolor.grid(row=0,column=4,pady=2,padx=2,sticky=tk.W)
+        self.kymbgcolor.grid(row=0,column=6,pady=2,padx=2,sticky=tk.W)
+        
+        kymcmaplabel2 = tk.Label(kyminfoframe,text= 'Background color:',)
+        kymcmaplabel2.grid(row=0,column=5,pady=2,padx=2,sticky=tk.W)
+
+        
         
 
         
@@ -1240,15 +1343,17 @@ class GUI(Frame):
         
 
         kymsmallframe = tk.Frame(kym_frame)
-        kymsmallframe.grid(row=1,column=0,sticky=tk.NW)
+        kymsmallframe.grid(row=2,column=0,sticky=tk.NW)
         self.traj_select = tk.Entry(kymsmallframe,width=10)
         self.traj_select.grid(row=0,column=0)
         
         plot_kym = tk.Button(kymsmallframe,text='Plot',command=self.kymograph)
         plot_kym.grid(row=1,column=0)
         
-        kym_frame.rowconfigure(0,weight=3)
+        kym_frame.rowconfigure(1,weight=3)
         kym_frame.columnconfigure(0,weight=3)
+        
+        
     
         
         
@@ -4084,6 +4189,25 @@ class GUI(Frame):
             self.expected_rna.config(text=('Expected RNA: ' + str(e) + ' +- '+str(std)   ))
 
         self.update()
+
+
+    def kymline_color_picker(self):
+        try:
+            color = askcolor()
+
+        except:
+            pass
+
+        self.kymlinecolor.config(bg=color[1])
+
+    def kymbg_color_picker(self):
+        try:
+            color = askcolor()
+
+        except:
+            pass
+        self.kymbgcolor.config(bg=color[1])
+
 
 
     def rna_color_picker(self):
