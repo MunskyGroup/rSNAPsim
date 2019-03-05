@@ -1277,15 +1277,15 @@ class GUI(Frame):
         
 
 
-        self.kym_cmap_list=np.array(cm.datad.keys()).astype(str).tolist()
+        kym_cmap_list=np.array(cm.datad.keys()).astype(str).tolist()
         
-        kym_menu = AutocompleteComboBox(kyminfoframe)
-        kym_menu.set_completion_list(self.kym_cmap_list)
+        self.kym_menu = AutocompleteComboBox(kyminfoframe)
+        self.kym_menu.set_completion_list(kym_cmap_list)
         
         
         
-        kym_menu.grid(row=0,column=1,sticky=tk.W,pady=2,padx=2)
-        kym_menu.config(width=20)        
+        self.kym_menu.grid(row=0,column=1,sticky=tk.W,pady=2,padx=2)
+        self.kym_menu.config(width=20)        
         
         kymcmaplabel = tk.Label(kyminfoframe, text = 'Intensity color map:', )
         kymcmaplabel.grid(row=0,column=0,sticky = tk.W)
@@ -1301,8 +1301,21 @@ class GUI(Frame):
         
         kymcmaplabel2 = tk.Label(kyminfoframe,text= 'Background color:',)
         kymcmaplabel2.grid(row=0,column=5,pady=2,padx=2,sticky=tk.W)
-
         
+        self.kymintense = tk.BooleanVar(value=True)
+        
+        intensity_on = tk.Checkbutton(kyminfoframe,text='Show Intensity', var =self.kymintense )
+        intensity_on.grid(row=0,column=7,padx=2,pady=2,sticky=tk.W)
+
+        self.traj_select = tk.Entry(kyminfoframe,width=10)
+        self.traj_select.grid(row=0,column=9,padx=2,pady=2)
+        
+        kymlabel3 = tk.Label(kyminfoframe,text='Trajectory: ')
+        kymlabel3.grid(row=0,column=8,padx=2,pady=2)
+        
+        plot_kym = tk.Button(kyminfoframe,text='Plot',command=self.kymograph)
+        plot_kym.grid(row=0,column=10,padx=2,pady=2)
+                
         
 
         
@@ -1344,12 +1357,7 @@ class GUI(Frame):
 
         kymsmallframe = tk.Frame(kym_frame)
         kymsmallframe.grid(row=2,column=0,sticky=tk.NW)
-        self.traj_select = tk.Entry(kymsmallframe,width=10)
-        self.traj_select.grid(row=0,column=0)
-        
-        plot_kym = tk.Button(kymsmallframe,text='Plot',command=self.kymograph)
-        plot_kym.grid(row=1,column=0)
-        
+
         kym_frame.rowconfigure(1,weight=3)
         kym_frame.columnconfigure(0,weight=3)
         
@@ -5723,15 +5731,20 @@ class GUI(Frame):
         self.kymax.clear()
         self.kymax2.clear()
         n_traj = int(self.traj_select.get())
-        self.kymograph_internal(self.kymax,self.kymax2,self.ssa,n_traj,color=self.main_color)
+        self.kymograph_internal(self.kymax,self.kymax2,self.ssa,n_traj,color=self.main_color,bg_intense=self.kymintense.get())
 
 
         self.kym_canvas.draw()
         self.kym_canvas2.draw()
+        
+        
     def kymograph_internal(self,ax,ax1,ssa_obj,n_traj,bg_intense=True,show_intense = True, *args,**kwargs):
         '''
         Constructs a kymograph of ribosome locations
         '''
+        
+        
+
         startfrags = 0
         for i in range(n_traj):
             startfrags += ssa_obj.frag_per_traj[i]
@@ -5753,9 +5766,20 @@ class GUI(Frame):
         maxin = np.max(ivec)
         
         #ax.set_facecolor('black')
+        
+        
+        cmapguess = self.kym_menu.get()
+        if cmapguess not in cm.datad.keys():
+            cmap = cm.summer
+        else:
+            exec(('cmap = cm.' + cmapguess))
+            
+        bgcolor = self.kymbgcolor.cget('bg')
+        linecolor = self.kymlinecolor.cget('bg')
+            
         if bg_intense == True:
             for i in range(len(ssa_obj.time_rec)):
-                ax.plot([0,lenplot],[ssa_obj.time_rec[i],ssa_obj.time_rec[i]],color = cm.summer(1.*ivec[i]/maxin),lw=1)
+                ax.plot([0,lenplot],[ssa_obj.time_rec[i],ssa_obj.time_rec[i]],color = cmap(1.*ivec[i]/maxin),lw=1)
             
         for i in range(nfrag):
             
@@ -5763,14 +5787,14 @@ class GUI(Frame):
             
             if maxlen <= np.where(fragments[i] > 0 )[0][-1]:       
                 timeseg = time[ftimes[i]:ftimes[i]+maxlen]
-                ax.plot(fragments[i][0:len(timeseg)] ,timeseg[::-1] )
+                ax.plot(fragments[i][0:len(timeseg)] ,timeseg[::-1],color=linecolor )
                 
             else:
                 timeseg = time[ftimes[i]:]
                 stop = np.where(fragments[i] > 0 )[0][-1]+1
                 timelen = len(fragments[i][0:stop]) 
                 
-                ax.plot(fragments[i][0:stop]   ,timeseg[0:timelen],**kwargs )
+                ax.plot(fragments[i][0:stop]   ,timeseg[0:timelen],color=linecolor)
 
         segtime = ssa_obj.time[0:len(ssa_obj.time_rec)]
         
@@ -5781,12 +5805,12 @@ class GUI(Frame):
                 
 
             
-
-       # ax.set_facecolor('black')
-    
-        ax1.plot(ivec.T,segtime,**kwargs)
-        ax1.set_xlabel('Intensity (AU)')
         
+        ax.set_facecolor(bgcolor )
+    
+        ax1.plot(ivec.T,segtime,color=linecolor)
+        ax1.set_xlabel('Intensity (AU)')
+        ax1.set_facecolor(bgcolor)
         ax1.set_ylim(segtime[-1], segtime[0])
         ax1.set_yticks([])
         ax1.set_xlim(0,maxin+5)
