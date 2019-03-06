@@ -2742,10 +2742,11 @@ class GUI(Frame):
 
 
         try:
-            self.trna_Nb.winfo_name
+            self.trna_Nb.winfo_children()
             return
         except:
             pass
+
 
         info = tk.Toplevel(self.parent)
 
@@ -2779,7 +2780,7 @@ class GUI(Frame):
 
         sense_dict = {'Phe-F':[],'Leu-L':[],'Ile-I':[],'Met-M':[],'Val-V':[],
                           'Ser-S':[],'Pro-P':[],'Thr-T':[],'Ala-A':[],'Tyr-Y':[],'STOP':[],'His-H':[],'Gln-Q':[],'Asn-N':[],'Lys-K':[],
-                          'Asp-D':[],'Glu-E':[],'Cys-C':[],'STOP':[],'Trp-W':[],'Arg-R':[],'Gly-G':[]}
+                          'Asp-D':[],'Glu-E':[],'Cys-C':[],'Trp-W':[],'Arg-R':[],'Gly-G':[]}
 
         try:
             self.sms.POI.nt_seq
@@ -3109,7 +3110,7 @@ class GUI(Frame):
             self.sms.strGeneCopy[keys[k]] = float(entry.get())
             k+=1
 
-        self.sms._sms__update_sensitivity()
+        self.sms._rSNAPsim__update_sensitivity()
 
 
 
@@ -4693,65 +4694,94 @@ class GUI(Frame):
 #        else:
 
 
+
+            
+
         try:
             N_rib = 200
+                        
+            rib_vec = []
+    
+            solutions = []            
+            solutionssave = []
+            
             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
             result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
             all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
             nribs = np.array([0])
-
+    
+            all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
+            all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
+            all_nribs = np.zeros((n_traj,1))
+    
             k = np.array(all_k)
             seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
-
+    
             updatetime = time.time()
-
+    
             for i in range(n_traj):
-
+    
                 stime = time.time()
                 sstime = time.time()
+                
+                frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
+                coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+                nribs = np.array([0],dtype=np.int32)
                 result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
                 ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
-                ssa_translation.run_SSA(result, ribtimes, k[1:-1], truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-
+                
+                ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+    
                 ttime = time.time()
                 simtime = ttime-stime
                 if i ==0:
                     ptime = simtime
                 else:
                     ptime = (ptime*i + simtime)/(i+1)
-
+    
                 if ttime-updatetime > .02:
                     self.prog['value'] = i+offset
                     self.nssa.config(text=str(i+offset))
                     self.time.config(text=('Av. time per sim: ' + str(np.round(ptime,3)) + 's ETA: ' + str(np.round(ptime*n_traj,6))+ 's'))
-
+    
                     self.newwin.update()
                     updatetime = ttime
-
-
-
+    
+    
+    
                 all_results[i, :] = result
                 all_ribtimes[i,:] = ribtimes
-
+    
             for i in range(n_traj):
                 soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
-
+    
                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
                 if np.max(validind) != N_rib-1:
                     validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
-
+    
                 so = soln[validind]
-
+    
                 solutions.append(so)
-
+                collisions = np.array([[]])
+                
+            for i in range(n_traj):
+                totalrib = all_nribs[0][0]
+            
+                if totalrib > all_collisions.shape[1]:
+                    collisions = np.append(collisions, all_collisions[0][:totalrib])
+            
+                else:
+                   
+                    collisions = np.append(collisions, all_collisions[0][:])
+    
             self.prog['value'] = i+offset
             self.nssa.config(text=str(i+offset))
             self.time.config(text=('Av. time per sim: ' + str(np.round(ptime,3)) + 's ETA: ' + str(np.round(ptime*n_traj,6))+ 's'))
-
+    
             self.newwin.update()
             updatetime = ttime
 
-
+        
         except:
             print('C++ library failed, Using Python Implementation')
 
@@ -4805,7 +4835,7 @@ class GUI(Frame):
                             #rb[j, value-1] = 1
 
                 #rib_vec.append(rb)
-
+        
 
         self.prog['value'] = self.prog['value']+1
         self.nssa.config(text=('Complete, Collecting... '+ str(self.prog['value'])))
@@ -4814,7 +4844,8 @@ class GUI(Frame):
         no_ribosomes = np.zeros((n_traj, (genelength+1)))
         startindex = np.where(truetime >= non_consider_time)[0][0]
 
-
+        
+        
         #all_results = all_results[:,startindex*N_rib:]
 
         for i in range(len(solutions)):
