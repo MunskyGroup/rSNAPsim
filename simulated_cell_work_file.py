@@ -705,7 +705,9 @@ def simulate_cell(diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, ts
         greys.fill(70)  
          
         
-        greys = greys + .01*np.random.poisson(greys)
+        greys =  (1.5*np.random.poisson(greys)).astype(int)
+        
+        
         alphas = Normalize(0, 1, clip=True)(np.abs(greys))
         alphas[:,:,:] = .5
         
@@ -945,7 +947,7 @@ sms.analyze_poi(sms.pois[0],sms.pois_seq[0])
 ssa_obj = rSNAPsim.ssa()
 ssa_obj.load_from_txt('simcelltestobj.txt')
 
-rna_locations, rna_loc_compressed, rna_particles, rna_creation_data, rna_exist, rnaonoff, rnaex,ivec = simulate_cell(.3,3,1,.03,.01,ssa_obj=ssa_obj,tf=300,tstep=300)
+rna_locations, rna_loc_compressed, rna_particles, rna_creation_data, rna_exist, rnaonoff, rnaex,ivec = simulate_cell(.3,3,1,.03,.01,ssa_obj=ssa_obj,tf=500,tstep=500)
 
 
 
