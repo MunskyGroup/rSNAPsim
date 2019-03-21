@@ -404,7 +404,7 @@ class rSNAPsim():
         return aa
 
 
-    def get_orfs(self, nt_seq='', min_codons=10):
+    def get_orfs(self, nt_seq='', min_codons=80):
 
         '''
         Returns open reading frames of the nucleotide sequence given
@@ -426,6 +426,8 @@ class rSNAPsim():
             nt_seq = self.sequence_str
 
         allstarts = np.array([m.start() for m in re.finditer('(?=A[TU]G((?:.{3})+?)[TU](?:AG|AA|GA))', nt_seq)])
+        
+        print(allstarts)
         #allsegments = re.findall('(?=A[TU]G((?:.{3})+?)[TU](?:AG|AA|GA))',self.sequence_str)
         allstops = np.array([m.start() for m in re.finditer('(?=[TU](?:AG|AA|GA))', nt_seq)])
         start_frames = allstarts%3
@@ -741,9 +743,19 @@ class rSNAPsim():
 
 
         for i in range(len(self.POI.tag_types)):
-
-            nt_tag = self.tag_full[self.POI.tag_types[i]]
-            aa_tag = self.nt2aa(nt_tag)
+            
+            try:
+                nt_tag = self.tag_full[self.POI.tag_types[i]]
+                aa_tag = self.nt2aa(nt_tag)
+            except:
+                epi = self.tag_dict[self.POI.tag_types[i]]
+                firstep = self.POI.aa_seq.find(epi) 
+                lastep = len(self.POI.aa_seq) - self.POI.aa_seq[::-1].find(epi[::-1])                
+                aa_tag = self.POI.aa_seq[firstep:lastep]
+                nt_tag = self.POI.nt_seq[3*firstep:3*lastep]
+                
+                
+                
             self.POI.tag_epitopes[self.POI.tag_types[i]] = [m.start()+1 for m in re.finditer(self.tag_dict[self.POI.tag_types[i]], aa_tag)]
 
             gs = gs.replace(aa_tag, '')
@@ -780,17 +792,22 @@ class rSNAPsim():
 
             if len(raw) < 2:
                 raw = raw[0].splitlines()
-
+            else:
+                raw = ''.join(raw)
+                raw = [raw]
 
 
             raw[0] = raw[0].replace('\n', '')
             raw[0] = raw[0].replace('>', '')
             self.sequence_name = raw[0]
             valid = ['A', 'G', 'T', 'C']
+            self.sequence_str = ''
             for line in raw:
 
                 line = line.replace('\n', '')
                 line = line.replace('>', '')
+                line = line.replace(' ','')
+                line = line.replace('\r','')
                 chars = list(''.join(set(line.upper())))
                 if set(chars) == set(valid):
                     self.sequence_str = line.upper()
@@ -842,7 +859,7 @@ class rSNAPsim():
         return codon_sensitivity, cai, cai_codons
 
 
-    def get_probvec(self):
+    def get_probvec(self): 
         '''
         returns the probe vectors (epitope positions by codon position) associated with the tagged sequence stored in POI
 
