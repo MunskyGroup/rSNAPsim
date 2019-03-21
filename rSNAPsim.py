@@ -427,7 +427,7 @@ class rSNAPsim():
 
         allstarts = np.array([m.start() for m in re.finditer('(?=A[TU]G((?:.{3})+?)[TU](?:AG|AA|GA))', nt_seq)])
         
-        print(allstarts)
+ 
         #allsegments = re.findall('(?=A[TU]G((?:.{3})+?)[TU](?:AG|AA|GA))',self.sequence_str)
         allstops = np.array([m.start() for m in re.finditer('(?=[TU](?:AG|AA|GA))', nt_seq)])
         start_frames = allstarts%3
@@ -1003,10 +1003,9 @@ class rSNAPsim():
         solutionssave = []
         
         st = time.time() 
-        xxxx=0
-        if xxxx == 1:
-            if force_python == True:
-                st[0]
+
+        if force_python == True:
+            st[0]
             
             rib_vec = []
     
@@ -1061,7 +1060,7 @@ class rSNAPsim():
                     collisions = np.append(collisions, all_collisions[0][:])
             
             sttime = time.time() - st
-        
+            
         else:
             print('C++ library failed, Using Python Implementation')
             rib_vec = []
@@ -2417,7 +2416,7 @@ class rSNAPsim():
             f.close()
 
 
-    def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True, *args,**kwargs):
+    def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True,show_col=True, *args,**kwargs):
         '''
         Constructs a kymograph of ribosome locations
         '''
@@ -2432,7 +2431,7 @@ class rSNAPsim():
 
         time = ssa_obj.time#[0:len(ssa_obj.time_rec)-1]
         
-        startindex = np.where(ssa_obj.time > ssa_obj.start_time)[0][0]
+
         
         
         
@@ -2441,12 +2440,7 @@ class rSNAPsim():
         
         ivec = ssa_obj.intensity_vec[n_traj]
         ftimes = ssa_obj.fragtimes[startfrags:startfrags+endfrags]
-        start = len(ftimes)
-        #ftimes = np.array(ftimes)[np.where(np.array(ftimes) > startindex)].astype(int).tolist()
-        
-        #ignore = start - len(ftimes)
 
-        #fragments = fragments[ignore:]
 
         nfrag = fragments.shape[0]
         maxlen= fragments.shape[1]
@@ -2489,9 +2483,12 @@ class rSNAPsim():
         segtime = ssa_obj.time[0:len(ssa_obj.time_rec)]
         plt.ylim(ssa_obj.time_rec[-1], ssa_obj.time_rec[0])
                 
-    
-        col = ssa_obj.col_points[n_traj]
-        plt.plot(col[:,0],col[:,1],color=cm.viridis,markersize=2,linestyle='none',marker='o')
+        if show_col == True:
+            try:
+                col = ssa_obj.col_points[n_traj]
+                plt.plot(col[:,0],col[:,1],color='#00ff00',markersize=1.5,linestyle='none',marker='o')
+            except:
+                pass
 
         if show_intense == True:
             plt.subplot(gs[1])
