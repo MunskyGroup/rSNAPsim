@@ -986,7 +986,8 @@ class rSNAPsim():
         solutionssave = []
         
         st = time.time() 
-        try:
+        xxxx=0
+        if xxxx == 1:
             if force_python == True:
                 st[0]
             
@@ -1044,7 +1045,7 @@ class rSNAPsim():
             
             sttime = time.time() - st
         
-        except:
+        else:
             print('C++ library failed, Using Python Implementation')
             rib_vec = []
     
@@ -1053,14 +1054,15 @@ class rSNAPsim():
             N_rib = 200
             collisions = np.array([[]])
             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
-            
+            all_col_points = []
             for i in range(n_traj):
                 
-                soln,all_ribtimes,Ncol = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
+                soln,all_ribtimes,Ncol,col_points = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
                 #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
                 
                 collisions = np.append(collisions,Ncol)
                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
+                all_col_points.append(np.array(col_points))
                 if np.max(validind) != N_rib-1:
                     validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
                 
@@ -1172,6 +1174,10 @@ class rSNAPsim():
         ssa_obj.time = truetime
         ssa_obj.time_rec = truetime[startindex:]
         ssa_obj.start_time = non_consider_time
+        try:
+            ssa_obj.col_points = all_col_points
+        except:
+            pass
 
 
         ssa_obj.evaluating_inhibitor = evaluating_inhibitor
@@ -1288,7 +1294,7 @@ class rSNAPsim():
                    
                 
                     
-                    fragtimes.append(addindexes[m])
+                    fragtimes.append(addindexes[m]+1)
                        
                     
                     fragmented_trajectories.append(fragment)
@@ -1543,6 +1549,7 @@ class rSNAPsim():
         
         T = np.array([0, 0], dtype=float)
         ribtimes = np.array([[0,0]],dtype=float)
+        col_points = []
         #wn_p = np.zeros((1,X.shape[0])).flatten()
         wshape = len(wn_p)
         Inhibit_condition = 1  #set up inhibitor flags
@@ -1664,13 +1671,13 @@ class rSNAPsim():
                 col = np.atleast_2d(np.append(col[:,1:],[0]))
                 
             else:
-                
                 if X[event-1] == X[event] + R:
                     col[0][event] +=1
+                    col_points.append( (X[event],t) )
                     
                 
             
-        return X_array,ribtimes[1:,:],Ncol  #return the completed simulation
+        return X_array,ribtimes[1:,:],Ncol,col_points  #return the completed simulation
 
 
     def get_acc2(self, data, trunc=False):
@@ -2455,7 +2462,7 @@ class rSNAPsim():
             else:
                 timeseg = time[ftimes[i]:]
                 
-                stop = np.where(fragments[i] > 0 )[0][-1]+1
+                stop = np.where(fragments[i] > 0 )[0][-1]
                 timelen = len(fragments[i][0:stop]) 
 
                 plt.plot(fragments[i][0:stop]   ,timeseg[0:timelen],**kwargs )
@@ -2465,8 +2472,10 @@ class rSNAPsim():
         segtime = ssa_obj.time[0:len(ssa_obj.time_rec)]
         plt.ylim(ssa_obj.time_rec[-1], ssa_obj.time_rec[0])
                 
+    
+        col = ssa_obj.col_points[n_traj]
+        plt.plot(col[:,0],col[:,1],color=cm.viridis,markersize=2,linestyle='none',marker='o')
 
-        
         if show_intense == True:
             plt.subplot(gs[1])
             ax = plt.gca()
