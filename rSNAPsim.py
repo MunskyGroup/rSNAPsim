@@ -1003,65 +1003,65 @@ class rSNAPsim():
         solutionssave = []
         
         st = time.time() 
-
-        if force_python == True:
-            st[0]
-            
-            rib_vec = []
-    
-            solutions = []            
-            solutionssave = []
-            N_rib = 200
-            all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
-            all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
-            result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
-            nribs = np.array([0],dtype=np.int32)
-            k = np.array(all_k)
-            seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
-            all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
-            all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
-            all_nribs = np.zeros((n_traj,1))
-            
-            for i in range(n_traj):
+        try:
+            if force_python == True:
+                st[0]
+                
+                rib_vec = []
+        
+                solutions = []            
+                solutionssave = []
+                N_rib = 200
+                all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
+                all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
                 result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
-                ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
-                frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
-                coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
                 nribs = np.array([0],dtype=np.int32)
+                k = np.array(all_k)
+                seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+                all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
+                all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
+                all_nribs = np.zeros((n_traj,1))
                 
-                ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+                for i in range(n_traj):
+                    result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+                    ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+                    frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
+                    coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+                    nribs = np.array([0],dtype=np.int32)
+                    
+                    ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+                    
+                    all_results[i, :] = result
+                    all_frapresults[i,:] = frapresult
+                    all_ribtimes[i,:] = ribtimes
+                    all_collisions[i,:] = coltimes
+                    all_nribs[i,:] = nribs
+        
+                for i in range(n_traj):
+                    soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
+                    validind = np.where(np.sum(soln,axis=1)!=0)[0]
+                    if np.max(validind) != N_rib-1:
+                        validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
                 
-                all_results[i, :] = result
-                all_frapresults[i,:] = frapresult
-                all_ribtimes[i,:] = ribtimes
-                all_collisions[i,:] = coltimes
-                all_nribs[i,:] = nribs
-    
-            for i in range(n_traj):
-                soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
-                validind = np.where(np.sum(soln,axis=1)!=0)[0]
-                if np.max(validind) != N_rib-1:
-                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
-            
-                so = soln[(validind,)]
+                    so = soln[(validind,)]
+                    
+                    solutionssave.append(so)
+                    solutions.append(soln)
                 
-                solutionssave.append(so)
-                solutions.append(soln)
+                collisions = np.array([[]])
+                for i in range(n_traj):
+                    totalrib = all_nribs[0][0]
+                
+                    if totalrib > all_collisions.shape[1]:
+                        collisions = np.append(collisions, all_collisions[0][:totalrib])
+                
+                    else:
+                       
+                        collisions = np.append(collisions, all_collisions[0][:])
+                
+                sttime = time.time() - st
+        except:
             
-            collisions = np.array([[]])
-            for i in range(n_traj):
-                totalrib = all_nribs[0][0]
-            
-                if totalrib > all_collisions.shape[1]:
-                    collisions = np.append(collisions, all_collisions[0][:totalrib])
-            
-                else:
-                   
-                    collisions = np.append(collisions, all_collisions[0][:])
-            
-            sttime = time.time() - st
-            
-        else:
             print('C++ library failed, Using Python Implementation')
             rib_vec = []
     
@@ -2416,7 +2416,7 @@ class rSNAPsim():
             f.close()
 
 
-    def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True,show_col=True, *args,**kwargs):
+    def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True,show_col=True,col_size = 1.5, *args,**kwargs):
         '''
         Constructs a kymograph of ribosome locations
         '''
@@ -2486,7 +2486,7 @@ class rSNAPsim():
         if show_col == True:
             try:
                 col = ssa_obj.col_points[n_traj]
-                plt.plot(col[:,0],col[:,1],color='#00ff00',markersize=1.5,linestyle='none',marker='o')
+                plt.plot(col[:,0],col[:,1],color='#00ff00',markersize=col_size,linestyle='none',marker='o')
             except:
                 pass
 
