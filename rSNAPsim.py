@@ -790,28 +790,33 @@ class rSNAPsim():
                 raw = f.readlines()
 
 
-            if len(raw) < 2:
-                raw = raw[0].splitlines()
-            else:
-                raw = ''.join(raw)
-                raw = [raw]
 
+            raw = ''.join(raw)
+           
 
-            raw[0] = raw[0].replace('\n', '')
-            raw[0] = raw[0].replace('>', '')
-            self.sequence_name = raw[0]
-            valid = ['A', 'G', 'T', 'C']
+            
+            
+            onlychar = re.split(r'[^A-Za-z]', raw)
+            validt = ['A', 'G', 'T', 'C']
+            validu = ['A', 'G', 'U', 'C']
+            namelen = 0
             self.sequence_str = ''
-            for line in raw:
-
-                line = line.replace('\n', '')
-                line = line.replace('>', '')
-                line = line.replace(' ','')
-                line = line.replace('\r','')
-                chars = list(''.join(set(line.upper())))
-                if set(chars) == set(valid):
-                    self.sequence_str = line.upper()
-
+       
+            for i in range(len(onlychar)):
+                section = onlychar[i]
+                if set(section.upper()) == set(validt):
+                    self.sequence_str += section.upper()
+                    
+                
+                elif set(section.upper()) == set(validu):
+                    self.sequence_str += section.upper()                    
+                else:
+                    if len(section)>namelen:
+                        self.sequence_name = section
+                        namelen = len(section)
+                    
+                    
+                    
 
 
         if '.gb' in seq:
@@ -2479,13 +2484,14 @@ class rSNAPsim():
                 plt.plot(fragments[i][0:stop]   ,timeseg[0:timelen],**kwargs )
 
         plt.xlabel('Ribosome position (residue)')
-        plt.ylabel('Time')
+        plt.ylabel('Time (sec)')
         segtime = ssa_obj.time[0:len(ssa_obj.time_rec)]
         plt.ylim(ssa_obj.time_rec[-1], ssa_obj.time_rec[0])
                 
         if show_col == True:
             try:
                 col = ssa_obj.col_points[n_traj]
+
                 plt.plot(col[:,0],col[:,1],color='#00ff00',markersize=col_size,linestyle='none',marker='o')
             except:
                 pass
