@@ -4792,7 +4792,7 @@ class GUI(Frame):
             updatetime = time.time()
             for i in range(n_traj):
                 stime = time.time()
-                soln,all_ribtimes,Ncol = self.sms.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
+                soln,all_ribtimes,Ncol,colpoints = self.sms.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
 
                 collisions = np.append(collisions,Ncol)
                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
