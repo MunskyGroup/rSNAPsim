@@ -7,7 +7,7 @@ Created on Fri Jul 06 13:40:30 2018
 import re                         #import regex
 import matplotlib                 #matplotlib
 #matplotlib.use("TkAgg")          #switch backends for matplotlib for tkinter
-import sys
+
 
 '''
 try:
@@ -69,7 +69,7 @@ except:
 
 import ast
 import operator as op
-from matplotlib import gridspec
+
 
 
 import PIL.Image
@@ -106,14 +106,15 @@ except ImportError:  # Python 3
 
 
 import matplotlib.backends.tkagg as tkagg
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg, NavigationToolbar2TkAgg)
+try:
+    from matplotlib.backends.backend_tkagg import (
+        FigureCanvasTkAgg, NavigationToolbar2TkAgg)
+except:
+    from matplotlib.backends.backend_tkagg import (
+        FigureCanvasTkAgg)    
 
 
-import threading  #import threading for multithreaded ssa
 import copy
-import scipy as sci
-from scipy import sparse
 
 
 
@@ -5781,9 +5782,10 @@ class GUI(Frame):
             startfrags += ssa_obj.frag_per_traj[i]
             
         endfrags = startfrags + ssa_obj.frag_per_traj[n_traj]
-        fragments = ssa_obj.fragments[startfrags:startfrags+endfrags]
+        fragments = ssa_obj.fragments[startfrags:endfrags]
         
         nfrag = fragments.shape[0]
+ 
         maxlen= fragments.shape[1]
         time  = ssa_obj.time
         

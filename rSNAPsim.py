@@ -2430,7 +2430,7 @@ class rSNAPsim():
             startfrags += ssa_obj.frag_per_traj[i]
             
         endfrags = startfrags + ssa_obj.frag_per_traj[n_traj]
-        fragments = ssa_obj.fragments[startfrags:startfrags+endfrags]
+        fragments = ssa_obj.fragments[startfrags:endfrags]
 
         
 
