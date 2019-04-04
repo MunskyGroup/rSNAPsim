@@ -9,7 +9,7 @@ import matplotlib                 #matplotlib
 #matplotlib.use("TkAgg")          #switch backends for matplotlib for tkinter
 import sys
 
-'''
+
 try:
    # sys.path.append('C:\\Users\\wsraymon\\Github\\ssa_cpp\\translation_ssa')
 
@@ -26,7 +26,7 @@ except:
         pass
 
     pass
-'''
+
 
 import rSNAPsim
 
@@ -615,8 +615,9 @@ class GUI(Frame):
         self.stoc_Nb.add(fcs_frame, text="   FCS  ")
         #self.stoc_Nb.add(elon_frame,text= "   Elongation Assays   ")
         #self.stoc_Nb.add(ccodon_frame,text="   Codon Optimization  ")
-        self.stoc_Nb.add(sim_frame, text="   Simulated Cell  ")
+        
         self.stoc_Nb.add(kym_frame, text="   Kymographs   ")
+        self.stoc_Nb.add(sim_frame, text="   Simulated Cell  ")
         
 
 
@@ -4696,7 +4697,7 @@ class GUI(Frame):
 
 
             
-
+        
         try:
             N_rib = 200
                         

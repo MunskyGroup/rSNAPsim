@@ -949,6 +949,7 @@ class rSNAPsim():
             except:
                 print('No POI found')
                 #nt_seq = self.tag_full['T_flag'] + nt_seq
+        
 
         if nt_seq == None:
             nt_seq = self.POI.nt_seq
@@ -971,14 +972,24 @@ class rSNAPsim():
             k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
             all_k = [k_initiation] + k_elongation.flatten().tolist()[:-1] + [10]
 
-
-
+        
+        if isinstance(probePosition,list):
+            probePosition = np.array([probePosition]).astype(int)
+            
+     
 
         non_consider_time = start_time
-        pv = np.zeros((1, genelength+1)).astype(int).flatten()
-
-        for i in range(len(probePosition)):
-            pv[probePosition[i]:] = i+1
+        
+        if probePosition.shape[0] <= 1:
+            pv = np.zeros((1, genelength+1)).astype(int).flatten()
+    
+            for i in range(len(probePosition)):
+                pv[probePosition[0][i]:] = i+1
+        else:
+            pv = np.zeros((probePosition.shape[0], genelength+1)).astype(int)
+            for j in range(probePosition.shape[0]):
+                for i in range(len(probePosition)):
+                    pv[j][probePosition[j][i]:] = i+1            
 
         npoints = tstep #non_consider_time + tstep
 
@@ -1008,63 +1019,64 @@ class rSNAPsim():
         solutionssave = []
         
         st = time.time() 
+        
         try:
             if force_python == True:
                 st[0]
                 
-                rib_vec = []
-        
-                solutions = []            
-                solutionssave = []
-                N_rib = 200
-                all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
-                all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
+            rib_vec = []
+    
+            solutions = []            
+            solutionssave = []
+            N_rib = 200
+            all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
+            all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
+            result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+            nribs = np.array([0],dtype=np.int32)
+            k = np.array(all_k)
+            seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+            all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
+            all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
+            all_nribs = np.zeros((n_traj,1))
+            
+            for i in range(n_traj):
                 result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+                ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+                frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
+                coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
                 nribs = np.array([0],dtype=np.int32)
-                k = np.array(all_k)
-                seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
-                all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
-                all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
-                all_nribs = np.zeros((n_traj,1))
                 
-                for i in range(n_traj):
-                    result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
-                    ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
-                    frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
-                    coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
-                    nribs = np.array([0],dtype=np.int32)
-                    
-                    ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-                    
-                    all_results[i, :] = result
-                    all_frapresults[i,:] = frapresult
-                    all_ribtimes[i,:] = ribtimes
-                    all_collisions[i,:] = coltimes
-                    all_nribs[i,:] = nribs
-        
-                for i in range(n_traj):
-                    soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
-                    validind = np.where(np.sum(soln,axis=1)!=0)[0]
-                    if np.max(validind) != N_rib-1:
-                        validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+                ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
                 
-                    so = soln[(validind,)]
-                    
-                    solutionssave.append(so)
-                    solutions.append(soln)
+                all_results[i, :] = result
+                all_frapresults[i,:] = frapresult
+                all_ribtimes[i,:] = ribtimes
+                all_collisions[i,:] = coltimes
+                all_nribs[i,:] = nribs
+    
+            for i in range(n_traj):
+                soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
+                validind = np.where(np.sum(soln,axis=1)!=0)[0]
+                if np.max(validind) != N_rib-1:
+                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+            
+                so = soln[(validind,)]
                 
-                collisions = np.array([[]])
-                for i in range(n_traj):
-                    totalrib = all_nribs[0][0]
-                
-                    if totalrib > all_collisions.shape[1]:
-                        collisions = np.append(collisions, all_collisions[0][:totalrib])
-                
-                    else:
-                       
-                        collisions = np.append(collisions, all_collisions[0][:])
-                
-                sttime = time.time() - st
+                solutionssave.append(so)
+                solutions.append(soln)
+            
+            collisions = np.array([[]])
+            for i in range(n_traj):
+                totalrib = all_nribs[0][0]
+            
+                if totalrib > all_collisions.shape[1]:
+                    collisions = np.append(collisions, all_collisions[0][:totalrib])
+            
+                else:
+                   
+                    collisions = np.append(collisions, all_collisions[0][:])
+            
+            sttime = time.time() - st
         except:
             
             print('C++ library failed, Using Python Implementation')
@@ -1136,20 +1148,30 @@ class rSNAPsim():
         ribosome_density = ribosome_means/npoints
 
         no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+ 
 
-
-
-        I = np.zeros((n_traj, len(time_vec_fixed[startindex:])))
+        if probePosition.shape[0] <=1:
+            I = np.zeros((n_traj, len(time_vec_fixed[startindex:])))
+        else:
+            I = np.zeros((int(probePosition.shape[0]),n_traj, len(time_vec_fixed[startindex:])))
 
         #I = np.zeros((1,tstep+1))
         
         if evaluating_frap == False:
-    
-            for i in range(n_traj):
-    
-                traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
-    
-                I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
+            if probePosition.shape[0] <=1:
+                for i in range(n_traj):
+        
+                    traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+        
+                    I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
+            else:
+                for j in range(probePosition.shape[0]):
+                    for i in range(n_traj):
+            
+                        traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+            
+                        I[j,i, :] = np.sum(pv[j][traj], axis=1)[startindex:].T                
     
     
             intensity_vec = I
@@ -1334,8 +1356,24 @@ class rSNAPsim():
         ssa_obj.fragtimes = fragtimes
         ssa_obj.frag_per_traj = fragmentspertraj
         
+        if probePosition.shape[0] > 1:
+            for i in range(probePosition.shape[0]):
+                if i > 0:
+                    autocorr_vec2, mean_autocorr2, error_autocorr2, dwelltime2, ke_sim2  = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+                    autocorr_vec = np.vstack((autocorr_vec,autocorr_vec2))
+                    mean_autocorr = np.vstack((mean_autocorr,mean_autocorr2))
+                    error_autocorr = np.vstack((error_autocorr,error_autocorr2))
+                    dwelltime.append(dwelltime2)
+                    ke_sim.append(ke_sim2)
+                else:
+                    autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+                    dwelltime = [dwelltime]
+                    ke_sim = [ke_sim]
+            
+        else:
+            autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
         
-        autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
+        
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
         ssa_obj.error_autocorr = error_autocorr
@@ -2519,6 +2557,7 @@ class rSNAPsim():
         '''
 
         autocorr_vec = np.zeros((intensity_vec.shape))
+        
         for i in range(intensity_vec.shape[0]):
             autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
 
