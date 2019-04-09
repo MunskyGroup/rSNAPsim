@@ -2564,7 +2564,8 @@ class rSNAPsim():
         normalized_autocorr = autocorr_vec.T/ autocorr_vec[:,0]
         mean_autocorr = np.mean(normalized_autocorr, axis=1)
         error_autocorr = np.std(normalized_autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
-
+        
+ 
         dwelltime = None
 
         try:

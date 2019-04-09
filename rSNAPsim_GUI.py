@@ -4744,7 +4744,8 @@ class GUI(Frame):
                 if ttime-updatetime > .02:
                     self.prog['value'] = i+offset
                     self.nssa.config(text=str(i+offset))
-                    self.time.config(text=('Av. time per sim: ' + str(np.round(ptime,3)) + 's ETA: ' + str(np.round(ptime*n_traj,6))+ 's'))
+                    if i < int(.1*n_traj):
+                        self.time.config(text=('Av. time per sim: ' + str(np.round(ptime,3)) + 's ETA: ' + str(np.round(ptime*n_traj,3))+ 's'))
     
                     self.newwin.update()
                     updatetime = ttime
@@ -4778,7 +4779,7 @@ class GUI(Frame):
     
             self.prog['value'] = i+offset
             self.nssa.config(text=str(i+offset))
-            self.time.config(text=('Av. time per sim: ' + str(np.round(ptime,3)) + 's ETA: ' + str(np.round(ptime*n_traj,6))+ 's'))
+            #self.time.config(text=('Av. time per sim: ' + str(np.round(ptime,3)) + 's ETA: ' + str(np.round(ptime*n_traj,6))+ 's'))
     
             self.newwin.update()
             updatetime = ttime
@@ -4881,7 +4882,7 @@ class GUI(Frame):
 
 
 
-
+    
 
 
 
@@ -4906,6 +4907,12 @@ class GUI(Frame):
         ssa_obj.solutions = solutions
         
         ssa_obj.collisions = collisions
+
+
+        try:
+            ssa_obj.ribtimes = all_ribtimes[np.where(all_ribtimes > 0)]
+        except:
+            pass
 
         #solt = solutions.T
 
@@ -5029,13 +5036,14 @@ class GUI(Frame):
         ssa_obj.fragments = fragarray
         ssa_obj.fragtimes = fragtimes
         ssa_obj.frag_per_traj = fragmentspertraj
-        autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec, truetime, 0, genelength)
+        autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec, truetime, truetime[startindex:], genelength)
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
         ssa_obj.error_autocorr = error_autocorr
         ssa_obj.dwelltime = dwelltime
         ssa_obj.ke_sim = ke_sim
-        ssa_obj.ke_true = np.mean(kes)
+        
+        ssa_obj.ke_true  = float(genelength)/np.mean(ssa_obj.ribtimes)
         ssa.probe = probePosition
         ssa.solvetime = np.round(time.time()-sstime,3)
         return ssa_obj
@@ -5124,7 +5132,7 @@ class GUI(Frame):
             self.ssa = self.ssa_solver_gui(all_k = all_k_design,nt_seq = self.sms.POI.nt_seq,nRepetitions=int(self.ssa_inputs[2].get()),
                                        probePosition = self.sms.POI.tag_epitopes['T_Flag'],tf = tvec[-1], tstep = len(tvec),
                                        k_elongationMean=float(self.ssa_inputs[4].get()),k_initiation=float(self.ssa_inputs[5].get()),
-                                       time_inhibit=float(self.ssa_inputs[0].get()),evaluating_frap=False,evaluating_inhibitor=True,start_time=float(self.ssa_inputs[6].get()))
+                                       time_inhibit=float(self.ssa_inputs[0].get()) + float(self.ssa_inputs[6].get()),evaluating_frap=False,evaluating_inhibitor=True,start_time=float(self.ssa_inputs[6].get()))
         if pt == 'frap':
 
             self.ssa = self.ssa_solver_gui(all_k = all_k_design,nt_seq = self.sms.POI.nt_seq,nRepetitions=int(self.ssa_inputs[2].get()),
@@ -6293,8 +6301,9 @@ class GUI(Frame):
     def update_ss_frame_data(self):
         calc = [1,4,7,10,13]
 
-
+        
         params = [str(np.round(self.sms.POI.CAI,3)),str(self.ssa.ke_sim),str(int(np.round(self.sms.POI.total_length/self.ssa.no_rib_per_mrna,0))),str(np.round(self.sms.POI.total_length/self.ssa.ke_sim,2))  ,str(np.round(self.ssa.no_rib_per_mrna,3))]
+        
         i = 0
         for index in calc:
             self.calculated_parameters[index].config(state='normal')
@@ -6304,9 +6313,10 @@ class GUI(Frame):
             i+=1
         self.calculated_parameters[16].config(state='normal')
         self.calculated_parameters[16].delete(0,tk.END)
-        self.calculated_parameters[16].insert(tk.END,str(np.round(self.ssa.ke_true)))
+        self.calculated_parameters[16].insert(tk.END,str(np.round(self.ssa.ke_true,2)))
         self.calculated_parameters[16].config(state='readonly')
 
+    
 
 
         if self.ssa.evaluating_inhibitor == True:
@@ -6314,17 +6324,20 @@ class GUI(Frame):
             meaniv_norm = meaniv/np.max(meaniv)
             norm_iv = self.ssa.intensity_vec/np.max(self.ssa.intensity_vec)
             sem_iv = np.std(self.ssa.intensity_vec,axis=0) / float(self.ssa.n_traj)
-            ti = self.ssa.time_inhibit
+            ti = self.ssa.time_inhibit - self.ssa.start_time
             time_inds = np.where(self.ssa.time_vec_fixed  > 0)
             tvec = self.ssa.time_vec_fixed[time_inds]
 
             timeindex = np.where(tvec >= ti)[0][0]
-            runoffindex = np.where(meaniv_norm[timeindex:] <.005   )[0][0] + timeindex
+
+            runoffindex = np.where(meaniv_norm[timeindex:] <.005   )[0][0] 
+            
+  
 
             application_time = float(self.ssa_inputs[6].get())
 
 
-            runoff_time = (tvec)[runoffindex] - application_time
+            runoff_time = (tvec)[runoffindex]
 
             elongation_rate = np.round(float(self.sms.POI.total_length) / runoff_time,2)
 
@@ -6395,7 +6408,6 @@ class GUI(Frame):
                 runoffindex = np.where(meaniv_norm[timeindex+1:] >= .7  )[0][0] + timeindex
 
                 recoverytime = (tvec)[runoffindex] - application_time
-
 
             elongation_rate = np.round(float(self.sms.POI.total_length) / recoverytime,2)
             self.calculated_parameters[22].config(state='normal')
