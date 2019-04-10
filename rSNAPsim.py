@@ -1190,8 +1190,9 @@ class rSNAPsim():
                 
                 nribs = np.sum(solutionssave[i][:,endfrap]!=0)
              
-                ribloc = solutionssave[i][:,endfrap]
-                adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
+                #ribloc = solutionssave[i][:,endfrap]
+                
+                #adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
     
                 I[i, :inds[0]] = np.sum(pv[traj], axis=1)[startindex:inds[0]].T
                 I[i,inds[0]:endfrap] = 0
@@ -1202,7 +1203,9 @@ class rSNAPsim():
 
 
 
-
+        global results
+        results= all_results
+        
 
         ssa_obj = ssa()
         ssa_obj.no_ribosomes = no_ribosomes
