@@ -980,10 +980,11 @@ class rSNAPsim():
 
         non_consider_time = start_time
         
+       
         if probePosition.shape[0] <= 1:
             pv = np.zeros((1, genelength+1)).astype(int).flatten()
-    
-            for i in range(len(probePosition)):
+            
+            for i in range(len(probePosition[0])):
                 pv[probePosition[0][i]:] = i+1
         else:
             pv = np.zeros((probePosition.shape[0], genelength+1)).astype(int)
@@ -992,7 +993,9 @@ class rSNAPsim():
                     pv[j][probePosition[j][i]:] = i+1            
 
         npoints = tstep #non_consider_time + tstep
-
+        
+        global pvi
+        pvi = pv
 
         time_vec_fixed = np.linspace(0, npoints-1, npoints, dtype=np.float64)
         truetime = np.linspace(0, tf, tstep, dtype=np.float64)
@@ -1153,8 +1156,11 @@ class rSNAPsim():
 
         if probePosition.shape[0] <=1:
             I = np.zeros((n_traj, len(time_vec_fixed[startindex:])))
+         
+            
         else:
             I = np.zeros((int(probePosition.shape[0]),n_traj, len(time_vec_fixed[startindex:])))
+         
 
         #I = np.zeros((1,tstep+1))
         
@@ -1182,7 +1188,8 @@ class rSNAPsim():
             inds = np.where(truetime > fraptime)
             inds2 = np.where(truetime  < fraptime+20)
             inds = np.intersect1d(inds,inds2)
-            endfrap = inds[-1]
+            endfrap = inds[-1]-1
+         
             
             for i in range(n_traj):
     
@@ -1190,16 +1197,21 @@ class rSNAPsim():
                 
                 nribs = np.sum(solutionssave[i][:,endfrap]!=0)
              
-                ribloc = solutionssave[i][:,endfrap]
-                adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
-    
+                #ribloc = solutionssave[i][:,endfrap]
+                
+                #adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
+                revI = self.__get_negative_intensity(traj,genelength,pv,truetime,fraptime,fraptime+20)
+                print(revI)
                 I[i, :inds[0]] = np.sum(pv[traj], axis=1)[startindex:inds[0]].T
                 I[i,inds[0]:endfrap] = 0
                 I[i,endfrap:] = np.sum(pv[traj],axis=1)[endfrap:].T
+                I[i,endfrap:len(revI)+endfrap] = I[i,endfrap:len(revI)+endfrap] + revI
+      
+                
+                
     
     
             intensity_vec = I
-
 
 
 
@@ -1385,6 +1397,174 @@ class rSNAPsim():
         return ssa_obj
 
 
+    def __get_negative_intensity(self,solution,gene_length,pv,tvec,ti,stop_frap):
+        
+        startindex = np.where(tvec >= ti)[0][0]
+        stop_frap = np.where(tvec >= stop_frap)[0][0]
+      
+            
+        solution = solution.T
+        fragmented_trajectories = []
+        fragtimes = []
+        endfragtimes = []
+        maxlen = 0
+        
+        fragmentspertraj= []
+  
+        ind = np.array([next(j for j in range(0,solution.shape[0]) if int(solution[j, i]) == 0 or int(solution[j, i]) == -1) for i in range(0, solution.shape[1])])
+        changes = ind[1:] - ind[:-1]
+        addindexes = np.where(changes > 0)[0]
+        subindexes = np.where(changes < 0)[0]
+        
+        sub = solution[:,1:] - solution[:,:-1]
+        neutralindexes = np.unique(np.where(sub < 0)[1])
+        neutralindexes = np.setxor1d(neutralindexes, subindexes)
+        
+        for index in neutralindexes:
+            pre = solution[:,index]
+            post = solution[:,index+1]
+            changecount = 0
+            while len(np.where(post - pre < 0)[0]) > 0:
+    
+                post = np.append([gene_length],post)
+                pre = np.append(pre,0)
+                
+                changecount+=1
+            
+            for i in range(changecount):
+                addindexes = np.sort(np.append(addindexes,index))
+                subindexes = np.sort(np.append(subindexes,index))
+                
+            changes[index] = -changecount
+            ind[index] += changecount
+         
+            
+        for index in np.where(np.abs(changes)>1)[0]:
+            if changes[index] < 0:
+                for i in range(np.abs(changes[index])-1):
+                    subindexes = np.sort(np.append(subindexes,index))
+            else:
+                for i in range(np.abs(changes[index])-1):
+                    addindexes = np.sort(np.append(addindexes,index))   
+            
+        truefrags = len(subindexes)
+     
+            
+    
+       
+        if len(subindexes) < len(addindexes):
+            subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(tvec)-1)).astype(int))
+            
+        
+        fragmentspertraj.append(len(subindexes))
+        
+        for m in range(min(len(subindexes),len(addindexes))):
+            traj = solution[:, addindexes[m]:subindexes[m]+1]
+            traj_ind = changes[addindexes[m]:subindexes[m]+1]
+            
+            startind = ind[addindexes[m]]
+            minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
+            fragment = np.array([])
+        
+                
+            
+            iterind = startind
+            
+            if subindexes[m]-addindexes[m] > 0:
+                if len(minusloc) > 1:
+                    if m <= truefrags:
+                        for n in range(len(minusloc)-1):
+                            iterind = iterind + min(0,traj_ind[minusloc[n]])
+                            fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                            
+                            
+                            
+              
+            
+                  
+                        
+                        fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
+                        
+                    else:
+                        for n in range(len(minusloc)-1):
+    
+                            iterind = iterind + min(0,traj_ind[minusloc[n]])
+                            
+                            fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+              
+                            
+                        fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
+      
+                    
+                
+                else:
+    
+                    fragment = solution[startind][addindexes[m]:subindexes[m]+1].flatten()
+               
+            
+                
+                fragtimes.append(addindexes[m]+1)
+                if addindexes[m]+1  + len(fragment) > len(tvec):
+                    endfragtimes.append(len(tvec))
+                else:
+                    endfragtimes.append(addindexes[m]+1  + len(fragment))
+                   
+                
+                fragmented_trajectories.append(fragment)
+                #if m <= truefrags:
+                    #kes.append(genelength/truetime[len(fragment)])
+        
+                if len(fragment) > maxlen:
+                    maxlen = len(fragment)
+                
+    
+        fragarray = np.zeros((len(fragmented_trajectories), maxlen))
+        for i in range(len(fragmented_trajectories)):
+            fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
+            
+            
+        affected_frags = []
+        fragindexes = []
+        for i in range(len(fragtimes)):
+        
+           if  np.sum([fragtimes[i]> np.array([startindex, stop_frap]), endfragtimes[i] > np.array([startindex, stop_frap])]) in [1,2,3]:
+               affected_frags.append(i)
+               fragindexes.append([fragtimes[i],endfragtimes[i]])
+            
+        
+        #affected_frags = np.intersect1d(np.where(np.array(fragtimes) >=  startindex), np.where(np.array(fragtimes)<= stop_frap))
+        if len(fragindexes)> 0:
+            findexes = np.array(fragindexes)
+  
+            frange = findexes[:,1]-stop_frap
+            afterfrapribs = findexes[np.where(frange > 0 )]
+            
+            
+            relevantfrags = np.array(affected_frags)[np.where(frange > 0 )]
+            if len(relevantfrags) > 0:
+                cooked_ribs = (len(affected_frags) - len(relevantfrags))*max(pv)
+      
+                stopfrapindex = stop_frap - afterfrapribs[:,0]
+                
+                rfrags = fragarray[relevantfrags]
+                np.diag(rfrags[:,stopfrapindex])
+                laglen = afterfrapribs[:,1] - stop_frap
+                posistions_at_end_of_FRAP = np.diag(rfrags[:,stopfrapindex])
+             
+                offset = pv[posistions_at_end_of_FRAP.astype(int)]
+             
+                trailing_intensity = np.zeros((max(laglen)))
+                
+                for i in range(len(laglen)):
+                    trailing_intensity[:laglen[i]] -= offset[i] 
+                    
+                trailing_intensity= trailing_intensity-cooked_ribs
+            else:
+                trailing_intensity = np.array([0])
+        else:
+            trailing_intensity = np.array([0])
+            
+        return trailing_intensity
 
 
     def ssa_solver_append(self, ssa_obj, n=100):
@@ -1626,8 +1806,9 @@ class rSNAPsim():
                 Inhibit_condition = 1
             if FRAP == True :   #if the Photobleaching is happening, "remove" ribosomes
                 if t >= inhibit_time and t < inhibit_time + 20:
-                    X = np.array([0, 0])
-                    T = np.array([0,0])
+                    #X = np.array([0, 0])
+                    a=1
+                    #T = np.array([0,0])
 
 
 
