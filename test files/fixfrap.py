@@ -9,6 +9,7 @@ import numpy as np
 
 test_ivec = np.load('test_ivec.npy')
 test_results = np.load('test_ribs.npy')
+pv = np.load('pv.npy')
 
 ti = 500
 stop_frap = ti+20
@@ -22,10 +23,6 @@ frapribs = traj[:,startindex:stopfrap]
 
 
 genelength = 405
-
-
-
-
 
 
 
@@ -160,9 +157,46 @@ def pullfrags(solution,genelength):
 
 
 fragarray,fragtimes,fragmentspertraj,endfragtimes = pullfrags(traj,405)
-affected_frags = np.intersect1d(np.where(np.array(fragtimes) >=  startindex), np.where(np.array(fragtimes)<= stop_frap))
+affected_frags = []
+fragindexes = []
+for i in range(len(fragtimes)):
+   if  np.sum([fragtimes[i]> np.array([startindex, stop_frap]), endfragtimes[i] > np.array([startindex, stop_frap])]) in [1,2,3]:
+       affected_frags.append(i)
+       fragindexes.append([fragtimes[i],endfragtimes[i]])
+    
+
+#affected_frags = np.intersect1d(np.where(np.array(fragtimes) >=  startindex), np.where(np.array(fragtimes)<= stop_frap))
 af = fragarray[affected_frags]
+findexes = np.array(fragindexes)
+frange = findexes[:,1]-stop_frap
+afterfrapribs = findexes[np.where(frange > 0 )]
+relevantfrags = np.array(affected_frags)[np.where(frange > 0 )]
+stopfrapindex = stop_frap - afterfrapribs[:,0]
+
+rfrags = fragarray[relevantfrags]
+np.diag(rfrags[:,stopfrapindex])
+laglen = afterfrapribs[:,1] - stop_frap
+posistions_at_end_of_FRAP = np.diag(rfrags[:,stopfrapindex])
+
+lenfrap = stop_frap - startindex
+offset = pv[posistions_at_end_of_FRAP.astype(int)]
+trailing_intensity = np.zeros((max(laglen)+ lenfrap))
 
 
+for j in len(fragindexes):
+    frag = fragindexes[j]
+    fragpos = af[j]
+    fragstart = frag[0]
+    fragend = frag[1]
+    for i in range(fragend - fragstart):
+        if fragstart + i > startindex:
+            trailing_intensity[i] -= pv[fragpos[i]]
+            
+    
+    
+
+
+for i in range(len(laglen)):
+    trailing_intensity[:laglen[i]] -= offset[i]
 
 
