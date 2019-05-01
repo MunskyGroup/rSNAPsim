@@ -756,7 +756,7 @@ class rSNAPsim():
                 
                 
                 
-            self.POI.tag_epitopes[self.POI.tag_types[i]] = [m.start()+1 for m in re.finditer(self.tag_dict[self.POI.tag_types[i]], aa_tag)]
+            self.POI.tag_epitopes[self.POI.tag_types[i]] = [m.start()+1 for m in re.finditer(self.tag_dict[self.POI.tag_types[i]], self.POI.aa_seq)]
 
             gs = gs.replace(aa_tag, '')
 
@@ -875,20 +875,50 @@ class rSNAPsim():
             **probe_loc**, epitope posistion as a binary vector, 1 for epitope pos, 0 for everything else
         '''
 
-        probePosition = []
-        for key in self.POI.tag_epitopes.keys():
+        probePositions = []
+        for n in range(len(self.POI.tag_epitopes.keys())):
+            probePosition = []
+            key = self.POI.tag_epitopes.keys()[n]
+            
             probePosition = probePosition + self.POI.tag_epitopes[key]
-        probePosition = np.unique(probePosition).tolist()
+            
+            if probePosition != []:
+                probePosition = np.unique(probePosition).tolist()
+                probePositions.append(probePosition)
+                
+        
+        
 
         genelength = self.POI.total_length
 
-        pv = np.zeros((1, genelength+1)).astype(int).flatten()
-
-        for i in range(len(probePosition)):
-            pv[probePosition[i]:] = i+1
-
-
-
+        pvfull = np.zeros((1, genelength+1)).astype(int).flatten()
+        
+        if len(probePositions) > 1:
+            k = 0
+            for n in range(len(self.POI.tag_epitopes.keys())):
+                pv = np.zeros((1, genelength+1)).astype(int).flatten()
+                key = self.POI.tag_epitopes.keys()[n]
+                probePosition = probePositions[k] 
+                k+=1
+                if len(self.POI.tag_epitopes[key]) != 0:
+                    for i in range(len(probePosition)):
+                        pv[probePosition[i]:] = i+1
+                    if n > 0:
+                        pvfull = np.vstack((pvfull,pv))
+                    else:
+                        pvfull = pv
+        else:
+            probePosition = probePositions[0]
+            for n in range(len(self.POI.tag_epitopes.keys())):
+                pv = np.zeros((1, genelength+1)).astype(int).flatten()
+                key = self.POI.tag_epitopes.keys()[n]
+                if len(self.POI.tag_epitopes[key]) != 0:
+                    for i in range(len(probePosition)):
+                        pv[probePosition[i]:] = i+1
+                    if n > 0:
+                        pvfull = np.vstack((pvfull,pv))
+                    else:
+                        pvfull = pv
         numtags = 0
         for key in self.POI.tag_epitopes.keys():
             if len(self.POI.tag_epitopes[key]) != 0:
@@ -897,13 +927,14 @@ class rSNAPsim():
         ploc = np.zeros((numtags, self.POI.total_length+1)).astype(int)
 
         numind = 0
-        for key in self.POI.tag_epitopes.keys():
+        for n in range(len(self.POI.tag_epitopes.keys())):
+            key = self.POI.tag_epitopes.keys()[n]
             if len(self.POI.tag_epitopes[key]) != 0:
                 ploc[numind][self.POI.tag_epitopes[key]] = 1
 
                 numind += 1
 
-        return pv, ploc
+        return pvfull, ploc
 
 
     def ssa_solver(self, nt_seq=None, all_k=None, k_elong_mean=10, k_initiation=.03, probePosition=[], n_traj=100, tf=1000, start_time=0, tstep=1000, time_inhibit=0, evaluating_frap=False, evaluating_inhibitor=False,force_python = False):
@@ -941,6 +972,7 @@ class rSNAPsim():
         '''
 
         if len(probePosition) == 0:
+            '''
             try:
                 probePosition = []
                 for key in self.POI.tag_epitopes.keys():
@@ -949,10 +981,13 @@ class rSNAPsim():
             except:
                 print('No POI found')
                 #nt_seq = self.tag_full['T_flag'] + nt_seq
+            '''
+            
+            pv,probePosition = self.get_probvec()
         
 
         if nt_seq == None:
-            nt_seq = self.POI.nt_seq
+          nt_seq = self.POI.nt_seq
         genelength = int(len(nt_seq)/3)
 
         if all_k == None:
@@ -979,8 +1014,8 @@ class rSNAPsim():
      
 
         non_consider_time = start_time
-        
-       
+      
+        '''
         if probePosition.shape[0] <= 1:
             pv = np.zeros((1, genelength+1)).astype(int).flatten()
             
@@ -990,19 +1025,18 @@ class rSNAPsim():
             pv = np.zeros((probePosition.shape[0], genelength+1)).astype(int)
             for j in range(probePosition.shape[0]):
                 for i in range(len(probePosition)):
-                    pv[j][probePosition[j][i]:] = i+1            
+                    pv[j][probePosition[j][i]:] = i+1      
+        '''
 
         npoints = tstep #non_consider_time + tstep
         
-        global pvi
-        pvi = pv
-
         time_vec_fixed = np.linspace(0, npoints-1, npoints, dtype=np.float64)
         truetime = np.linspace(0, tf, tstep, dtype=np.float64)
 
         rib_vec = []
 
         solutions = []
+        
 
 
         evf = int(evaluating_frap)
@@ -1367,6 +1401,7 @@ class rSNAPsim():
         ssa_obj.fragments = fragarray
         ssa_obj.fragtimes = fragtimes
         ssa_obj.frag_per_traj = fragmentspertraj
+        ssa_obj.full_frags = truefrags
         
         if probePosition.shape[0] > 1:
             for i in range(probePosition.shape[0]):
@@ -2640,7 +2675,7 @@ class rSNAPsim():
             f.close()
 
 
-    def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True,show_col=True,col_size = 1.5, *args,**kwargs):
+    def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True,tag = 0, show_col=True,col_size = 1.5, custom_fig = None, *args,**kwargs):
         '''
         Constructs a kymograph of ribosome locations
         '''
@@ -2660,9 +2695,10 @@ class rSNAPsim():
         
         
         
-        
-        
-        ivec = ssa_obj.intensity_vec[n_traj]
+        if len(ssa_obj.intensity_vec.shape) ==3:
+            ivec = ssa_obj.intensity_vec[tag][n_traj]
+        else:        
+            ivec = ssa_obj.intensity_vec[n_traj]
         ftimes = ssa_obj.fragtimes[startfrags:startfrags+endfrags]
 
 
@@ -2672,7 +2708,7 @@ class rSNAPsim():
         
         #plt.figure(figsize=(5,10))
         if show_intense == True:
-            gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1]) 
+            gs = gridspec.GridSpec(1, 2, custom_fig, width_ratios=[3, 1]) 
         else:
             gs = gridspec.GridSpec(1, 1)
         
@@ -2681,6 +2717,7 @@ class rSNAPsim():
         maxin = np.max(ivec)
         ax = plt.gca()
         ax.set_facecolor('black')
+
         if bg_intense == True:
             for i in range(len(time)):
                 plt.plot([0,lenplot],[time[i],time[i]],color = cm.summer(1.*ivec[i]/maxin),lw=1)
@@ -2702,7 +2739,7 @@ class rSNAPsim():
 
                 plt.plot(fragments[i][0:stop]   ,timeseg[0:timelen],**kwargs )
 
-        plt.xlabel('Ribosome position (residue)')
+        plt.xlabel('Ribosome position')
         plt.ylabel('Time (sec)')
         segtime = ssa_obj.time[0:len(ssa_obj.time_rec)]
         plt.ylim(ssa_obj.time_rec[-1], ssa_obj.time_rec[0])
@@ -2719,13 +2756,14 @@ class rSNAPsim():
             plt.subplot(gs[1])
             ax = plt.gca()
             ax.set_facecolor('black')
-        
-            plt.plot(ivec.T,segtime,**kwargs)
-            plt.xlabel('Intensity (AU)')
-            
+            print((np.sum(ssa_obj.probe)))
+            plt.plot(ivec.T/ np.sum(ssa_obj.probe),segtime,lw=2,color='white')
+            plt.xlabel('Intensity (ump)')
+            plt.xlim(0,30)
             plt.ylim(segtime[-1], segtime[0])
-            plt.yticks([])
-            plt.xlim(0,maxin+5)
+            
+        
+            
             plt.tight_layout()
                 
 
