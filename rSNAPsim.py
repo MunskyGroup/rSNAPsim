@@ -1419,6 +1419,7 @@ class rSNAPsim():
         ssa_obj.fragtimes = fragtimes
         ssa_obj.frag_per_traj = fragmentspertraj
         ssa_obj.full_frags = truefrags
+        ssa_obj.all_results = all_results
         
         if probePosition.shape[0] > 1:
             for i in range(probePosition.shape[0]):
@@ -2821,6 +2822,22 @@ class rSNAPsim():
         return autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_exp
 
 
+    def get_crosscorr(self, iv1,iv2):
+        '''
+        returns the autocorrelations
+        '''
+
+        i = 0
+        slen = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full').shape[0]
+        crosscorr_vec = np.zeros((iv1.shape[0],slen))
+        
+        for i in range(iv1.shape[0]):
+            crosscorr_vec[i,:] = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full')
+
+        normalized_autocorr = crosscorr_vec.T/ crosscorr_vec[:,0]
+        mean_autocorr = np.mean(normalized_autocorr, axis=1)
+
+        return crosscorr_vec, mean_autocorr
 
 
 
