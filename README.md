@@ -44,6 +44,7 @@ open up a Terminal or Command Prompt and run
 
 Open up the Anaconda Prompt (anaconda console) and run 
 ```conda pip install rSNAPsim ```
+
 -------------------------------------
 
 #### Future work
