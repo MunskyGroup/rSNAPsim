@@ -868,6 +868,7 @@ class rSNAPsim():
         for i in range(len(self.aakeys)-1):
 
             codon_usage[0, i] = len(re.findall(self.aakeys[i], aa_seq))
+            
         codon_usage[0, 20] = len(re.findall('\*', aa_seq))
         codon_norm = codon_usage/gene_len
         codon_sensitivity = np.round(codon_norm*self.sensitivity_fast_slow, 2)
@@ -879,6 +880,13 @@ class rSNAPsim():
         cai = self.geomean(cai_codons)
 
         return codon_sensitivity, cai, cai_codons
+    
+    def get_ui(self,nt_seq):
+        mean_u = np.mean(self.strGeneCopy.values()) 
+        ui = []
+        for i in range(0, len(nt_seq), 3):
+            ui.append(mean_u/ self.strGeneCopy[nt_seq[i:i+3]])
+        return ui
 
 
     def get_probvec(self): 
@@ -1046,7 +1054,6 @@ class rSNAPsim():
         '''
 
         npoints = tstep #non_consider_time + tstep
-        
         time_vec_fixed = np.linspace(0, npoints-1, npoints, dtype=np.float64)
         truetime = np.linspace(0, tf, tstep, dtype=np.float64)
 
@@ -2821,23 +2828,24 @@ class rSNAPsim():
 
         return autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_exp
 
-
     def get_crosscorr(self, iv1,iv2):
         '''
         returns the autocorrelations
         '''
-
-        i = 0
+        i=0
         slen = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full').shape[0]
-        crosscorr_vec = np.zeros((iv1.shape[0],slen))
+        crosscorr_vec = np.zeros( (iv1.shape[0],slen))
         
         for i in range(iv1.shape[0]):
+            
             crosscorr_vec[i,:] = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full')
-
+          
         normalized_autocorr = crosscorr_vec.T/ crosscorr_vec[:,0]
         mean_autocorr = np.mean(normalized_autocorr, axis=1)
+        
+    
+        return crosscorr_vec, mean_autocorr 
 
-        return crosscorr_vec, mean_autocorr
 
 
 
