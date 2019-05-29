@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = u'mRNA Translation Simulation'
+project = u'rSNAPsim'
 copyright = u'2018, Luis Aguilera, Will Raymond, Zach Fox, Brian Munsky'
 author = u'Luis Aguilera, Will Raymond, Zach Fox, Brian Munsky'
 
@@ -108,7 +108,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'mRNATranslationSimulationdoc'
+htmlhelp_basename = 'rSNAPsimdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -135,7 +135,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'mRNATranslationSimulation.tex', u'mRNA Translation Simulation Documentation',
+    (master_doc, 'rSNAPsim.tex', u'mRNA Translation Simulation Documentation',
      u'Luis Aguilera, Will Raymond, Zach Fox, Brian Munsky', 'manual'),
 ]
 
@@ -145,7 +145,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'mrnatranslationsimulation', u'mRNA Translation Simulation Documentation',
+    (master_doc, 'rSNAPsim', u'mRNA Translation Simulation Documentation',
      [author], 1)
 ]
 
@@ -156,8 +156,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'mRNATranslationSimulation', u'mRNA Translation Simulation Documentation',
-     author, 'mRNATranslationSimulation', 'One line description of project.',
+    (master_doc, 'rSNAPsim', u'mRNA Translation Simulation Documentation',
+     author, 'rSNAPsim', 'One line description of project.',
      'Miscellaneous'),
 ]
 

@@ -84,7 +84,7 @@ class rSNAPsim():
     single molecule mRNA translation simulations
 
     When presented with a valid protein sequence the SMS can find open reading frames
-    and simulate intensity trajectoriesfrom translation of the protein with given fluorescent tags.
+    and simulate intensity trajectories from translation of the protein with given fluorescent tags.
 
     *model description*
 
@@ -93,86 +93,127 @@ class rSNAPsim():
 
     *main functions*
 
-        open_seq_file(filepath), opens a txt or .gb file and gets the sequence
+        -open_seq_file(filepath), opens a txt or .gb file and gets the sequence
 
-        get_orfs(nt_sequence, min_codons), returns open reading frames of a given
+        -get_orfs(nt_sequence, min_codons), returns open reading frames of a given
         sequence and a minimum codon length per protein
 
-        get_temporal_proteins(), gets the proteins after get_orfs
+        -get_temporal_proteins(), gets the proteins after get_orfs
 
-        analyze_poi(aa_seq,nt_seq), analyzes the proteins of intrest for
+        -analyze_poi(aa_seq,nt_seq), analyzes the proteins of intrest for
         codon sensitivity and elongation rates
 
-        __.poi(), class to contain proteins of intrest after analyzed
+        -__.poi(), class to contain proteins of intrest after analyzed
 
-        run_default(), runs get_orfs, get_temporal proteins, and analyze_poi
+        -run_default(), runs get_orfs, get_temporal proteins, and analyze_poi
         with the first protien found in the sequence
 
 
 
     *attributes*
 
-        gene_sequence_str = string of the nucleotide sequence
-        tag_dict = dictionary with various types of fluorescent tag epitopes
-        tag_full = dictionary of full tag sequences
-        aa_keys = amino acid single letter keys
-        codon_types = flag dictionary of which amino acids are set to Wild-type, fast, or slow
-        aa_table = dictionary of amino acids
-        aa_table_r = reverse dictionary (amino acid letters are the keys)
-        strGeneCopy = dictionary of wild-type tRNA copy numbers
-        strGeneCopy_fast = dictionary of fast tRNA copy numbers
-        strGeneCopy_slow = dictionary of slow tRNA copy numbers
-        slow_codons_value = list of slowest codon tRNA copy numbers
-        fast_codons_value = list of fastest codon tRNA copy numbers
-        sensitivity_fast_slow = list of sensitivity for amino acids
-        poi = Class container for proteins of intrest
-        orfs = dictionary of open reading frames with keys 1,2,3
-        seq_str = sequence string
-        proteins = dictionary of proteins detected in the sequence by ORF
-        tagged_proteins = dictionary of proteins that were detected and tagged
+        **gene_sequence_str** = string of the nucleotide sequence
+        **tag_dict** = dictionary with various types of fluorescent tag epitopes
+        
+        **tag_full** = dictionary of full tag sequences
+        
+        **aa_keys** = amino acid single letter keys
+        
+        **codon_types** = flag dictionary of which amino acids are set to Wild-type, fast, or slow
+        
+        **aa_table** = dictionary of amino acids
+        
+        **aa_table_r** = reverse dictionary (amino acid letters are the keys)
+        
+        **strGeneCopy** = dictionary of wild-type tRNA copy numbers
+        
+        **strGeneCopy_fast** = dictionary of fast tRNA copy numbers
+        
+        **strGeneCopy_slow** = dictionary of slow tRNA copy numbers
+        
+        **slow_codons_value** = list of slowest codon tRNA copy numbers
+        
+        **fast_codons_value** = list of fastest codon tRNA copy numbers
+        
+        **sensitivity_fast_slow** = list of sensitivity for amino acids
+        
+        **poi** = Class container for proteins of intrest
+        
+        **orfs** = dictionary of open reading frames with keys 1,2,3
+        
+        **seq_str** = sequence string
+        
+        **proteins** = dictionary of proteins detected in the sequence by ORF
+        
+        **tagged_proteins** = dictionary of proteins that were detected and tagged
 
 
     *POI*
 
         Protein of intrest has the following attributes:
 
-        aa_seq = amino acid sequence
-        nt_seq = nucleotide sequence
-        gene_length = length of the gene
-        tag_length = length of the tags
-        total_length = total length of the full amino acid sequence
-        name = name of the gene
-        tag_types = what types of tags does the protien have
-        tag_epitopes = type of tags and epitope lists per tag
-        codon_sensitivity = how sensitive is the protein per amino acid sequence?
-        CAI = codon activation index
-        CAI_codons = means of the codon activation
+        **aa_seq** = amino acid sequence
+        
+        **nt_seq** = nucleotide sequence
+        
+        **gene_length** = length of the gene
+        
+        **tag_length** = length of the tags
+        
+        **total_length** = total length of the full amino acid sequence
+        
+        **name** = name of the gene
+        
+        **tag_types** = what types of tags does the protien have
+        
+        **tag_epitopes** = type of tags and epitope lists per tag
+        
+        **codon_sensitivity** = how sensitive is the protein per amino acid sequence?
+        
+        **CAI** = codon activation index
+        
+        **CAI_codons** = means of the codon activation
 
     *ssa*
 
         The ssa container class has the following attributes:
 
 
-        no_ribosomes = number of ribosomes
-        n_traj = number of trajectories
-        k = all kelongation rates (calculated from codon sequence)
-        no_rib_per_mrna = number of ribosomes per mRNA strand on average
-        rib_density = ribosome density
-        rib_means = ribosome means
-        rib_vec = raw ribosome location matrix for each trajectory
-        intensity_vec = fluorescence intensities
-        time_vec_fixed = the time vector
-        start_time = the time the simulation was started
+        **no_ribosomes** = number of ribosomes
+        
+        **n_traj** = number of trajectories
+        
+        **k** = all kelongation rates (calculated from codon sequence)
+        
+        **no_rib_per_mrna** = number of ribosomes per mRNA strand on average
+        
+        **rib_density** = ribosome density
+        
+        **rib_means** = ribosome means
+        
+        **rib_vec** = raw ribosome location matrix for each trajectory
+        
+        **intensity_vec** = fluorescence intensities
+        
+        **time_vec_fixed** = the time vector
+        
+        **start_time** = the time the simulation was started
 
-        evaluating_inhibitor = was there an inhibitor present?
-        evaluating_frap = was the simulation subjected to a FRAP test
-        time_inhibit = the time of the perturbation
+        **evaluating_inhibitor** = was there an inhibitor present?
+        
+        **evaluating_frap** = was the simulation subjected to a FRAP test
+        
+        **time_inhibit** = the time of the perturbation
 
-        autocorr_vec = autocorrelation vector of intensities
-        mean_autocorr = the average autocorrelations, averaged over trajectories
-        error_autocorr = the standard deviation of the autocorrelation
-        dwell_time = how long do the ribosomes stay on the mRNA strand calculated by the simulation
-        ke_sim = the calculated average elongation rate from the simulations
+        **autocorr_vec** = autocorrelation vector of intensities
+        
+        **mean_autocorr** = the average autocorrelations, averaged over trajectories
+        
+        **error_autocorr** = the standard deviation of the autocorrelation
+        
+        **dwell_time** = how long do the ribosomes stay on the mRNA strand calculated by the simulation
+        
+        **ke_sim** = the calculated average elongation rate from the simulations
 
 
     """
