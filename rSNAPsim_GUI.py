@@ -1272,12 +1272,19 @@ class GUI(Frame):
 
         kyminfoframe = tk.Frame(kym_frame)
         kyminfoframe.grid(row=0,column=0,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
+        kymspacerframe = tk.Frame(kym_frame)
+        kymspacerframe.grid(row=0,column=1,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
+        kymspacer = tk.Label(kymspacerframe,text = '                                                               ')
+        kymspacer.pack()
 
-
-        kymtopframe = tk.Frame(kym_frame)
-        kymtopframe.grid(row=1,column=0,sticky=tk.W+tk.E+tk.N+tk.S,padx=gpx,pady=gpy)     
+        kymtopframeL = tk.Frame(kym_frame)
+        kymtopframeL.grid(row=1,column=0,columnspan=1,sticky=tk.W+tk.E+tk.N+tk.S,padx=gpx,pady=gpy)     
         
-
+        kymtopframeR = tk.Frame(kym_frame)
+        kymtopframeR.grid(row=1,column=1,sticky=tk.W+tk.E+tk.N+tk.S,padx=gpx,pady=gpy)     
+        
+        kymbottomframe = tk.Frame(kym_frame)
+        kymbottomframe.grid(row=2,column=0,columnspan=1,sticky=tk.W+tk.E+tk.N+tk.S,padx=gpx,pady=gpy)
 
         kym_cmap_list=np.array(cm.datad.keys()).astype(str).tolist()
         
@@ -1333,7 +1340,7 @@ class GUI(Frame):
 
 
 
-        self.kym_canvas = FigureCanvasTkAgg(self.kym_fig,master=kymtopframe)
+        self.kym_canvas = FigureCanvasTkAgg(self.kym_fig,master=kymtopframeL)
         self.kym_canvas.draw()
         self.kym_canvas.get_tk_widget().pack(expand=True,fill='both',side='left') #stickying this way it makes it fill all avaliable space
 
@@ -1348,20 +1355,39 @@ class GUI(Frame):
         #self.kymax.set_ylabel('Intensity (a.u.)')
         self.kymax2.set_title("")
         
-        figframe = tk.Frame(kymtopframe,bg='#00ff00')
+       # figframe = tk.Frame(kymtopframe,bg='#00ff00')
         #figframe.pack(expand=True,fill='both',side='left')
 
 
-        self.kym_canvas2 = FigureCanvasTkAgg(self.kym_fig2,master=kymtopframe)
+        self.kym_canvas2 = FigureCanvasTkAgg(self.kym_fig2,master=kymtopframeR)
         self.kym_canvas2.draw()
         self.kym_canvas2.get_tk_widget().pack(expand=True,fill='both',side='left') 
         
+
+        self.kym_fig3 = mpl.figure.Figure(figsize=(5,2))#figsize=(2,5),dpi=60)
+        self.kym_fig3.set_tight_layout(True)
+        self.kymax3 = self.kym_fig3.add_subplot(111)
+        self.kym_fig3.patch.set_facecolor(self.default_color)
+        self.kym_fig3.tight_layout(h_pad=1.0)
+
+        #self.kymax.set_xlabel('time (sec)')
+        #self.kymax.set_ylabel('Intensity (a.u.)')
+        self.kymax3.set_title("")
+        
+       # figframe = tk.Frame(kymtopframe,bg='#00ff00')
+        #figframe.pack(expand=True,fill='both',side='left')
+
+
+        self.kym_canvas3 = FigureCanvasTkAgg(self.kym_fig3,master=kymbottomframe)
+        self.kym_canvas3.draw()
+        self.kym_canvas3.get_tk_widget().pack(expand=True,fill='both',side='left') 
 
         kymsmallframe = tk.Frame(kym_frame)
         kymsmallframe.grid(row=2,column=0,sticky=tk.NW)
 
         kym_frame.rowconfigure(1,weight=3)
         kym_frame.columnconfigure(0,weight=3)
+        kym_frame.columnconfigure(1,weight=4)
         
         
     
@@ -5780,10 +5806,13 @@ class GUI(Frame):
         self.kymax2.clear()
         n_traj = int(self.traj_select.get())
         self.kymograph_internal(self.kymax,self.kymax2,self.ssa,n_traj,color=self.main_color,bg_intense=self.kymintense.get())
-
+        
+        self.kymax3.clear()
+        self.plot_rib_dense_kym(self.kymax3,self.ssa.rib_density)
 
         self.kym_canvas.draw()
         self.kym_canvas2.draw()
+        self.kym_canvas3.draw()
         
         
     def kymograph_internal(self,ax,ax1,ssa_obj,n_traj,bg_intense=True,show_intense = True, *args,**kwargs):
@@ -5851,6 +5880,7 @@ class GUI(Frame):
         ax.set_xlabel('Ribosome position (residue)')
         ax.set_ylabel('Time')
         ax.set_ylim(ssa_obj.time_rec[-1], ssa_obj.time_rec[0])
+        ax.set_xlim(-10,max(ssa_obj.rib_density.shape)+10 )
                 
 
             
@@ -5887,6 +5917,18 @@ class GUI(Frame):
 
 
 
+    def plot_rib_dense_kym(self,ax,rib_density):
+        ax.cla()
+        ax.axis([0,int(len(rib_density)),0,np.max(rib_density)+.1*np.max(rib_density)])
+        ax.set_xlabel('Codon Position')
+        ax.set_ylabel('P')
+        
+        ax.plot(rib_density,color=self.kymlinecolor.cget('bg'))
+        bgcolor = self.kymbgcolor.cget('bg')
+        ax.set_facecolor(bgcolor )
+        
+        ax.set_ylim(np.max(rib_density)+.1*np.max(rib_density),np.min(rib_density)+.1*np.min(rib_density) )
+        ax.set_xlim(-10,rib_density.shape[0] + 10)
 
     def plot_rib_dense(self,ax,rib_density):
         ax.cla()
