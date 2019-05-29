@@ -22,6 +22,8 @@ Provide a Python module that takes nucleotide sequence as an input and does the 
 ---------------------------------
 ### Documentation
 
+Tutorials, Module Documentation, Installiation and more [LINK TO MUNSKY GROUP WEBSITE]
+
 Dependencies: 
  * [NumPy](https://www.numpy.org/) 
  * [SciPy](https://www.scipy.org/)
@@ -43,6 +45,7 @@ open up a Terminal or Command Prompt and run
 Open up the Anaconda Prompt (anaconda console) and run 
 ```conda pip install rSNAPsim ```
 -------------------------------------
+
 #### Future work
 
 - Adding the two color visualization and probe editing to the GUI
