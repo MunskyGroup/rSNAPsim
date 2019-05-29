@@ -2729,9 +2729,16 @@ class GUI(Frame):
 
             # the blank protien example using plasmid_H2B
             sample_protein = [146,318,464,[2,11,20,196,206,218,228,300,309,318]]  #plasmid h2b example
-            self.plot_sequence(self.ax,sample_protein[0],sample_protein[1],sample_protein[2],sample_protein[3],'Flag','Plasmid_H2B')
-
-
+            tags = ''
+            for text in self.sms.POI.tag_types:
+                tags = tags + text + ' '
+            ep_pos = ''
+            ep_pos2 = []
+            for key in self.sms.POI.tag_types:
+                ep_pos = ep_pos + str(self.sms.POI.tag_epitopes[key]) + ' '
+                ep_pos2 = ep_pos2 + self.sms.POI.tag_epitopes[key]                
+            self.plot_sequence(self.ax,self.sms.POI.gene_length,(self.sms.POI.total_length - self.sms.POI.gene_length)
+                , self.sms.POI.total_length ,ep_pos2,tags,self.sms.POI.name)
 
 
             poi = tk.Label(self.viewframe,text='POI = Protein of intrest',font=('SystemButtonText',8))
