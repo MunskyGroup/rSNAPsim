@@ -37,7 +37,15 @@ import time
 import json, codecs
 
 from scipy import sparse
-os.chdir('ssa_cpp')
+
+cwd = os.getcwd()
+try:
+    os.chdir('../..')
+    os.chdir('ssa_cpp')
+except:
+    os.chdir(cwd)
+    os.chdir('ssa_cpp')  
+
 try:
     
     import ssa_translation
@@ -45,6 +53,7 @@ try:
 except:
     pass
 os.chdir('..')
+os.chdir(cwd)
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt

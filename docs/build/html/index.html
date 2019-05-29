@@ -1,0 +1,474 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Welcome rSNAPsim’s documentation! &#8212; mRNA Translation Simulation 0.1a documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Introduction" href="Intro.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Intro.html" title="Introduction"
+             accesskey="N">next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">mRNA Translation Simulation 0.1a documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-rsnapsim-s-documentation">
+<h1>Welcome rSNAPsim’s documentation!<a class="headerlink" href="#welcome-rsnapsim-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Intro.html#rsnapsim">rSNAPsim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Intro.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Intro.html#future-work">Future Work</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Installation.html#installing-rsnapsim">Installing rSNAPsim</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Tutorial.html">rSNAPsim tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Tutorial.html#importing-rsnapsim-commandline">Importing rSNAPsim commandline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tutorial.html#getting-started">Getting started</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<span class="target" id="module-rSNAPsim"></span><p>Created on Tue Oct 23 09:42:24 2018</p>
+<p>&#64;author: William</p>
+<dl class="class">
+<dt id="rSNAPsim.rSNAPsim">
+<em class="property">class </em><code class="descclassname">rSNAPsim.</code><code class="descname">rSNAPsim</code><a class="headerlink" href="#rSNAPsim.rSNAPsim" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Single Molecule Simulator (SMS) provides a python class for running
+single molecule mRNA translation simulations</p>
+<p>When presented with a valid protein sequence the SMS can find open reading frames
+and simulate intensity trajectoriesfrom translation of the protein with given fluorescent tags.</p>
+<p><em>model description</em></p>
+<blockquote>
+<div>link to paper here / image</div></blockquote>
+<p><em>main functions</em></p>
+<blockquote>
+<div><p>open_seq_file(filepath), opens a txt or .gb file and gets the sequence</p>
+<p>get_orfs(nt_sequence, min_codons), returns open reading frames of a given
+sequence and a minimum codon length per protein</p>
+<p>get_temporal_proteins(), gets the proteins after get_orfs</p>
+<p>analyze_poi(aa_seq,nt_seq), analyzes the proteins of intrest for
+codon sensitivity and elongation rates</p>
+<p>__.poi(), class to contain proteins of intrest after analyzed</p>
+<p>run_default(), runs get_orfs, get_temporal proteins, and analyze_poi
+with the first protien found in the sequence</p>
+</div></blockquote>
+<p><em>attributes</em></p>
+<blockquote>
+<div>gene_sequence_str = string of the nucleotide sequence
+tag_dict = dictionary with various types of fluorescent tag epitopes
+tag_full = dictionary of full tag sequences
+aa_keys = amino acid single letter keys
+codon_types = flag dictionary of which amino acids are set to Wild-type, fast, or slow
+aa_table = dictionary of amino acids
+aa_table_r = reverse dictionary (amino acid letters are the keys)
+strGeneCopy = dictionary of wild-type tRNA copy numbers
+strGeneCopy_fast = dictionary of fast tRNA copy numbers
+strGeneCopy_slow = dictionary of slow tRNA copy numbers
+slow_codons_value = list of slowest codon tRNA copy numbers
+fast_codons_value = list of fastest codon tRNA copy numbers
+sensitivity_fast_slow = list of sensitivity for amino acids
+poi = Class container for proteins of intrest
+orfs = dictionary of open reading frames with keys 1,2,3
+seq_str = sequence string
+proteins = dictionary of proteins detected in the sequence by ORF
+tagged_proteins = dictionary of proteins that were detected and tagged</div></blockquote>
+<p><em>POI</em></p>
+<blockquote>
+<div><p>Protein of intrest has the following attributes:</p>
+<p>aa_seq = amino acid sequence
+nt_seq = nucleotide sequence
+gene_length = length of the gene
+tag_length = length of the tags
+total_length = total length of the full amino acid sequence
+name = name of the gene
+tag_types = what types of tags does the protien have
+tag_epitopes = type of tags and epitope lists per tag
+codon_sensitivity = how sensitive is the protein per amino acid sequence?
+CAI = codon activation index
+CAI_codons = means of the codon activation</p>
+</div></blockquote>
+<p><em>ssa</em></p>
+<blockquote>
+<div><p>The ssa container class has the following attributes:</p>
+<p>no_ribosomes = number of ribosomes
+n_traj = number of trajectories
+k = all kelongation rates (calculated from codon sequence)
+no_rib_per_mrna = number of ribosomes per mRNA strand on average
+rib_density = ribosome density
+rib_means = ribosome means
+rib_vec = raw ribosome location matrix for each trajectory
+intensity_vec = fluorescence intensities
+time_vec_fixed = the time vector
+start_time = the time the simulation was started</p>
+<p>evaluating_inhibitor = was there an inhibitor present?
+evaluating_frap = was the simulation subjected to a FRAP test
+time_inhibit = the time of the perturbation</p>
+<p>autocorr_vec = autocorrelation vector of intensities
+mean_autocorr = the average autocorrelations, averaged over trajectories
+error_autocorr = the standard deviation of the autocorrelation
+dwell_time = how long do the ribosomes stay on the mRNA strand calculated by the simulation
+ke_sim = the calculated average elongation rate from the simulations</p>
+</div></blockquote>
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.SSA">
+<code class="descname">SSA</code><span class="sig-paren">(</span><em>k</em>, <em>t_array</em>, <em>inhibit_time=0</em>, <em>FRAP=False</em>, <em>Inhibitor=False</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.SSA" title="Permalink to this definition">¶</a></dt>
+<dd><p>mRNA Translation simulation python implementation</p>
+<p>given a propensity vector k, time array to record, and inhibitory conditions, run a single trajectory of translation simulation</p>
+<p>The simulation is described here: [PUT LINK HERE TO PAPER]</p>
+<p><em>args</em></p>
+<blockquote>
+<div><p><strong>k</strong>, propensity vector of size gene length + 2, [initiation rate,  Codon dependent rates,  completion rate / unbinding rate]
+for reference the codon dependent rates are refering to the time rate of a ribosome to move on to the next codon</p>
+<p><strong>t_array</strong>, time points to record the ribosome posistions at</p>
+</div></blockquote>
+<p><em>keyword args</em></p>
+<blockquote>
+<div><p><strong>inhibit_time</strong>, the time to start inhibition assays if FRAP or Inhibitor (harringtonine) == True</p>
+<p><strong>FRAP</strong>, True or false to apply Fluorescence Recovery After Photobleaching (FRAP) <a class="reference external" href="https://en.wikipedia.org/wiki/Fluorescence_recovery_after_photobleaching">https://en.wikipedia.org/wiki/Fluorescence_recovery_after_photobleaching</a></p>
+<p><strong>Inhibitor</strong>, True or false to apply harringtonine at inhibit_time. Harringtonine acts as a protien translation initiation inhibitor</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.analyze_poi">
+<code class="descname">analyze_poi</code><span class="sig-paren">(</span><em>protein</em>, <em>sequence</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.analyze_poi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analyzes the protein of intrest and stores it in __.POI</p>
+<p><em>args</em></p>
+<blockquote>
+<div><p><strong>protein</strong>,  amino acid sequence as a string</p>
+<p><strong>sequence</strong>, nucleotide sequence that goes with the protein</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.analyze_seq_file">
+<code class="descname">analyze_seq_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.analyze_seq_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>General catch all to run all functions necessary before a SSA and store the first POI found from any given sequence</p>
+<p><em>args</em></p>
+<blockquote>
+<div><strong>filename</strong> a txt or gb file to be read and analyzed</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.codon_usage">
+<code class="descname">codon_usage</code><span class="sig-paren">(</span><em>nt_seq</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.codon_usage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analyzes codon useage from the nucleotide sequence</p>
+<p><em>args</em></p>
+<blockquote>
+<div><strong>nt_seq</strong>,  nucleotide sequence as a string</div></blockquote>
+<p><em>returns</em></p>
+<blockquote>
+<div><p><strong>codon_sensitivity</strong>, a list of codon sensitivity for the nucleotide sequence</p>
+<p><strong>cai</strong>, cai value</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.elongation_animation">
+<code class="descname">elongation_animation</code><span class="sig-paren">(</span><em>ti=0</em>, <em>tf=1000</em>, <em>tstep=1000</em>, <em>cell_radius=50</em>, <em>imagesize=5</em>, <em>dpi=90</em>, <em>filename='simulated_cell'</em>, <em>ssa_obj=None</em>, <em>fcolor='#00FF00'</em>, <em>rnacolor='#FF0000'</em>, <em>xkcd=False</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.elongation_animation" title="Permalink to this definition">¶</a></dt>
+<dd><p>function that creates a mrna translation animation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.geomean">
+<code class="descname">geomean</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.geomean" title="Permalink to this definition">¶</a></dt>
+<dd><p>geometric mean used for codon sensitivity calculations</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.get_acc2">
+<code class="descname">get_acc2</code><span class="sig-paren">(</span><em>data</em>, <em>trunc=False</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.get_acc2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get autocorrelation function</p>
+<p><em>NOT</em> multi-tau</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.get_autocorr">
+<code class="descname">get_autocorr</code><span class="sig-paren">(</span><em>intensity_vec</em>, <em>time_vec</em>, <em>totalSimulationTime</em>, <em>geneLength</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.get_autocorr" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the autocorrelations</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.get_crosscorr">
+<code class="descname">get_crosscorr</code><span class="sig-paren">(</span><em>iv1</em>, <em>iv2</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.get_crosscorr" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the autocorrelations</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.get_gb_file">
+<code class="descname">get_gb_file</code><span class="sig-paren">(</span><em>accession_number</em>, <em>savetofile=False</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.get_gb_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function to poll genbank given an accession number and pull the relevant gb file</p>
+<p><em>args</em></p>
+<blockquote>
+<div><strong>accession_number</strong>, the accession number of the sequence to find.
+<a class="reference external" href="http://www.nslc.wustl.edu/elgin/genomics/bio4342/1archives/2006/AccReference.pdf">http://www.nslc.wustl.edu/elgin/genomics/bio4342/1archives/2006/AccReference.pdf</a></div></blockquote>
+<p><em>keyword args</em></p>
+<blockquote>
+<div><strong>savetofile</strong>, true or false to save the gb file in the same directory as sms for future use</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.get_k">
+<code class="descname">get_k</code><span class="sig-paren">(</span><em>nt_seq</em>, <em>k_init</em>, <em>k_elong_mean</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.get_k" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns all propensities for a given nucleotide sequence</p>
+<p><em>args</em></p>
+<blockquote>
+<div><p><strong>nt_seq</strong>,  nucleotide sequence as a string</p>
+<p><strong>k_initiation</strong>, initiation rate of ribosome binding</p>
+<p><strong>k_elong_mean</strong>, average rate of elgonation experimentally found</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.get_k_construct">
+<code class="descname">get_k_construct</code><span class="sig-paren">(</span><em>nt_seq</em>, <em>k_init</em>, <em>k_elong_mean</em>, <em>codon_types=None</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.get_k_construct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the k_elongation rates of a given nucleotide sequence under constructed conditions
+given some sort of key describing which amino acids are slow, fast or natural</p>
+<p><em>args</em></p>
+<blockquote>
+<div><p><strong>nt_seq</strong>, nucleotide sequence to get the propensities of</p>
+<p><strong>k_init</strong>, initiation rate of starting translation</p>
+<p><strong>k_elong_mean</strong>, average rate of elongation for the protein translation</p>
+</div></blockquote>
+<p><em>keyword args</em></p>
+<blockquote>
+<div><p><strong>codon_types</strong>, a dictonary or identifier determining which amino acids are slow, fast or natural</p>
+<blockquote>
+<div><p>self.codon_types is an example dictionary for the user to change / utilize, if codon_types is left blank
+get_k_construct uses this internal dictonary</p>
+<dl class="docutils">
+<dt>ex: codon_types = ‘slow’ or ‘rare’  all amino acids set to slow</dt>
+<dd><p class="first">codon_types = ‘fast’ or ‘common’  all amino acids set to fast
+codon_types = ‘natural’ all amino acids set to fast</p>
+<p class="last">codon_types = {‘A’:[0], ‘T’:[2]}  A set to slow, T set to fast
+codon_types = {‘rare’:[‘A’,’R’],’common’:[‘L’]}  A and R set to slow, L set to fast</p>
+</dd>
+</dl>
+</div></blockquote>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.get_orfs">
+<code class="descname">get_orfs</code><span class="sig-paren">(</span><em>nt_seq=''</em>, <em>min_codons=80</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.get_orfs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns open reading frames of the nucleotide sequence given</p>
+<dl class="docutils">
+<dt>orfs = {‘1’:[proteins],</dt>
+<dd>‘2’:[proteins],
+‘3’:[proteins]}</dd>
+</dl>
+<p><em>keyword args</em></p>
+<blockquote>
+<div><p><strong>nt_seq</strong>, nucleotide sequence as a string. If left blank uses
+the self.sequence_str</p>
+<p><strong>min_codons</strong>, minimum amount of codons to be considered
+a protein in the open reading frame</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.get_probvec">
+<code class="descname">get_probvec</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.get_probvec" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the probe vectors (epitope positions by codon position) associated with the tagged sequence stored in POI</p>
+<p><em>returns</em></p>
+<blockquote>
+<div><p><strong>probe_vec</strong>, cumlative probe intensity vector by codon position. Ex: [0,0,0,0,1,1,1,1,2,2,2,3,3,3 etc]</p>
+<p><strong>probe_loc</strong>, epitope posistion as a binary vector, 1 for epitope pos, 0 for everything else</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.get_simulated_mov">
+<code class="descname">get_simulated_mov</code><span class="sig-paren">(</span><em>ssa_obj</em>, <em>filename</em>, <em>filetype</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.get_simulated_mov" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a gif or html file of the simulated circlular cell from any sms ssa object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.get_temporal_proteins">
+<code class="descname">get_temporal_proteins</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.get_temporal_proteins" title="Permalink to this definition">¶</a></dt>
+<dd><p>gets all the temporal proteins after getting the ORFs</p>
+<p>__.tagged_proteins = dictionary with keys of tag types and a list of proteins
+__.pois = list of proteins of intrest
+__.pois_seq = list of nucleotide sequences of proteins of sequences
+__.proteins = dictonary with keys of 1 2 or 3 orfs</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.kymograph">
+<code class="descname">kymograph</code><span class="sig-paren">(</span><em>ssa_obj</em>, <em>n_traj</em>, <em>bg_intense=True</em>, <em>show_intense=True</em>, <em>tag=0</em>, <em>show_col=True</em>, <em>col_size=1.5</em>, <em>custom_fig=None</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.kymograph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a kymograph of ribosome locations</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.multitau_acc">
+<code class="descname">multitau_acc</code><span class="sig-paren">(</span><em>ivec</em>, <em>n</em>, <em>sampling_rate</em>, <em>sample_rate_seconds</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.multitau_acc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multi-tau acc</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.nt2aa">
+<code class="descname">nt2aa</code><span class="sig-paren">(</span><em>nt_seq</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.nt2aa" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translates nucleotides sequences to amino acid sequences</p>
+<p><em>args</em></p>
+<blockquote>
+<div><strong>nt_seq</strong>, nucleotide sequence as a string</div></blockquote>
+<p><em>returns</em></p>
+<blockquote>
+<div><strong>aa_seq</strong>, amino acid sequence as string</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.open_seq_file">
+<code class="descname">open_seq_file</code><span class="sig-paren">(</span><em>seqfile</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.open_seq_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a sequence file, either a .txt file or a .gb genbank file</p>
+<p><em>args</em></p>
+<blockquote>
+<div><strong>seqfile</strong>, sequence file either in txt, gb, gbk format</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.simulate_cell">
+<code class="descname">simulate_cell</code><span class="sig-paren">(</span><em>diffusion_constant</em>, <em>kon</em>, <em>koff</em>, <em>kRNA</em>, <em>kdecay</em>, <em>ti=0</em>, <em>tf=1000</em>, <em>tstep=1000</em>, <em>cell_radius=50</em>, <em>imagesize=5</em>, <em>dpi=90</em>, <em>filename='simulated_cell'</em>, <em>ssa_obj=None</em>, <em>fcolor='#00FF00'</em>, <em>rnacolor='#FF0000'</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.simulate_cell" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>[DNA] ==kRNA==&gt; [RNA] &lt;==koff== [RNA*] ==translation simulation==&gt; [Protein]===&gt; null</dt>
+<dd>// ||             /                        || <cite>‘=====kon=====’</cite>
+||
+/
+null</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="rSNAPsim.rSNAPsim.ssa_solver">
+<code class="descname">ssa_solver</code><span class="sig-paren">(</span><em>nt_seq=None</em>, <em>all_k=None</em>, <em>k_elong_mean=10</em>, <em>k_initiation=0.03</em>, <em>probePosition=[]</em>, <em>n_traj=100</em>, <em>tf=1000</em>, <em>start_time=0</em>, <em>tstep=1000</em>, <em>time_inhibit=0</em>, <em>evaluating_frap=False</em>, <em>evaluating_inhibitor=False</em>, <em>force_python=False</em><span class="sig-paren">)</span><a class="headerlink" href="#rSNAPsim.rSNAPsim.ssa_solver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve stochastic simulation algorithms (SSA) for the translation simulation.</p>
+<p><em>keyword args</em></p>
+<blockquote>
+<div><p><strong>nt_seq</strong>, nucleotide sequence to simulate</p>
+<p><strong>all_k</strong>, the propensity rates for each codon location (obtained via get_k)</p>
+<p><strong>k_elong_mean</strong>, average elongation rate to normalize by</p>
+<p><strong>k_initiation</strong>, rate of mRNA translation initiation</p>
+<p><strong>probePosition</strong>, binary vector of probe positions, i.e. where the tag epitopes start by codon position</p>
+<p><strong>n_traj</strong>, number of trajectories</p>
+<p><strong>tf</strong>, final time point</p>
+<p><strong>tstep</strong>, number of time steps to record from 0 to tf</p>
+<p><strong>time_inhibit</strong>, inhibition time of translation either, harringtonine assay or FRAP</p>
+<p><strong>evaluating_frap</strong>, true or false for evaluating frap assay at time_inhibit</p>
+<p><strong>evaluating_inhibitor</strong>, true or false for evaluating harringtonine at time_inhibit</p>
+</div></blockquote>
+<p><em>returns</em></p>
+<blockquote>
+<div><strong>ssa_obj</strong>, a ssa() class containing the raw ribosome posistions simulated and statistics such as intensity vectors from the SSA trajectory group</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="rSNAPsim.poi">
+<em class="property">class </em><code class="descclassname">rSNAPsim.</code><code class="descname">poi</code><a class="headerlink" href="#rSNAPsim.poi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Protein of Intrest class</p>
+<p>Holds all the information for analyzed proteins</p>
+</dd></dl>
+
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome rSNAPsim’s documentation!</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Intro.html"
+                        title="next chapter">Introduction</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Intro.html" title="Introduction"
+             >next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">mRNA Translation Simulation 0.1a documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Luis Aguilera, Will Raymond, Zach Fox, Brian Munsky.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+    </div>
+  </body>
+</html>
