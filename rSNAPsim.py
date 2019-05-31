@@ -670,6 +670,15 @@ class rSNAPsim():
         all_k_design = [k_init] + k_elongation_design.flatten().tolist() + [k_elong_mean]
 
         return all_k_design
+    
+    
+    def get_ui(self, nt_seq):
+        mean_u = np.mean(self.strGeneCopy.values()) 
+        ui = []
+        for i in range(0, len(nt_seq), 3):
+            ui.append(mean_u/ self.strGeneCopy[nt_seq[i:i+3]])
+        return ui
+        
 
 
 
