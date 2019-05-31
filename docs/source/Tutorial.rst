@@ -1,6 +1,6 @@
-==================
+===============
 rSNAPsim tutorial 
-==================
+===============
 
 .. contents::
 	:depth: 5
@@ -16,11 +16,11 @@ If your Python enviroment has rSNAPsim.py's directory within the enviroment path
 	import rSNAPsim
 	
 	
-Otherwise when importing ssit, the current working directory will have to be where ssit.py is on your system.
+Otherwise when importing rSNAPsim, the current working directory will have to be where rSNAPsim.py is on your system.
 
 ::
 
-	import os    			   #import os
+	import os    					  #import os
 	os.getcwd()					  #print your current working directory
 	os.chdir('path to directory containing rSNAPsim.py')  #how to change your directory 
 	
@@ -45,8 +45,10 @@ Now with rSNAPsim imported, we can start a rSNAPsim instance and load a sequence
 ::
 
 
-	model = rSNAPsim.rSNAPsim()
-	model.open_seq_file('HUMINSR.gb')
+	rss = rSNAPsim.rSNAPsim()
+	rss.open_seq_file('HUMINSR.gb')
+	
+Alternatively you can pull the human insulin resceptor protein INSR from genebank
 	
 	
 
@@ -54,30 +56,82 @@ The sequence file was successfully read and stored in sequence_str
 
 ::
 
-	>>> model.sequence_str
+	>>> rss.sequence_str
 	'GGGGGGCTGCGCGGCCGGGTCGGTGCG...'
 	
+	>>> rss.sequence_name
+	'HUMINSR'
+	
 
 
-From here we can analzye this sequence using default settings or with specified settings 
+The steps to set up a protein for simulation are as follows:
 
+::
+   
+	#analyze the sequence given for open reading frames and fluorescent tags
+	
+	>>>  rss.get_orfs(rss.sequence_str)
+	
+	>>> rss.orfs
+	{'1': [(78, 4284)], '2': [(667, 979)], '3': []}
+	
+	>>>rss.starts[0]   #all the start codons in frame 1
+	array([  78,  138,  249,  330,  384,  510,  546, 1098, 1542, 1728, 1875,
+       2670, 2745, 3243, 3369, 3444, 3453, 3543, 3552, 3576, 3633, 3675,
+       3744, 3792, 3885, 3942, 3948, 3972, 4092, 4107, 4227, 4383])
+	
+Now the rss instance contains the open reading frames, from the dictionary we can see that 
+there is a protein from codon 78 to codon 4284 in frame 1 and a smaller potential protein from 667 to 979 in the 2nd frame
+
+Next step is to translate those proteins and check for fluorescent tags
 
 ::
 
-	>>> model.run_default()
-	>>> model.POI.aa_seq	
+	>>> rss.get_temporal_proteins()
+	
+	>>> rss.pois
+	
+	['MDYKDDDDKGDYKDDDDKGDYKDDDDKGGNSLIKENMRMKVVMEGSVNGHQFKCTGEGEGNPYMGTQTMRIKVIEGGPLPFAFDILATSFGGGSRTFIKYPKGIPDFFKQSFPEGFTWERVTRYEDGGVVTVMQDTSLEDGCLVYHVQVRGVNFPSNGPVMQKKTKGWEPNTEMMYPADGGLRGYTHMALKVDGGDYKDDDDKQQDYKDDDDKGQQGDYKDDDDKQQDYKDDDDKGGGHLSCSFVTTYRSKKTVGNIKMPGIHAVDHRLERLEESDNEMFVVQREHAVAKFAGLGGGGGDYKDDDDKGDYKDDDDKGDYKDDDDKGGGGSGGGGSLQMGTGGRRGAAAAPLLVAVAALLLGAAGHLYPGEVCPGMDIRNNLTRLHELENCSVIEGHLQILLMFKTRPEDFRDLSFPKLIMITDYLLLFRVYGLESLKDLFPNLTVIRGSRLFFNYALVIFEMVHLKELGLYNLMNITRGSVRIEKNNELCYLATIDWSRILDSVEDNHIVLNKDDNEECGDICPGTAKGKTNCPATVINGQFVERCWTHSHCQKVCPTICKSHGCTAEGLCCHSECLGNCSQPDDPTKCVACRNFYLDGRCVETCPPPYYHFQDWRCVNFSFCQDLHHKCKNSRRQGCHQYVIHNNKCIPECPSGYTMNSSNLLCTPCLGPCPKVCHLLEGEKTIDSVTSAQELRGCTVINGSLIINIRGGNNLAAELEANLGLIEEISGYLKIRRSYALVSLSFFRKLRLIRGETLEIGNYSFYALDNQNLRQLWDWSKHNLTTTQGKLFFHYNPKLCLSEIHKMEEVSGTKGRQERNDIALKTNGDKASCENELLKFSYIRTSFDKILLRWEPYWPPDFRDLLGFMLFYKEAPYQNVTEFDGQDACGSNSWTVVDIDPPLRSNDPKSQNHPGWLMRGLKPWTQYAIFVKTLVTFSDERRTYGAKSDIIYVQTDATNPSVPLDPISVSNSSSQIILKWKPPSDPNGNITHYLVFWERQAEDSELFELDYCLKGLKLPSRTWSPPFESEDSQKHNQSEYEDSAGECCSCPKTDSQILKELEESSFRKTFEDYLHNVVFVPRKTSSGTGAEDPRPSRKRRSLGDVGNVTVAVPTVAAFPNTSSTSVPTSPEEHRPFEKVVNKESLVISGLRHFTGYRIELQACNQDTPEERCSVAAYVSARTMPEAKADDIVGPVTHEIFENNVVHLMWQEPKEPNGLIVLYEVSYRRYGDEELHLCVSRKHFALERGCRLRGLSPGNYSVRIRATSLAGNGSWTEPTYFYVTDYLDVPSNIAKIIIGPLIFVFLFSVVIGSIYLFLRKRQPDGPLGPLYASSNPEYLSASDVFPCSVYVPDEWEVSREKITLLRELGQGSFGMVYEGNARDIIKGEAETRVAVKTVNESASLRERIEFLNEASVMKGFTCHHVVRLLGVVSKGQPTLVVMELMAHGDLKSYLRSLRPEAENNPGRPPPTLQEMIQMAAEIADGMAYLNAKKFVHRDLAARNCMVAHDFTVKIGDFGMTRDIYETDYYRKGGKGLLPVRWMAPESLKDGVFTTSSDMWSFGVVLWEITSLAEQPYQGLSNEQVLKFVMDGGYLDQPDNCPERVTDLMRMCWQFNPKMRPTFLEIVNLLKDDLHPSFPEVSFFHSEENKAPESEELEMEFEDMENVPLDRSSHCQREEAGGRDGGSSLGFKRSYEEHIPYTHMNGGKKNGRILTLPRSNPS']
+	
+The stored protein from the genbank file format was automatically tagged with a FLAG tag (DYDDDDK) since no tag was autodetected
+
+Finally we can analyze this protein
+
+::
+
+	>>> rss.analyze_poi(rss.pois[0],rss.pois_seq[0]) 
+	
+	>>> rss.POI.gene_length
+	1382
+	
+	>>> rss.POI.tag_epitopes
+	{'T_Flag': [2, 11, 20, 196, 206, 218, 228, 300, 309, 318]}
+	
+Now the POI object is filled with the information needed to run SSA simulations!
+
+For conveinece all these functions are built into run_default()
+ 
+::
+
+	>>> rss.run_default()
+	>>> rss.POI.aa_seq	
 	'MGTGGRRGAAAAPLLVAVAALLLGAAGHLYPGEVCPGMDIRNNLTRLHELENCSVIEGHLQILLMFKTRPEDFRDLSFPKLIMITDYLLLFRVYGLESLKDLFPNLTVIRGSRLFFNYALVIFEMVHLKELGLYNLMNITRGSVRIEKNNELCYLATIDWSRILDSVEDNHIVLNKDDNEECGDICPGTAKGKTNCPATVINGQFVERCWTHSHCQKVCPTICK...'
 	
-	#Lets tag the protien with a T_Flag
-	>>> model.analyze_poi(model.tag_dict['T_Flag']+model.POI.aa_seq, model.tag_full['T_Flag']+model.POI.nt_seq)
-	
-	
-
 SSA trajectories can now be run and saved from the stored protien of intrest
+
+If the users just runs a blank solver with no arguments, the rSNAPsim automatically uses the stored POI object to populate the 
+rates and propensities with default settings of 
+
+- k_elong_mean = 10
+- k_initiation = .03
+- n_traj = 100
+- tf = 1000
+- ti = 0
+
 
 ::
 	
-	>>> ssa_traj = sms1.ssa_solver()
+	>>> ssa_traj = rss.ssa_solver()
 	>>> ssa_traj.ivec
 	array([[ 0.,  0.,  0., ..., 24., 25., 27.],
        [ 0.,  0.,  0., ..., 50., 52., 53.],
@@ -86,5 +140,30 @@ SSA trajectories can now be run and saved from the stored protien of intrest
        [ 0.,  0.,  0., ..., 33., 33., 33.],
        [ 0.,  0.,  0., ..., 30., 30., 30.],
        [ 0.,  0.,  0., ..., 30., 30., 30.]])
+	   
+The ssa_solver returns an object containing all the data from the simulation
 
+* ssa_traj.all_results,  all the results from the simulation (ribosome positions per time per trajectory per max ribosomes)
+* ssa_traj.solvetime, the time it took to solve the simulation
+* ssa_traj.mean_autocorr, mean autocorrelation of fluorescence 
+* ssa_traj.error_autocorr, error of the autocorrelation
+* ssa_traj.autocorr_vec, the autocorrelation vectors
+* ssa_traj.solutions, list of solutions for each trajectory (ribosomes pos per time)
+* ssa_traj.rib_means, list of mean ribosomes per posistion
+* ssa_traj.rib_density, list of ribosome probability per codon
+* ssa_traj.k, the rates used for the simulation
+* ssa_traj.fragimes, the start time of each ribosome trajectory
+* ssa_traj.fragments, each seperate ribosome trajectory
+* ssa_traj.full_frags, the number of fully completed ribosomes (finished translation)
+* ssa_traj.ke_true, the true k_elongation rate recorded by the simulation
+* ssa_traj.ke_sim, the simulated ke from FCS autocorrelation
+* ssa_traj.dwelltime, the dwell time of each ribosome
+* ssa_traj.time, the time vector for the simulation
+* ssa_traj.collisions, recorded collisions 
+
+additionally you can choose to save the ssa object to a txt or json file. 
+
+::
+
+	ssa_traj.save_txt('data.txt')
    
