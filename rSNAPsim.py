@@ -220,11 +220,12 @@ class rSNAPsim():
 
     def __init__(self):
         self.gene_sequence_str = ''
-        self.sequence = []
+        
 
         self.tag_dict = {'T_SunTag':'EELLSKNYHLENEVARLKK',
                          'T_Flag':'DYKDDDDK',
                          'T_Hemagglutinin':'YPYDVPDYA'}
+        
         self.tag_full = {'T_Flag':('ATGGACTACAAGGACGACGACGACAAAGGTGAC'
                                    'TACAAAGATGATGACGATAAAGGCGACTATA'
                                    'AGGACGATGACGACAAGGGCGGAAACTCACTGA'
@@ -258,12 +259,12 @@ class rSNAPsim():
                                    'GATGATGATGATAAGGGAGGCGGTGGATCAGGTGGAG'
                                    'GAGGTTCACTGCAG')}
 
-        self.aakeys = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F',
+        self.aa_keys = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F',
                        'P', 'S', 'T', 'W', 'Y', 'V', '*']
 
-        self.codon_types = dict(zip(self.aakeys, np.ones((1, 21)).flatten().astype(int).tolist()))
+        self.codon_types = dict(zip(self.aa_keys, np.ones((1, 21)).flatten().astype(int).tolist()))
 
-        self.aatable = {
+        self.aa_table = {
             'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
             'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T',
             'AAC':'N', 'AAT':'N', 'AAA':'K', 'AAG':'K',
@@ -298,27 +299,27 @@ class rSNAPsim():
             'UAC':'Y', 'UAU':'Y', 'UAA':'*', 'UAG':'*',
             'UGC':'C', 'UGU':'C', 'UGA':'*', 'UGG':'W',}
 
-        self.aatable_r = {'A':['GCA', 'GCC', 'GCG', 'GCT'],
-                          'R':['CGA', 'CGC', 'CGG', 'CGT','AGG','AGA'],
-                          'N':['AAC', 'AAT'],
-                          'D':['GAC', 'GAT'],
-                          'C':['TGC', 'TGT'],
+        self.aa_table_r = {'A':['GCA', 'GCC', 'GCG', 'GCT','GCU'],
+                          'R':['CGA', 'CGC', 'CGG', 'CGT','AGG','AGA''CGU'],
+                          'N':['AAC', 'AAT','AAU'],
+                          'D':['GAC', 'GAT','GAU'],
+                          'C':['TGC', 'TGT','UGC','UGU'],
                           'Q':['CAA', 'CAG'],
                           'E':['GAA', 'GAG'],
-                          'G':['GGT', 'GGC', 'GGA', 'GGC'],
-                          'H':['CAC', 'CAT'],
-                          'I':['ATT', 'ATC', 'ATA'],
-                          'L':['CTA', 'CTC', 'CTG', 'CTT', 'TTA', 'TTG'],
+                          'G':['GGT', 'GGC', 'GGA', 'GGC','GGU'],
+                          'H':['CAC', 'CAT','CAU'],
+                          'I':['ATT', 'ATC', 'ATA','AUU','AUC','AUA'],
+                          'L':['CTA', 'CTC', 'CTG', 'CTT', 'TTA', 'TTG','CUA', 'CUC', 'CUG', 'CUU', 'UUA', 'UUG'],
                           'K':['AAA', 'AAG'],
-                          'M':['ATG'],
-                          'F':['TTC', 'TTT'],
-                          'P':['CCT', 'CCC', 'CCG', 'CCA'],
-                          'S':['TCA', 'TCC', 'TCG', 'TCT','AGC','AGT'],
-                          'T':['ACA', 'ACC', 'ACG', 'ACT'],
-                          'W':['TGG'],
-                          'Y':['TAT', 'TAC'],
-                          'V':['GTA', 'GTC', 'GTT', 'GTG'],
-                          '*':['TGA', 'TAG', 'TAA']
+                          'M':['ATG','AUG'],
+                          'F':['TTC', 'TTT','UUC','UUU'],
+                          'P':['CCT', 'CCC', 'CCG', 'CCA','CCU'],
+                          'S':['TCA', 'TCC', 'TCG', 'TCT','AGC','AGT','UCA','UCC','UCG'],
+                          'T':['ACA', 'ACC', 'ACG', 'ACT','ACU'],
+                          'W':['TGG','UGG'],
+                          'Y':['TAT', 'TAC','UAC','UAU'],
+                          'V':['GTA', 'GTC', 'GTT','GTG','GUG','GUU','GUC','GUA'],
+                          '*':['TGA', 'TAG', 'TAA','UGA','UAG','UAA']
                          }
 
 
@@ -419,9 +420,9 @@ class rSNAPsim():
         """
 
         self.fast_codons_value = []
-        for key in self.aakeys:
+        for key in self.aa_keys:
             values = []
-            codons = self.aatable_r[key]
+            codons = self.aa_table_r[key]
             for codon in codons:
                 values.append(self.strGeneCopy[codon])
 
@@ -433,9 +434,9 @@ class rSNAPsim():
 
 
         self.slow_codons_value = []
-        for key in self.aakeys:
+        for key in self.aa_keys:
             values = []
-            codons = self.aatable_r[key]
+            codons = self.aa_table_r[key]
             for codon in codons:
                 values.append(self.strGeneCopy_slow[codon])
 
@@ -467,7 +468,7 @@ class rSNAPsim():
 
         aa = ''
         for i in range(0, len(nt_seq), 3):
-            aa += self.aatable[nt_seq[i:i+3]]
+            aa += self.aa_table[nt_seq[i:i+3]]
         return aa
 
 
@@ -580,18 +581,18 @@ class rSNAPsim():
         if codon_types == None:
             codon_types = self.codon_types
         else:
-            all_natural = dict(zip(self.aakeys, np.ones((1, 20)).flatten().astype(int).tolist()))
+            all_natural = dict(zip(self.aa_keys, np.ones((1, 20)).flatten().astype(int).tolist()))
 
             if isinstance(codon_types, str):
                 if codon_types == 'rare' or codon_types == 'slow':
-                    all_natural = dict(zip(self.aakeys, np.zeros((1, 20)).flatten().astype(int).tolist()))
+                    all_natural = dict(zip(self.aa_keys, np.zeros((1, 20)).flatten().astype(int).tolist()))
                 if codon_types == 'common' or codon_types == 'fast':
-                    all_natural = dict(zip(self.aakeys, (2*np.ones((1, 20))).flatten().astype(int).tolist()))
+                    all_natural = dict(zip(self.aa_keys, (2*np.ones((1, 20))).flatten().astype(int).tolist()))
             if isinstance(codon_types, dict):
                 for key in codon_types.keys():
                     if isinstance(key, str):
                         if key.lower() not in ['rare', 'common', 'natural']:
-                            if key.upper() in self.aakeys:
+                            if key.upper() in self.aa_keys:
                                 if codon_types[key] in [0, 1, 2]:
                                     all_natural[key] = key
                                 if codon_types[key] in ['rare', 'common', 'natural']:
@@ -604,7 +605,7 @@ class rSNAPsim():
                         else:
                             newkeys = codon_types[key]
                             for newkey in newkeys:
-                                if newkey.upper() in self.aakeys:
+                                if newkey.upper() in self.aa_keys:
                                     if key.lower() == 'rare':
                                         all_natural[newkey.upper()] = 0
                                     if key.lower() == 'common':
@@ -641,10 +642,10 @@ class rSNAPsim():
 
 
 
-        for i in range(len(self.aakeys)-1):
+        for i in range(len(self.aa_keys)-1):
 
-            fs = codon_types[self.aakeys[i]]
-            indexes = [m.start() for m in re.finditer(self.aakeys[i], aa_seq)]
+            fs = codon_types[self.aa_keys[i]]
+            indexes = [m.start() for m in re.finditer(self.aa_keys[i], aa_seq)]
             for index in indexes:
 
                 if fs == 0:
@@ -915,9 +916,9 @@ class rSNAPsim():
         gene_len = len(nt_seq)/3
         aa_seq = self.nt2aa(nt_seq)
 
-        for i in range(len(self.aakeys)-1):
+        for i in range(len(self.aa_keys)-1):
 
-            codon_usage[0, i] = len(re.findall(self.aakeys[i], aa_seq))
+            codon_usage[0, i] = len(re.findall(self.aa_keys[i], aa_seq))
         codon_usage[0, 20] = len(re.findall('\*', aa_seq))
         codon_norm = codon_usage/gene_len
         codon_sensitivity = np.round(codon_norm*self.sensitivity_fast_slow, 2)

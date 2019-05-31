@@ -2509,7 +2509,7 @@ class GUI(Frame):
 
             self.aa_entries[i].config(state='normal')
             self.aa_entries[i].delete(0,tk.END)
-            self.aa_entries[i].insert(tk.END,str(self.sms.POI.aa_seq.count(self.sms.aakeys[i])))
+            self.aa_entries[i].insert(tk.END,str(self.sms.POI.aa_seq.count(self.sms.aa_keys[i])))
             self.aa_entries[i].config(state='readonly')
             self.aa_entries[i].config(readonlybackground='#FFFFFF')
 
@@ -2804,7 +2804,7 @@ class GUI(Frame):
                 'TGT','TGC','TGA','TGG','CGT','CGC','CGA','CGG','AGT','AGC','AGA','AGG','GGT','GGC','GGA','GGG']
 
 
-        aakeys = ['Phe-F','Leu-L','Ile-I','Met-M','Val-V','Ser-S','Pro-P','Thr-T','Ala-A','Tyr-Y','STOP','His-H','Gln-Q','Asn-N','Lys-K','Asp-D','Glu-E','Cys-C','STOP','Trp-W','Arg-R','Ser-S','Arg-R','Gly-G']
+        aa_keys = ['Phe-F','Leu-L','Ile-I','Met-M','Val-V','Ser-S','Pro-P','Thr-T','Ala-A','Tyr-Y','STOP','His-H','Gln-Q','Asn-N','Lys-K','Asp-D','Glu-E','Cys-C','STOP','Trp-W','Arg-R','Ser-S','Arg-R','Gly-G']
 
         sense_dict = {'Phe-F':[],'Leu-L':[],'Ile-I':[],'Met-M':[],'Val-V':[],
                           'Ser-S':[],'Pro-P':[],'Thr-T':[],'Ala-A':[],'Tyr-Y':[],'STOP':[],'His-H':[],'Gln-Q':[],'Asn-N':[],'Lys-K':[],
@@ -2812,8 +2812,8 @@ class GUI(Frame):
 
         try:
             self.sms.POI.nt_seq
-            for i in range(len(self.sms.aakeys)):
-                key = self.sms.aakeys[i]
+            for i in range(len(self.sms.aa_keys)):
+                key = self.sms.aa_keys[i]
 
 
                 if key != '*':
@@ -2857,7 +2857,7 @@ class GUI(Frame):
 
                     m +=1
                     span = aan[m]
-                    c = tk.Label(wt_frame,text =aakeys[m],bg = colorpalette[m%len(colorpalette)])
+                    c = tk.Label(wt_frame,text =aa_keys[m],bg = colorpalette[m%len(colorpalette)])
                     c.grid(row=j,column=5*i+2,rowspan = span,sticky=tk.N+tk.S+tk.W+tk.E)
 
 
@@ -2869,7 +2869,7 @@ class GUI(Frame):
                     try:
                         self.sms.POI.nt_seq
 
-                        sense_label.config(text=sense_dict[aakeys[m]][0])
+                        sense_label.config(text=sense_dict[aa_keys[m]][0])
                     except:
                         pass
 
@@ -2882,7 +2882,7 @@ class GUI(Frame):
                 if m ==0:
                     if niter ==1:
                         span = aan[m]
-                        c = tk.Label(wt_frame,text =aakeys[m],bg = colorpalette[m%len(colorpalette)])
+                        c = tk.Label(wt_frame,text =aa_keys[m],bg = colorpalette[m%len(colorpalette)])
                         c.grid(row=j,column=5*i+2,rowspan = span,sticky=tk.N+tk.S+tk.W+tk.E)
                         niter+=1
 
@@ -2892,7 +2892,7 @@ class GUI(Frame):
                         try:
                             self.sms.POI.nt_seq
 
-                            sense_label.config(text=sense_dict[aakeys[m]][0])
+                            sense_label.config(text=sense_dict[aa_keys[m]][0])
                         except:
                             pass
 
@@ -2962,7 +2962,7 @@ class GUI(Frame):
 
                     m +=1
                     span = aan[m]
-                    c = tk.Label(fast_frame,text =aakeys[m],bg = colorpalette[m%len(colorpalette)])
+                    c = tk.Label(fast_frame,text =aa_keys[m],bg = colorpalette[m%len(colorpalette)])
                     c.grid(row=j,column=4*i+2,rowspan = span,sticky=tk.N+tk.S+tk.W+tk.E)
 
                 b = tk.Label(fast_frame,text=keys[k],relief=tk.GROOVE,bg = colorpalette[m%len(colorpalette)])
@@ -2972,7 +2972,7 @@ class GUI(Frame):
                 if m ==0:
                     if niter ==1:
                         span = aan[m]
-                        c = tk.Label(fast_frame,text =aakeys[m],bg = colorpalette[m%len(colorpalette)])
+                        c = tk.Label(fast_frame,text =aa_keys[m],bg = colorpalette[m%len(colorpalette)])
                         c.grid(row=j,column=4*i+2,rowspan = span,sticky=tk.N+tk.S+tk.W+tk.E)
                         niter+=1
 
@@ -3027,7 +3027,7 @@ class GUI(Frame):
 
                     m +=1
                     span = aan[m]
-                    c = tk.Label(slo_frame,text =aakeys[m],bg = colorpalette[m%len(colorpalette)])
+                    c = tk.Label(slo_frame,text =aa_keys[m],bg = colorpalette[m%len(colorpalette)])
                     c.grid(row=j,column=4*i+2,rowspan = span,sticky=tk.N+tk.S+tk.W+tk.E)
 
                 b = tk.Label(slo_frame,text=keys[k],relief=tk.GROOVE,bg = colorpalette[m%len(colorpalette)])
@@ -3037,7 +3037,7 @@ class GUI(Frame):
                 if m ==0:
                     if niter ==1:
                         span = aan[m]
-                        c = tk.Label(slo_frame,text =aakeys[m],bg = colorpalette[m%len(colorpalette)])
+                        c = tk.Label(slo_frame,text =aa_keys[m],bg = colorpalette[m%len(colorpalette)])
                         c.grid(row=j,column=4*i+2,rowspan = span,sticky=tk.N+tk.S+tk.W+tk.E)
                         niter+=1
 
@@ -3772,7 +3772,7 @@ class GUI(Frame):
 
             self.aa_entries[i].config(state='normal')
             self.aa_entries[i].delete(0,tk.END)
-            self.aa_entries[i].insert(tk.END,str(self.sms.POI.aa_seq.count(self.sms.aakeys[i])))
+            self.aa_entries[i].insert(tk.END,str(self.sms.POI.aa_seq.count(self.sms.aa_keys[i])))
             self.aa_entries[i].config(state='readonly')
             self.aa_entries[i].config(readonlybackground='#FFFFFF')
 
@@ -5121,7 +5121,7 @@ class GUI(Frame):
         for i in range(len(self.aa_vars)):
 
             fs = self.aa_vars[i].get()
-            indexes = [m.start() for m in re.finditer(self.sms.aakeys[i],aa_seq)]
+            indexes = [m.start() for m in re.finditer(self.sms.aa_keys[i],aa_seq)]
             for index in indexes:
 
                 if fs ==2:
@@ -5260,7 +5260,7 @@ class GUI(Frame):
         for i in range(len(self.aa_vars)):
 
             fs = self.aa_vars[i].get()
-            indexes = [m.start() for m in re.finditer(self.sms.aakeys[i],aa_seq)]
+            indexes = [m.start() for m in re.finditer(self.sms.aa_keys[i],aa_seq)]
             for index in indexes:
 
                 if fs ==2:
@@ -6586,7 +6586,7 @@ class GUI(Frame):
 
             self.aa_entries[i].config(state='normal')
             self.aa_entries[i].delete(0,tk.END)
-            self.aa_entries[i].insert(tk.END,str(self.sms.POI.aa_seq.count(self.sms.aakeys[i])))
+            self.aa_entries[i].insert(tk.END,str(self.sms.POI.aa_seq.count(self.sms.aa_keys[i])))
             self.aa_entries[i].config(state='readonly')
             self.aa_entries[i].config(readonlybackground='#FFFFFF')
 
