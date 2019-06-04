@@ -234,4 +234,74 @@ Attribute                    Description
 ===========================  ========================================================================
 
 
+Plotting and Kymographs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+	import matplotlib.pyplot as plt
+	import numpy as np
+	plt.figure()
+	plt.plot(ssa_traj.intensity_vec.T, alpha=.3,color='green')  #plot all trajectories
+	
+	plt.plot(np.mean(ssa_traj.intensity_vec.T,axis=1),color='purple') #plot the mean
+	
+
+
+.. figure:: tutorial_plot1.png
+
+
+To plot a kymograph the kymograph function can be used
+
+::
+
+	#with no bg intensity
+	rss.kymograph(ssa_traj,0,color='white',bg_intense=False)
+	
+	#with bg intensity colormap
+	rss.kymograph(ssa_traj,0,color='purple')  
+	
+	
+.. figure:: tutorial_plot2.png
+
+
+.. figure:: tutorial_plot3.png
+
+
+Autocorrelation with error
+
+
+::
+	
+	#Steady State trajectories
+	ssa_traj = rss.ssa_solver(n_traj = 250, start_time = 1000, tf = 2000, tstep = 2000)
+	
+    #just the mean trajectory
+	
+	plt.plot(ssa_traj.mean_autocorr,color='b')
+	plt.plot(ssa_traj.mean_autocorr- ssa_traj.error_autocorr,color='b',ls='--')
+	plt.plot(ssa_traj.mean_autocorr+ ssa_traj.error_autocorr,color='b',ls='--')
+	plt.xlabel('time')
+	plt.ylabel('normalized autocorrelation')
+	plt.plot([0,1000],[.01,.01],color='red',ls=':')
+	
+	#With all the trajectories
+	
+	normalized_autocorr = ssa_traj.autocorr_vec.T/ ssa_traj.autocorr_vec[:,0]
+	plt.plot(normalized_autocorr,alpha=.1,color='b')		
+	plt.plot(ssa_traj.mean_autocorr,color='b')
+	plt.plot(ssa_traj.mean_autocorr- ssa_traj.error_autocorr,color='b',ls='--')
+	plt.plot(ssa_traj.mean_autocorr+ ssa_traj.error_autocorr,color='b',ls='--')
+	plt.xlabel('time')
+	plt.ylabel('normalized autocorrelation')
+	plt.plot([0,1000],[.01,.01],color='red',ls=':')
+
+.. figure:: tutorial_plot4.png
+
+.. figure:: tutorial_plot5.png
+
+	
+
+
+
 

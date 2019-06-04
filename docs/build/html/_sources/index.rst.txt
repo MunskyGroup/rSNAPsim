@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome rSNAPsim's documentation!
+rSNAPsim Documentation 
 =======================================================
 
 .. toctree::
@@ -13,6 +13,7 @@ Welcome rSNAPsim's documentation!
    Intro
    Installation 
    Tutorial
+   Analyses
    
 .. automodule:: rSNAPsim
 

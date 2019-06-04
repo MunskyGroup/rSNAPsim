@@ -1297,6 +1297,7 @@ class rSNAPsim():
             fraptime = time_inhibit
             
             inds = np.where(truetime > fraptime)
+
             inds2 = np.where(truetime  < fraptime+20)
             inds = np.intersect1d(inds,inds2)
             endfrap = inds[-1]-1
@@ -1313,10 +1314,11 @@ class rSNAPsim():
                 #adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
                 revI = self.__get_negative_intensity(traj,genelength,pv,truetime,fraptime,fraptime+20)
                 print(revI)
-                I[i, :inds[0]] = np.sum(pv[traj], axis=1)[startindex:inds[0]].T
-                I[i,inds[0]:endfrap] = 0
-                I[i,endfrap:] = np.sum(pv[traj],axis=1)[endfrap:].T
-                I[i,endfrap:len(revI)+endfrap] = I[i,endfrap:len(revI)+endfrap] + revI
+
+                I[i, :inds[0]-startindex] = np.sum(pv[traj], axis=1)[startindex:inds[0]].T
+                I[i,inds[0]-startindex:] = 0
+                I[i,endfrap-startindex:] = np.sum(pv[traj],axis=1)[endfrap-startindex:].T
+                I[i,endfrap-startindex:len(revI)+endfrap-startindex] = I[i,endfrap-startindex:len(revI)+endfrap-startindex] + revI
       
                 
                 
@@ -1505,7 +1507,7 @@ class rSNAPsim():
         ssa_obj.dwelltime = dwelltime
         ssa_obj.ke_sim = ke_sim
         ssa_obj.ke_true = float(genelength)/np.mean(ssa_obj.ribtimes)
-        ssa.probe = probePosition
+        ssa_obj.probe = probePosition
 
         return ssa_obj
 
@@ -2753,7 +2755,7 @@ class rSNAPsim():
             f.close()
 
 
-    def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True,tag = 0, show_col=True,col_size = 1.5, custom_fig = None, *args,**kwargs):
+    def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True,tag = 0, show_col=True,col_size = 1.5, custom_fig = None, facecolor='white', *args,**kwargs):
         '''
         Constructs a kymograph of ribosome locations
         '''
@@ -2794,7 +2796,7 @@ class rSNAPsim():
         lenplot = np.max(fragments)
         maxin = np.max(ivec)
         ax = plt.gca()
-        ax.set_facecolor('black')
+        ax.set_facecolor(facecolor)
 
         if bg_intense == True:
             for i in range(len(time)):
@@ -2833,9 +2835,9 @@ class rSNAPsim():
         if show_intense == True:
             plt.subplot(gs[1])
             ax = plt.gca()
-            ax.set_facecolor('black')
+            ax.set_facecolor(facecolor)
             print((np.sum(ssa_obj.probe)))
-            plt.plot(ivec.T/ np.sum(ssa_obj.probe),segtime,lw=2,color='white')
+            plt.plot(ivec.T/ np.sum(ssa_obj.probe),segtime,**kwargs)
             plt.xlabel('Intensity (ump)')
             plt.xlim(0,30)
             plt.ylim(segtime[-1], segtime[0])
