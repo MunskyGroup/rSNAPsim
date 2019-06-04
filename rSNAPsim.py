@@ -2755,6 +2755,27 @@ class rSNAPsim():
             f.close()
 
 
+
+    def tau_plot(self,ssa_obj,t,tau, plot_all = False):
+        
+        time = ssa_obj.time_rec-ssa_obj.start_time
+        
+        idx_t = (np.abs(time - t)).argmin()
+        idx_tau = (np.abs(time - tau)).argmin()
+        
+        
+        if not plot_all:
+            plt.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau] )
+            plt.ylabel(('I(t=' + str(tau)+')'))
+        else:
+           
+            for i in range(idx_t,len(time)):
+                idx_tau = (np.abs(time - (idx_t+i))).argmin()                
+                plt.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau],c= cm.viridis(1.*i/len(time)),alpha=.01  )
+                plt.ylabel('I(tau)')
+        plt.xlabel(('I(t=' + str(t)+')'))
+        
+
     def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True,tag = 0, show_col=True,col_size = 1.5, custom_fig = None, facecolor='white', *args,**kwargs):
         '''
         Constructs a kymograph of ribosome locations
