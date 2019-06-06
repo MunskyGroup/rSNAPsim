@@ -64,7 +64,7 @@ import matplotlib.animation as animation
 from matplotlib.collections import PatchCollection
 from matplotlib import cm
 from matplotlib import gridspec
-
+from matplotlib.patches import Ellipse
 #import scipy.stats.trim_mean as tmean
 
 
@@ -337,7 +337,13 @@ class rSNAPsim():
                             'GGC': 22.2, 'GTA':  7.1, 'GCA': 15.8, 'GAA': 29.0, 'GGA': 16.5,
                             'GTG': 28.1, 'GCG': 7.4, 'GAG': 39.6, 'GGG': 16.5}
 
-
+        
+        # add the U codons
+        for key in list(self.strGeneCopy.keys()):
+            if 'T' in key:
+                val = self.strGeneCopy[key]
+                newkey = key.replace('T','U')
+                self.strGeneCopy[newkey] = val
 
 
 
@@ -368,6 +374,12 @@ class rSNAPsim():
                                 }
 
 
+        for key in list(self.strGeneCopy_fast.keys()):
+            if 'T' in key:
+                val = self.strGeneCopy_fast[key]
+                newkey = key.replace('T','U')
+                self.strGeneCopy_fast[newkey] = val
+
         self.strGeneCopy_slow = {'GCT': 7.4, 'GCC': 7.4, 'GCA': 7.4, 'GCG': 7.4,  #A
                                  'CGT': 4.5, 'CGC': 4.5, 'CGA': 4.5, 'CGG': 4.5,
                                  'AGA':4.5, 'AGG':4.5,   #R
@@ -393,6 +405,12 @@ class rSNAPsim():
                                  'GTT': 7.1, 'GTC':7.1, 'GTA': 7.1, 'GTG': 7.1, # V
                                  'TAA': 0.8, 'TAG': 0.8, 'TGA': 0.8 #STOP CODON}
                                 }
+        
+        for key in list(self.strGeneCopy_slow.keys()):
+            if 'T' in key:
+                val = self.strGeneCopy_slow[key]
+                newkey = key.replace('T','U')
+                self.strGeneCopy_slow[newkey] = val
 
 
         self.fast_codons_value = [27.7, 12.2, 19.1, 25.1, 12.6, 34.2, 39.6, 22.2, 15.1,
@@ -403,11 +421,16 @@ class rSNAPsim():
         self.slow_codons_value = [7.4, 4.5, 17, 21.8, 10.6, 12.3, 29, 10.8, 10.9, 7.5, 7.2,
                                   24.4, 22, 17.6, 6.9, 4.4, 6.1, 13.2, 12.2, 7.1, .8]
 
+        fullcodonkeys = ['GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT',
+                     'ATT', 'TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
+                     'ACT', 'TGG', 'TAT', 'GTT', 'TAA',
+                     'GCU', 'CGU', 'AAU', 'GAU', 'UGU', 'CAA', 'GAA', 'GGU', 'CAU',
+                     'AUU', 'UUA', 'AAA', 'AUG', 'UUU', 'CCU', 'TCU',
+                     'ACU', 'UGG', 'UAU', 'GUU', 'UAA',                     ]
+
         codonkeys = ['GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT',
                      'ATT', 'TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
                      'ACT', 'TGG', 'TAT', 'GTT', 'TAA']
-
-
         self.sensitivity_fast_slow = []
         for i in range(len(codonkeys)):
             self.sensitivity_fast_slow.append(self.strGeneCopy_fast[codonkeys[i]] / self.strGeneCopy_slow[codonkeys[i]])
@@ -953,9 +976,12 @@ class rSNAPsim():
         '''
 
         probePositions = []
-        for n in range(len(self.POI.tag_epitopes.keys())):
+        
+        keylist = list(self.POI.tag_epitopes.keys())
+        
+        for n in range(len(keylist)):
             probePosition = []
-            key = self.POI.tag_epitopes.keys()[n]
+            key = keylist[n]
             
             probePosition = probePosition + self.POI.tag_epitopes[key]
             
@@ -972,9 +998,9 @@ class rSNAPsim():
         
         if len(probePositions) > 1:
             k = 0
-            for n in range(len(self.POI.tag_epitopes.keys())):
+            for n in range(len(keylist)):
                 pv = np.zeros((1, genelength+1)).astype(int).flatten()
-                key = self.POI.tag_epitopes.keys()[n]
+                key = keylist[n]
                 probePosition = probePositions[k] 
                 k+=1
                 if len(self.POI.tag_epitopes[key]) != 0:
@@ -986,9 +1012,9 @@ class rSNAPsim():
                         pvfull = pv
         else:
             probePosition = probePositions[0]
-            for n in range(len(self.POI.tag_epitopes.keys())):
+            for n in range(len(keylist)):
                 pv = np.zeros((1, genelength+1)).astype(int).flatten()
-                key = self.POI.tag_epitopes.keys()[n]
+                key = keylist[n]
                 if len(self.POI.tag_epitopes[key]) != 0:
                     for i in range(len(probePosition)):
                         pv[probePosition[i]:] = i+1
@@ -997,15 +1023,15 @@ class rSNAPsim():
                     else:
                         pvfull = pv
         numtags = 0
-        for key in self.POI.tag_epitopes.keys():
+        for key in keylist:
             if len(self.POI.tag_epitopes[key]) != 0:
                 numtags += 1
 
         ploc = np.zeros((numtags, self.POI.total_length+1)).astype(int)
 
         numind = 0
-        for n in range(len(self.POI.tag_epitopes.keys())):
-            key = self.POI.tag_epitopes.keys()[n]
+        for n in range(len(keylist)):
+            key = keylist[n]
             if len(self.POI.tag_epitopes[key]) != 0:
                 ploc[numind][self.POI.tag_epitopes[key]] = 1
 
@@ -2756,25 +2782,98 @@ class rSNAPsim():
 
 
 
-    def tau_plot(self,ssa_obj,t,tau, plot_all = False):
-        
-        time = ssa_obj.time_rec-ssa_obj.start_time
-        
-        idx_t = (np.abs(time - t)).argmin()
-        idx_tau = (np.abs(time - tau)).argmin()
+    def tau_plot(self,ssa_obj,t,tau,plot_type='contour', plot_all = False):
+
         
         
-        if not plot_all:
-            plt.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau] )
-            plt.ylabel(('I(t=' + str(tau)+')'))
-        else:
-           
-            for i in range(idx_t,len(time)):
-                idx_tau = (np.abs(time - (idx_t+i))).argmin()                
-                plt.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau],c= cm.viridis(1.*i/len(time)),alpha=.01  )
+        stime = ssa_obj.time_rec-ssa_obj.start_time
+        idx_t = (np.abs(stime - t)).argmin()
+        idx_tau = (np.abs(stime - tau)).argmin()
+        
+        if plot_type == 'scatter':
+            if not plot_all:
+                plt.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau] )
+                plt.ylabel(('I(t=' + str(tau)+')'))
+            else:
+               
+                for i in range(idx_t,len(stime)):
+                    idx_tau = (np.abs(stime - (idx_t+i))).argmin()                
+                    plt.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau],c= cm.viridis(1.*i/len(stime)),alpha=.01  )
+                    plt.ylabel('I(tau)')
+            plt.xlabel(('I(t=' + str(t)+')'))
+            
+        if plot_type == 'contour':
+            fig,ax= plt.subplots()
+            if not plot_all:
+                It = ssa_obj.intensity_vec[:,idx_t]
+                Itau = ssa_obj.intensity_vec[:,idx_tau]
+                
+                cov = np.cov(It,Itau)
+                
+                eigs, v = np.linalg.eig(cov)
+                eigs = np.sqrt(eigs)
+                plt.ylabel(('I(t=' + str(tau)+')'))
+                colors = [cm.viridis(1.0),cm.viridis(.5),cm.viridis(0.0),cm.viridis(0.0)]
+      
+                
+                for j in xrange(3, 0,-1):
+                   
+                    ell_artist = Ellipse(xy=(np.mean(It), np.mean(Itau)),
+                                  width=eigs[0]*j*2, height=eigs[1]*j*2,
+                                  angle=np.rad2deg(np.arccos(v[0, 0])))
+                    
+                    ell_artist.set_linewidth(2)
+                    ell_artist.set_edgecolor(colors[j-1])
+                    ell_artist.set_color(colors[j-1])
+                    ax.add_patch(ell_artist)
+                    
+                ax.autoscale()      
+                ax.set_xlim(0)
+                ax.set_ylim(0)
+                ax.scatter(It, Itau,zorder=3,alpha=0.3,color='red',marker='.')
+                fig.show()
+            else:
                 plt.ylabel('I(tau)')
-        plt.xlabel(('I(t=' + str(t)+')'))
-        
+                It = ssa_obj.intensity_vec[:,idx_t]
+                for i in range(len(stime)-idx_t,0,-10):
+                    idx_tau = (np.abs(stime - (idx_t+i))).argmin()  
+                    Itau = ssa_obj.intensity_vec[:,idx_tau]
+                   
+                    cov = np.cov(It,Itau)
+                    
+                    eigs, v = np.linalg.eig(cov)
+                    eigs = np.sqrt(eigs)
+                    
+                    
+                    j = 3
+                    ell_artist = Ellipse(xy=(np.mean(It), np.mean(Itau)),
+                                  width=eigs[0]*j*2, height=eigs[1]*j*2,
+                                  angle=np.rad2deg(np.arccos(v[0, 0])))
+                    
+                    ell_artist.set_linewidth(2)
+                    ell_artist.set_edgecolor( cm.viridis_r(1.*i/len(stime)))
+                    ell_artist.set_color( cm.viridis_r(1.*i/len(stime)))
+                    ax.autoscale()    
+                    ax.add_patch(ell_artist)
+                    ax.figure.canvas.draw()
+            
+                
+                    
+                plt.xlabel(('I(t=' + str(t)+')'))
+                ax.set_xlim(0)
+                ax.set_ylim(0)
+                c_map_ax = fig.add_axes([.95, 0.1, 0.1, 0.8])
+              
+
+                c_map_ax.axes.get_xaxis().set_visible(False)
+
+                cbar = mpl.colorbar.ColorbarBase(c_map_ax, cmap=cm.viridis_r, orientation = 'vertical')
+                
+                cbar.ax.set_yticklabels(np.linspace(idx_t,stime[-1],6).astype(int) )
+                
+                fig.show()       
+            
+    
 
     def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True,tag = 0, show_col=True,col_size = 1.5, custom_fig = None, facecolor='white', *args,**kwargs):
         '''

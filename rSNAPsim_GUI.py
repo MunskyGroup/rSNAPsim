@@ -56,7 +56,7 @@ import json, codecs
 try:
     from tkColorChooser import askcolor
 except:
-    from tkinter import colorchooser as askcolor
+    from tkinter.colorchooser import *
 from scipy.stats import norm
 
 try:
@@ -3476,15 +3476,20 @@ class GUI(Frame):
 
             self.insert_entry(self.Seq_props[5],str(self.sms.POI.total_length - self.sms.POI.gene_length))
             self.insert_entry(self.Seq_props[6],str(self.sms.POI.total_length))
+                
+            self.fill_defaults()
 
-
-
-
+    
             self.plot_sequence(self.ax,self.sms.POI.gene_length,(self.sms.POI.total_length - self.sms.POI.gene_length)
                 , self.sms.POI.total_length ,ep_pos2,tags,self.sms.POI.name)
 
             self.vis_canvas.draw()
             self.update_idletasks()
+            
+            
+            
+            
+        
 
     def flatten_alpha_for_mac(self,img):
         '''
@@ -3571,59 +3576,62 @@ class GUI(Frame):
         if '.txt' in seq:
             with open(seq) as f:
                 raw = f.readlines()
+            
+            
+            self.sequence_name = os.path.basename(seq)
+            print(self.sequence_name)
+            
+            if len(raw[0].splitlines()[0])< 50:
+                if raw[0].splitlines()[0] != '':
+                    name = raw[0].splitlines()[0]
+                    self.sequence_name = name
 
+            raw = ''.join(raw)
+           
+            print(self.sequence_name)
+            
+            self.sequence_str= ''
+            
+            
+            onlychar = re.split(r'[^A-Za-z]', raw)
+            validt = ['A', 'G', 'T', 'C']
+            validu = ['A', 'G', 'U', 'C']
+            namelen = 0
+            
+            
+            
+       
+            for i in range(len(onlychar)):
+                section = onlychar[i]
+              
+                if set(section.upper()) == set(validt):
+                    self.sequence_str += section.upper()
+                    
+                
+                elif set(section.upper()) == set(validu):
+                    self.sequence_str += section.upper()                    
+                else:
+                    pass
+                    
 
-            if len(raw)<2:
-                raw = raw[0].splitlines()
-
-
-
-            raw[0] = raw[0].replace('\n','')
-            raw[0] = raw[0].replace('>','')
-            self.sequence_name = raw[0]
-            valid = ['A','G','T','C']
-            for line in raw:
-                chars = list(''.join(set(line.upper())))
-                if set(chars) == set(valid):
-                    self.sequence_str = raw[1].upper()
-
-
-
-
-            with open(seq) as f:
-                raw = f.readlines()
+    
+            self.seq_name = self.sequence_name
+            self.seqtext = self.sequence_str
+            
+            
             self.seqdisp.config(state='normal')
             self.seqdisp.delete(0,tk.END)
-
-            if len(raw)<2:
-                raw = raw[0].splitlines()
-
-
-
-            raw[0] = raw[0].replace('\n','')
-            raw[0] = raw[0].replace('>','')
-            self.seq_name = raw[0]
-            self.seqdisp.insert(tk.END,raw[0])
+            self.seqdisp.insert(0,self.seq_name)
 
             self.seqdisp.config(state='readonly')
 
 
-
-            valid = ['A','G','T','C']
-            for line in raw:
-                chars = list(''.join(set(line.upper())))
-                if set(chars) == set(valid):
-                    self.seqtext = line.upper()
-
-
-
-            self.seqdisp.config(state='readonly')
 
 
             self.gs_text.config(state='normal')
             self.gs_text.delete(0.0,tk.END)
 
-            self.gs_text.insert(tk.END,self.seqtext.upper())
+            self.gs_text.insert(0.0,self.sequence_str)
 
             self.gs_text.config(state='disabled')
 
@@ -3733,9 +3741,11 @@ class GUI(Frame):
                 self.fullsizecodon.destroy()
             except:
                 pass
+            
+        self.fill_defaults()
 
 
-
+    def fill_defaults(self):
         #self.insert_entry(self.ss_gs_inputs[1],self.seq_name)
         if self.ss_gs_inputs[0].get() == '':
             self.ss_gs_inputs[0].insert(tk.END,'500')
@@ -3802,7 +3812,16 @@ class GUI(Frame):
             self.sensitivity_entries[i].config(readonlybackground=color)
 
 
-
+            ep_pos = ''
+            ep_pos2 = []
+            for key in self.sms.POI.tag_types:
+                ep_pos = ep_pos + str(self.sms.POI.tag_epitopes[key]) + ' '
+                ep_pos2 = ep_pos2 + self.sms.POI.tag_epitopes[key]
+                
+            tags = ''
+            for text in self.sms.POI.tag_types:
+                tags = tags + text + ' '
+            self.insert_entry(self.Seq_props[1],tags)
 
             self.plot_sequence(self.ax,self.sms.POI.gene_length,(self.sms.POI.total_length - self.sms.POI.gene_length)
                 , self.sms.POI.total_length ,ep_pos2,tags,self.sms.POI.name)
