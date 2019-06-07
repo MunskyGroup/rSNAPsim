@@ -799,6 +799,8 @@ class GUI(Frame):
 
         self.gbid_entry = tk.Entry(newseq_frame,width=30,justify=tk.RIGHT)   #GeneBank ID entry
         self.gbid_entry.grid(row=1,column=1,sticky=tk.W,padx=gpx,pady=gpy)
+        self.gbid_entry.bind('<FocusIn>',self.__bind_genbank)
+        self.gbid_entry.bind('<FocusOut>',self.__unbind_genbank)
 
 
         ginput_tt = tooltip(self.gbid_entry,text='GenBank Accession number, If you would like to poll genbank please input a valid accession number for your gene sequence')
@@ -2399,6 +2401,12 @@ class GUI(Frame):
 
         '''
 
+    def __bind_genbank(self,event):
+     
+        self.gbid_entry.bind('<Return>',self.poll_genebank)
+    def __unbind_genbank(self,event):
+        self.gbid_entry.unbind('<Return>')
+        
 
     def initstyle(self):
         ''' Initalize the custom tkinter style (rounded tabs and spacing)
@@ -3284,7 +3292,7 @@ class GUI(Frame):
         f.close()
 
 
-    def poll_genebank(self):
+    def poll_genebank(self,event=None):
         asc = self.gbid_entry.get()
 
         pollwindow = tk.Toplevel(self.parent)
