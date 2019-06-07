@@ -620,7 +620,7 @@ class GUI(Frame):
         self.stoc_Nb.add(kym_frame, text="   Kymographs   ")
         self.stoc_Nb.add(sim_frame, text="   Simulated Cell  ")
         
-
+        global_font_size = 8
 
         '''
         Previous simulation frame
@@ -633,7 +633,7 @@ class GUI(Frame):
 
 
 
-
+        
 
 
         '''
@@ -836,17 +836,17 @@ class GUI(Frame):
 
 
 
-        gbid = tk.Label(topframe,text='Simulation Time')
+        gbid = tk.Label(topframe,text='Simulation Time',font=('SystemLabelText',global_font_size))
         gbid.grid(row=1,column=7,sticky=tk.E,padx=gpx,pady=gpy,columnspan=2)
 
         gbid5_tt = tooltip(gbid,self.tooltips['Simulation Time'][0])
 
-        gbid = tk.Label(topframe,text='Repetitions')
+        gbid = tk.Label(topframe,text='Repetitions',font=('SystemLabelText',global_font_size))
         gbid.grid(row=3,column=7,sticky=tk.E,padx=gpx,pady=gpy,columnspan=2)
 
         gbid4_tt = tooltip(gbid,self.tooltips['Repetitions'][0])
 
-        gbid = tk.Label(topframe,text='Perturbation Time')
+        gbid = tk.Label(topframe,text='Perturbation Time',font=('SystemLabelText',global_font_size))
         gbid.grid(row=2,column=7,sticky=tk.E,padx=gpx,pady=gpy,columnspan=2)
 
         gbid3_tt = tooltip(gbid,self.tooltips['Perturbation Time'][0])
@@ -863,9 +863,9 @@ class GUI(Frame):
 
         #self.ss_gs_inputs = [sste,pbte,repe]
 
-        sec = tk.Label(topframe,text='sec')
+        sec = tk.Label(topframe,text='sec',font=('SystemLabelText',global_font_size))
         sec.grid(row=1,column=10,sticky=tk.W)
-        sec = tk.Label(topframe,text='sec')
+        sec = tk.Label(topframe,text='sec',font=('SystemLabelText',global_font_size))
         sec.grid(row=2,column=10,sticky=tk.W)
 
         run_ss = tk.Button(topframe,text='Run',command=self.run_ssa,font=('SystemButtonText',14))
@@ -873,26 +873,26 @@ class GUI(Frame):
 
 
 
-        gl = tk.Label(topframe,text='Burn In')
+        gl = tk.Label(topframe,text='Burn In',font=('SystemLabelText',global_font_size))
         gl.grid(row=1,column=3,sticky=tk.E,padx=gpx,pady=gpy)
 
-        gl = tk.Label(topframe,text='sec')
+        gl = tk.Label(topframe,text='sec',font=('SystemLabelText',global_font_size))
         gl.grid(row=1,column=5,sticky=tk.W,padx=gpx,pady=gpy)
 
-        gl = tk.Label(topframe,text='Exp. Elongation Rate')
+        gl = tk.Label(topframe,text='Exp. Elongation Rate',font=('SystemLabelText',global_font_size))
         gl.grid(row=2,column=3,sticky=tk.E,padx=gpx,pady=gpy)
 
         gl3_tt = tooltip(gl,self.tooltips['Exp. Elongation Rate'][0])
 
-        gl = tk.Label(topframe,text='aa/sec')
+        gl = tk.Label(topframe,text='aa/sec',font=('SystemLabelText',global_font_size))
         gl.grid(row=2,column=5,sticky=tk.W,padx=gpx,pady=gpy)
 
-        gl = tk.Label(topframe,text='Exp. Initiation Rate')
+        gl = tk.Label(topframe,text='Exp. Initiation Rate',font=('SystemLabelText',global_font_size))
         gl.grid(row=3,column=3,sticky=tk.E,padx=gpx,pady=gpy)
 
         gl4_tt = tooltip(gl,self.tooltips['Exp. Initiation Rate'][0])
 
-        gl = tk.Label(topframe,text='1/sec')
+        gl = tk.Label(topframe,text='1/sec',font=('SystemLabelText',global_font_size))
         gl.grid(row=3,column=5,sticky=tk.W,padx=gpx,pady=gpy)
 
         gl_e = tk.Entry(newseq_frame,state=tk.DISABLED,justify=tk.RIGHT)
@@ -930,10 +930,10 @@ class GUI(Frame):
         save_seq= tk.Button(newseq_frame,text='Save file', command = self.save_seq)
         save_seq.grid(row=1,column=3,columnspan=1)
 
-        select_protein = tk.Label(topframe,text='Select POI')
+        select_protein = tk.Label(topframe,text='Select POI',font=('SystemLabelText',global_font_size))
         select_protein.grid(row=1,column=0,columnspan=1)
 
-        time_res = tk.Label(topframe,text='time steps')
+        time_res = tk.Label(topframe,text='time steps',font=('SystemLabelText',global_font_size))
         time_res.grid(row=3,column=0)
 
         self.time_res_e = tk.Entry(topframe,justify=tk.RIGHT)
@@ -944,7 +944,7 @@ class GUI(Frame):
         ginput_tt = tooltip(select_protein,text='If the genbank file given has more than one protein sequence, the dropdown menu provides them by site location on the gene for user selection')
 
 
-        tag = tk.Label(topframe,text='Tag ')
+        tag = tk.Label(topframe,text='Tag ',font=('SystemLabelText',global_font_size))
         tag.grid(row=2,column=0,sticky=tk.E,padx=2,pady=2)
 
         tagtypes = ['T_Flag','T_Flag','T_Hemagglutinin','T_SunTag']           #current filetypes for dropdown
@@ -1102,13 +1102,13 @@ class GUI(Frame):
         tle.grid(row=1,column=1,padx=2,pady=2,sticky=tk.E)
         ttle.grid(row=2,column=1,padx=2,pady=2,sticky=tk.E)
 
-        cd = tk.Label(prop_frame2,text='codons',bg='#FFFFFF')
+        cd = tk.Label(prop_frame2,text='codons',font=('SystemLabelText',global_font_size),bg='#FFFFFF')
         cd.grid(row=0,column=2,padx=2,pady=2,sticky=tk.W)
 
-        cd = tk.Label(prop_frame2,text='codons',bg='#FFFFFF')
+        cd = tk.Label(prop_frame2,text='codons',font=('SystemLabelText',global_font_size),bg='#FFFFFF')
         cd.grid(row=1,column=2,padx=2,pady=2,sticky=tk.W)
 
-        cd = tk.Label(prop_frame2,text='codons',bg='#FFFFFF')
+        cd = tk.Label(prop_frame2,text='codons',font=('SystemLabelText',global_font_size),bg='#FFFFFF')
         cd.grid(row=2,column=2,padx=2,pady=2,sticky=tk.W)
 
 
@@ -1183,7 +1183,7 @@ class GUI(Frame):
 
 
 
-        poi = tk.Label(self.viewframe,text='POI = Protein of intrest',font=('SystemButtonText',8))
+        poi = tk.Label(self.viewframe,text='POI = Protein of intrest',font=('SystemLabelText',8))
         poi.grid(row=12,column=0,columnspan=2)
 
 
@@ -1310,11 +1310,11 @@ class GUI(Frame):
         self.kym_menu.grid(row=0,column=1,sticky=tk.W,pady=2,padx=2)
         self.kym_menu.config(width=20)        
         
-        kymcmaplabel = tk.Label(kyminfoframe, text = 'Intensity color map:', )
+        kymcmaplabel = tk.Label(kyminfoframe, text = 'Intensity color map:',font=('SystemLabelText',global_font_size) )
         kymcmaplabel.grid(row=0,column=0,sticky = tk.W)
         
         
-        kym_traj_color = tk.Label(kyminfoframe,text='Line color:', )
+        kym_traj_color = tk.Label(kyminfoframe,text='Line color:',font=('SystemLabelText',global_font_size) )
         kym_traj_color.grid(row=0,column=3,sticky=tk.W)
         
         self.kymlinecolor = tk.Button(kyminfoframe,text='      ',command=self.kymline_color_picker,bg='#550c7c',relief=tk.FLAT)
@@ -1322,7 +1322,7 @@ class GUI(Frame):
         self.kymlinecolor.grid(row=0,column=4,pady=2,padx=2,sticky=tk.W)
         self.kymbgcolor.grid(row=0,column=6,pady=2,padx=2,sticky=tk.W)
         
-        kymcmaplabel2 = tk.Label(kyminfoframe,text= 'Background color:',)
+        kymcmaplabel2 = tk.Label(kyminfoframe,text= 'Background color:',font=('SystemLabelText',global_font_size))
         kymcmaplabel2.grid(row=0,column=5,pady=2,padx=2,sticky=tk.W)
         
         self.kymintense = tk.BooleanVar(value=True)
@@ -1335,7 +1335,7 @@ class GUI(Frame):
         
         self.insert_entry_readable(self.traj_select,'0')
         
-        kymlabel3 = tk.Label(kyminfoframe,text='Trajectory: ')
+        kymlabel3 = tk.Label(kyminfoframe,text='Trajectory: ',font=('SystemLabelText',global_font_size))
         kymlabel3.grid(row=0,column=8,padx=2,pady=2)
         
         plot_kym = tk.Button(kyminfoframe,text='Plot',command=self.kymograph)
@@ -1431,7 +1431,7 @@ class GUI(Frame):
 
         tt_dropdown.config(width=20)
         
-        pdf_time_label = tk.Label(ss_frame,text='PDF time slice')
+        pdf_time_label = tk.Label(ss_frame,text='PDF time slice',font=('SystemLabelText',global_font_size))
         pdf_time_label.grid(row=5,column=2,sticky=tk.EW,padx=3)
         self.pdf_time_entry = tk.Entry(ss_frame,width=5)
         self.pdf_time_entry.grid(row=5,column=3,sticky=tk.EW,padx=3)
@@ -2422,7 +2422,9 @@ class GUI(Frame):
                         "map":       {"background": [("selected", '#EEEEEE')] } } ,
 
                     "TCombobox":{"padding":[5,5]},
-                    "TCombobox.Entry":{"padding":[5,5]}   }   )
+                    "TCombobox.Entry":{"padding":[5,5]} ,
+                    "TLabel":{'font':'helvetica 50',"bg":self.default_color },
+                    "TButton.Label":{"fontsize":[45]}})
 
             return style
         except:
@@ -2795,7 +2797,7 @@ class GUI(Frame):
 
     def change_trna_copys(self):
 
-
+        global_font_size=8
         try:
             self.trna_Nb.winfo_children()
             return
@@ -2884,12 +2886,12 @@ class GUI(Frame):
 
                     m +=1
                     span = aan[m]
-                    c = tk.Label(wt_frame,text =aa_keys[m],bg = colorpalette[m%len(colorpalette)])
+                    c = tk.Label(wt_frame,text =aa_keys[m],bg = colorpalette[m%len(colorpalette)],font=('SystemLabelText',global_font_size))
                     c.grid(row=j,column=5*i+2,rowspan = span,sticky=tk.N+tk.S+tk.W+tk.E)
 
 
 
-                    sense_label = tk.Label(wt_frame,text='---',relief=tk.GROOVE,bg = colorpalette[m%len(colorpalette)])
+                    sense_label = tk.Label(wt_frame,text='---',relief=tk.GROOVE,bg = colorpalette[m%len(colorpalette)],font=('SystemLabelText',global_font_size))
                     sense_label.grid(row=j,column=5*i+4,rowspan = span,sticky=tk.N+tk.S+tk.W+tk.E)
 
 
@@ -2902,18 +2904,18 @@ class GUI(Frame):
 
 
 
-                b = tk.Label(wt_frame,text=keys[k],relief=tk.GROOVE,bg = colorpalette[m%len(colorpalette)])
+                b = tk.Label(wt_frame,text=keys[k],relief=tk.GROOVE,bg = colorpalette[m%len(colorpalette)],font=('SystemLabelText',global_font_size))
                 b.grid(row=j,column=5*i+1,sticky=tk.N+tk.S+tk.W+tk.E)
 
 
                 if m ==0:
                     if niter ==1:
                         span = aan[m]
-                        c = tk.Label(wt_frame,text =aa_keys[m],bg = colorpalette[m%len(colorpalette)])
+                        c = tk.Label(wt_frame,text =aa_keys[m],bg = colorpalette[m%len(colorpalette)],font=('SystemLabelText',global_font_size))
                         c.grid(row=j,column=5*i+2,rowspan = span,sticky=tk.N+tk.S+tk.W+tk.E)
                         niter+=1
 
-                        sense_label = tk.Label(wt_frame,text='---',relief=tk.GROOVE,bg = colorpalette[m%len(colorpalette)])
+                        sense_label = tk.Label(wt_frame,text='---',relief=tk.GROOVE,bg = colorpalette[m%len(colorpalette)],font=('SystemLabelText',global_font_size))
                         sense_label.grid(row=j,column=5*i+4,rowspan = span,sticky=tk.N+tk.S+tk.W+tk.E)
 
                         try:
@@ -2924,7 +2926,7 @@ class GUI(Frame):
                             pass
 
 
-                a = tk.Entry(wt_frame,width=10,bg = colorpalette[m%len(colorpalette)])
+                a = tk.Entry(wt_frame,width=10,bg = colorpalette[m%len(colorpalette)],font=('SystemLabelText',global_font_size))
                 a.grid(row=j,column=5*i+3,sticky=tk.N+tk.S+tk.W+tk.E)
 
                 self.wt_entries.append(a)
@@ -2950,19 +2952,19 @@ class GUI(Frame):
 
         wtbuttons = tk.Frame(wt_frame,relief=tk.GROOVE)
         wtbuttons.grid(row=16,column=0,columnspan=19,sticky=tk.E)
-        wt_default = tk.Button(wtbuttons,text='Default',command=self.set_default_wt)
+        wt_default = tk.Button(wtbuttons,text='Default',command=self.set_default_wt,font=('SystemButtonText',global_font_size) )
         wt_default.grid(row=0,column=0,padx=3)
 
         self.wt_mult_entry = tk.Entry(wtbuttons,width=8)
         self.wt_mult_entry.grid(row=0,column=2)
 
-        wt_label = tk.Label(wtbuttons,text='Multiply by: ' )
+        wt_label = tk.Label(wtbuttons,text='Multiply by: ',font=('SystemButtonText',global_font_size) )
         wt_label.grid(row=0,column=1)
 
-        wt_mult = tk.Button(wtbuttons,text='Enter',command=self.wt_mult_go)
+        wt_mult = tk.Button(wtbuttons,text='Enter',command=self.wt_mult_go,font=('SystemButtonText',global_font_size))
         wt_mult.grid(row=0,column=4,padx=1)
 
-        wt_mult = tk.Button(wtbuttons,text='Update',command=self.update_tRNA_dicts)
+        wt_mult = tk.Button(wtbuttons,text='Update',command=self.update_tRNA_dicts,font=('SystemButtonText',global_font_size))
         wt_mult.grid(row=0,column=5,padx=1)
 
 
@@ -5132,7 +5134,7 @@ class GUI(Frame):
 
     def popout_ssabar(self):
 
-
+        global_font_size=8
         #self.ssa_inputs = [pbte,sste,repe,gl_e,eer_e,eir_e]    #perturb time, simtime, repetitions, experiemental rate, initiation rate
         self.newwin = tk.Toplevel(self.parent)
         self.newwin.lift()
@@ -5141,7 +5143,7 @@ class GUI(Frame):
         self.newwin.title(' ')
         newframe = tk.Frame(self.newwin)
         newframe.grid(row=0,column=0)
-        lb = tk.Label(newframe,text='Running SSA...')
+        lb = tk.Label(newframe,text='Running SSA...',font=('SystemLabelText',8))
         lb.grid(row=0,column=0,sticky=tk.W)
         self.prog = ttk.Progressbar(newframe,orient="horizontal",length=600, mode="determinate")
         self.prog.grid(row=1,column=0,columnspan=7)
@@ -5149,11 +5151,11 @@ class GUI(Frame):
         self.prog["maximum"] = int(self.ssa_inputs[2].get())
 
 
-        self.time = tk.Label(newframe,text='Time per traj: 0')
+        self.time = tk.Label(newframe,text='Time per traj: 0',font=('SystemLabelText',global_font_size))
         self.time.grid(row=0,column=3,sticky=tk.E)
-        self.nssa = tk.Label(newframe,text='Traj: 0')
+        self.nssa = tk.Label(newframe,text='Traj: 0',font=('SystemLabelText',global_font_size))
         self.nssa.grid(row=0,column=5,sticky=tk.E)
-        nssa2 = tk.Label(newframe,text=( '/' + str(int(self.ssa_inputs[2].get()))  ) )
+        nssa2 = tk.Label(newframe,text=( '/' + str(int(self.ssa_inputs[2].get()))  ),font=('SystemLabelText',global_font_size) )
         nssa2.grid(row=0,column=6,sticky=tk.W)
 
         self.newwin.focus_force()
@@ -5236,16 +5238,16 @@ class GUI(Frame):
         self.newwin.title(' ')
         newframe = tk.Frame(self.newwin)
         newframe.grid(row=0,column=0)
-        lb = tk.Label(newframe,text='Running SSA...')
+        lb = tk.Label(newframe,text='Running SSA...',font=('SystemLabelText',8))
         lb.grid(row=0,column=0,sticky=tk.W)
         self.prog = ttk.Progressbar(newframe,orient="horizontal",length=600, mode="determinate")
         self.prog.grid(row=1,column=0,columnspan=7)
         self.prog["value"] = 0
         self.prog["maximum"] = 2*int(self.elon_gs_inputs[4].get())
 
-        self.nssa = tk.Label(newframe,text='Traj: 0')
+        self.nssa = tk.Label(newframe,text='Traj: 0',font=('SystemLabelText',8))
         self.nssa.grid(row=0,column=5,sticky=tk.E)
-        nssa2 = tk.Label(newframe,text=( '/' + str(2*int(self.elon_gs_inputs[4].get()))  ) )
+        nssa2 = tk.Label(newframe,text=( '/' + str(2*int(self.elon_gs_inputs[4].get()))  ),font=('SystemLabelText',8) )
         nssa2.grid(row=0,column=6,sticky=tk.W)
 
         self.newwin.focus_force()
