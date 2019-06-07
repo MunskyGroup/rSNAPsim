@@ -895,6 +895,18 @@ class GUI(Frame):
 
         gl_e = tk.Entry(newseq_frame,state=tk.DISABLED,justify=tk.RIGHT)
         gl_e.grid(row=1,column=7,padx=3,pady=8)
+        
+        backend_entry = tk.Entry(newseq_frame,justify=tk.RIGHT,width=8)
+        backend_entry.grid(row=1,column=8,padx=3,pady=8)
+        
+        try:
+            ssa_translation.__file__
+            backend_entry.insert(0,'C++')
+            
+        except:
+            backend_entry.insert(0,'Python')
+        backend_entry.config(state='disabled')
+        
 
         burn_e = tk.Entry(topframe,justify=tk.RIGHT)
         burn_e.grid(row=1,column=4,sticky=tk.W,padx=gpx,pady=gpy)
