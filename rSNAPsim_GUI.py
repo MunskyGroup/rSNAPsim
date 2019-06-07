@@ -1319,6 +1319,8 @@ class GUI(Frame):
         self.traj_select = tk.Entry(kyminfoframe,width=10)
         self.traj_select.grid(row=0,column=9,padx=2,pady=2)
         
+        self.insert_entry_readable(self.traj_select,'0')
+        
         kymlabel3 = tk.Label(kyminfoframe,text='Trajectory: ')
         kymlabel3.grid(row=0,column=8,padx=2,pady=2)
         
@@ -1414,6 +1416,11 @@ class GUI(Frame):
         tt_dropdown.grid(row=5,column=4,sticky=tk.EW,padx=3)
 
         tt_dropdown.config(width=20)
+        
+        pdf_time_label = tk.Label(ss_frame,text='PDF time slice')
+        pdf_time_label.grid(row=5,column=2,sticky=tk.EW,padx=3)
+        self.pdf_time_entry = tk.Entry(ss_frame,width=5)
+        self.pdf_time_entry.grid(row=5,column=3,sticky=tk.EW,padx=3)
 
         self.tcplottype.trace('w',lambda name, index, mode,tcplottype= self.tcplottype: self.update_timecourse_plot(self.tcplottype))
 
@@ -3842,6 +3849,14 @@ class GUI(Frame):
         entry.insert(tk.END,text)
         entry.config(state='readonly')
 
+    def insert_entry_readable(self,entry,text):
+        '''simpler command for readonly entries
+        '''
+        entry.config(state='normal')
+        entry.delete(0,tk.END)
+        entry.insert(tk.END,text)
+       
+
     def load_data(self):
         x=1
 
@@ -5407,6 +5422,9 @@ class GUI(Frame):
 
         savebutton = tk.Button(newf,text='Plot',command= lambda j=ssaruns: self.plot_ssa_psim(j))
         savebutton.grid(row=0,column=9,padx=2,pady=2)
+        
+        savebutton = tk.Button(newf,text='Del',command= lambda j=ssaruns: self.delete_ss_data(j))
+        savebutton.grid(row=0,column=10,padx=2,pady=2)
 
 
 
@@ -5416,6 +5434,69 @@ class GUI(Frame):
 
     def save_ssa_psim(self,num):
         x=1
+        
+    def delete_ss_data(self,num):
+        
+        self.ssa = self.ssas[max(num-1,0)]
+        self.ssas.pop(num)
+        
+        
+        for child in self.psimscroll.inside_frame.winfo_children():
+            
+            child.destroy()
+        
+        
+        for k in range(len(self.ssas)):
+            
+            
+            if k %2 == 1:
+                bgc = self.default_color
+            else:
+                bgc = '#DDDDDD'
+            newf = tk.Frame(self.psimscroll.inside_frame,bg=bgc)
+            newf.pack(fill='x',side='top',expand=True)
+            ssalabel = tk.Label(newf,text=('ssa ' + str(k+1)),bg=bgc,width=4)
+            ssalabel.grid(row=0,column=0,padx=2,pady=2)
+            numlabel = tk.Label(newf,text=(str(self.ssas[k].n_traj) + ' traj '),bg=bgc,width=4)
+            numlabel.grid(row=0,column=1,padx=2,pady=2)
+            nameentry = tk.Entry(newf,width=12)
+            nameentry.grid(row=0,column=7,padx=2,pady=2)
+            nameentry.insert(tk.END,('ssa' + str(k+1)))
+    
+            timelabel = tk.Label(newf,bg=bgc,text=('time ' + str(self.ssa.time_vec_fixed[0]) + ' --> ' + str(self.ssas[k].time_vec_fixed[-1]) + '  ' + str(len(self.ssas[k].time_vec_fixed)   ) + ' steps'),width=25 )
+            timelabel.grid(row=0,column=2,padx=2,pady=2)
+            harr = 'X'
+            if self.ssas[k].evaluating_inhibitor == True:
+                harr = '✓'
+    
+            harrlabel = tk.Label(newf, text=('Harr: ' + harr ),bg=bgc,width=6)
+            harrlabel.grid(row=0,column=4,padx=2,pady=2)
+    
+    
+            harr = 'X'
+            if self.ssas[k].evaluating_frap == True:
+                harr = '✓'
+    
+            harrlabel = tk.Label(newf, text=('FRAP: ' + harr ),bg=bgc,width=6)
+            harrlabel.grid(row=0,column=5,padx=2,pady=2)
+    
+    
+            if self.ssas[k].start_time == self.ssas[k].time_vec_fixed[0]:
+                ss = 'False'
+            else:
+                ss = 'True'
+    
+            starttimelabel = tk.Label(newf,text=('start time: ' + str(self.ssas[k].start_time) + '     steady state: ' + ss + '  Sim time: ' + str(self.ssas[k].solvetime)),bg=bgc,width=40)
+            starttimelabel.grid(row=0,column=3,padx=2,pady=2)
+    
+            savebutton = tk.Button(newf,text='Save',command=lambda j=k: self.save_ss_data(j))
+            savebutton.grid(row=0,column=8,padx=2,pady=2)
+    
+            savebutton = tk.Button(newf,text='Plot',command= lambda j=k: self.plot_ssa_psim(j))
+            savebutton.grid(row=0,column=9,padx=2,pady=2)
+            
+            savebutton = tk.Button(newf,text='Del',command= lambda j=k: self.delete_ss_data(j))
+            savebutton.grid(row=0,column=10,padx=2,pady=2)
 
     def plot_ssa_psim(self,num):
 
@@ -5748,34 +5829,73 @@ class GUI(Frame):
         ax.set_ylabel('Intensity (a.u.)')
 
 
+    def __is_number(self, string):
+        '''
+        Is this string a number?
+        '''
+        try:
+            complex(string)
+        except ValueError:
+            return False
+        return True
+    
+    
+    def __get_closest_val(self,value,array):
+       
+        idx = (np.abs(array - value)).argmin()
+        return idx
+
+
     def plot_ssa_pdf(self,ax,i_vec):
         ax.cla()
         nbins = int(np.max(i_vec))
 
+        stime = self.ssa.time_rec-self.ssa.start_time
+        
+        timeslice = self.pdf_time_entry.get()
+        
+        if self.__is_number(timeslice):
+            idx = self.__get_closest_val(int(timeslice),stime)
+            ivec_slice = i_vec.T[idx]
+        else:
+            ivec_slice = i_vec
 
+        argmin = int(np.min(np.floor(ivec_slice/len(self.ssa.probe))))
+        argmax = int(np.max(np.ceil(ivec_slice/len(self.ssa.probe))))
 
+        histdata = np.histogram(ivec_slice/len(self.ssa.probe), bins = np.linspace(argmin,argmax, argmax+1).astype(int))
 
-        hist = np.histogram(i_vec,bins=int(np.max(i_vec) / len(self.ssa.probe)))
-
-
-
+   
+     
+        '''
         ax.axis([0,np.max(i_vec)+5,0,np.max(hist[0])+5] )
         ticks = np.linspace(0,np.max(i_vec)+5 ,6).astype(int)
         yticks = np.linspace(0,np.max(hist[0])+5,4).astype(int)
         ax.set_xticks(ticks)
         ax.set_yticks(yticks)
-
-
-        ax.bar(hist[1][:-1],hist[0],color=self.main_color,width=len(self.ssa.probe))
-        ivect = i_vec.T
         '''
-        for i in range(0,i_vec.shape[1]):
+
+
+        ax.bar(histdata[1][:-1],histdata[0],color=self.main_color,width=.96)
+        
+        maxhist = np.sum(histdata[0])
+        ticks = ax.get_yticks()
+        p_ticks = []
+        for tick in ticks:
+            val = float(tick)
+            p_ticks.append(str(np.round(val/maxhist,2)))
+            
+        
+        ax.set_yticklabels(p_ticks)
+        
+        '''
+        for i in range(0,i_vec.shape[1])
             nbins = int(np.max(ivect))
             ax.hist(ivect[i],bins = nbins,alpha=.5,color=self.main_color,histtype='step',fill=self.main_color)
         '''
 
-        ax.set_xlabel('intensity (a.u.)')
-        ax.set_ylabel('count ')
+        ax.set_xlabel('intensity (ump)')
+        ax.set_ylabel('Probability ')
 
 
     def plot_ssa_acc_codon(self,ax,mean_acc,error_acc,color=None,name=None):
