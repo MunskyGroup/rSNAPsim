@@ -620,7 +620,7 @@ class GUI(Frame):
         self.stoc_Nb.add(kym_frame, text="   Kymographs   ")
         self.stoc_Nb.add(sim_frame, text="   Simulated Cell  ")
         
-        global_font_size = 8
+        global_font_size = 9
 
         '''
         Previous simulation frame
@@ -628,7 +628,7 @@ class GUI(Frame):
         self.psimscroll = ScrollingFrame(runsims_frame,height=100)
         self.psimscroll.pack(anchor=tk.NW,expand=True,fill='both',side=tk.LEFT)
 
-        loadbutton = tk.Button(runsims_frame,text='Load',command= self.load_ss_data)
+        loadbutton = tk.Button(runsims_frame,text='Load',command= self.load_ss_data,font=('SystemButtonText',global_font_size))
         loadbutton.pack(side=tk.LEFT)
 
 
@@ -723,7 +723,7 @@ class GUI(Frame):
                 mo = ['WT','Common','Rare']
                 for text,mode in aa_options:
 
-                    b = tk.Radiobutton(rbframe,text=mo[m],variable=v,value=mode,indicatoron=1,bg=cc)
+                    b = tk.Radiobutton(rbframe,text=mo[m],variable=v,value=mode,indicatoron=1,bg=cc,font=('SystemButtonText',global_font_size))
                     m+=1
                     b.grid(row=5+k,column=2+j,pady=0)
                     j+=1
@@ -753,7 +753,7 @@ class GUI(Frame):
                 m = 0
                 mo = ['WT','Common','Rare']
                 for text,mode in aa_options:
-                    b = tk.Radiobutton(rbframe,text=mo[m],variable=v,value=mode,indicatoron=1,bg=cc)
+                    b = tk.Radiobutton(rbframe,text=mo[m],variable=v,value=mode,indicatoron=1,bg=cc,font=('SystemButtonText',global_font_size))
                     m+=1
                     b.grid(row=5+(k),column=2+j,pady=0)
                     j+=1
@@ -766,20 +766,20 @@ class GUI(Frame):
         #l = tk.Label(outside_codon_frame_bottom,text='* Sensitivity of the codon manipulation can vary between 0 and 1, where 1 is the most sensitive amino acid for manipulation',font=('SystemButtonText',8,))
         #l.grid(row=0,column=0,columnspan=8)
 
-        allnatural = tk.Button(rightcodonframe,text='All Wild Type Codons',command=self.set_natural_codons)
+        allnatural = tk.Button(rightcodonframe,text='All Wild Type Codons',command=self.set_natural_codons,font=('SystemButtonText',global_font_size))
         allnatural.grid(row=0,column=1,columnspan=3,pady=gpy,padx=gpx)
 
-        allcommon = tk.Button(rightcodonframe,text='All Common Codons',command=self.set_common_codons)
+        allcommon = tk.Button(rightcodonframe,text='All Common Codons',command=self.set_common_codons,font=('SystemButtonText',global_font_size))
         allcommon.grid(row=1,column=1,columnspan=4,pady=gpy,padx=gpx)
 
-        allrare = tk.Button(rightcodonframe,text='All Rare Codons',command=self.set_rare_codons)
+        allrare = tk.Button(rightcodonframe,text='All Rare Codons',command=self.set_rare_codons,font=('SystemButtonText',global_font_size))
         allrare.grid(row=2,column=1,columnspan=4,pady=gpy,padx=gpx)
 
 
-        fullsizecodon = tk.Button(rightcodonframe,text= 'Full size Codon editor',command=self.fullsize_codon_popout)
+        fullsizecodon = tk.Button(rightcodonframe,text= 'Full size Codon editor',command=self.fullsize_codon_popout,font=('SystemButtonText',global_font_size))
         fullsizecodon.grid(row=1,column=0,pady=gpy,padx=gpx)
 
-        edittrna = tk.Button(rightcodonframe,text='Edit tRNA Abundance',command=self.change_trna_copys)
+        edittrna = tk.Button(rightcodonframe,text='Edit tRNA Abundance',command=self.change_trna_copys,font=('SystemButtonText',global_font_size))
         edittrna.grid(row=0,column=0,pady=gpy,padx=gpx)
 
 
@@ -788,7 +788,7 @@ class GUI(Frame):
         gpy = 2
         #gs_input_l = tk.Label(newseq_frame,text='Gene Sequence Input',font=('SystemButtonText',13,'bold'),bg='#888888',fg='#FFFFFF')
         #gs_input_l.grid(row=0,column=0,columnspan=12,sticky=tk.W+tk.E+tk.N+tk.S)
-        gbid_label = tk.Label(newseq_frame,text='GenBank ID')
+        gbid_label = tk.Label(newseq_frame,text='GenBank ID',font=('SystemLabelText',global_font_size))
         gbid_label.grid(row=1,column=0,sticky=tk.E)
 
         gbid_tt = tooltip(gbid_label,text='GenBank Accession number, If you would like to poll genbank please input a valid accession number for your gene sequence',wraplength=200)
@@ -806,7 +806,7 @@ class GUI(Frame):
         ginput_tt = tooltip(self.gbid_entry,text='GenBank Accession number, If you would like to poll genbank please input a valid accession number for your gene sequence')
 
 
-        pullasc = tk.Button(newseq_frame,text='Pull',command=self.poll_genebank)
+        pullasc = tk.Button(newseq_frame,text='Pull',command=self.poll_genebank,font=('SystemButtonText',global_font_size))
         pullasc.grid(row=1,column=2,sticky=tk.W,padx=gpx,pady=gpy,rowspan=2)
 
         self.H2B = tk.IntVar(value=0)  #checkbutton for H2B variable
@@ -816,7 +816,7 @@ class GUI(Frame):
         orl = tk.Label(newseq_frame,text='     OR     ',font=('SystemButtonText',14,'bold'))
         orl.grid(row=1,column=4,padx=gpx,pady=gpy,rowspan=2)
 
-        seqbutton = tk.Button(newseq_frame,text='Select File Sequence',command=self.open_seq_file)
+        seqbutton = tk.Button(newseq_frame,text='Select File Sequence',command=self.open_seq_file,font=('SystemButtonText',global_font_size))
         seqbutton.grid(row=1,column=5,padx=gpx,pady=gpy,rowspan=2)
 
         seqbutton_tt = tooltip(seqbutton,self.tooltips['Select File Sequence'][0])
@@ -927,7 +927,7 @@ class GUI(Frame):
         #topframe.grid_columnconfigure(9,weight=2)
 
 
-        save_seq= tk.Button(newseq_frame,text='Save file', command = self.save_seq)
+        save_seq= tk.Button(newseq_frame,text='Save file', command = self.save_seq,font=('SystemButtonText',global_font_size))
         save_seq.grid(row=1,column=3,columnspan=1)
 
         select_protein = tk.Label(topframe,text='Select POI',font=('SystemLabelText',global_font_size))
@@ -968,9 +968,9 @@ class GUI(Frame):
 
         perturbs = [("None","none"),("FRAP","frap"),("Harringtonine","harr")]
         self.perturb = tk.StringVar(value="none")
-        nonebutton = tk.Radiobutton(topframe,text='No Perturbation',value="none",variable=self.perturb)
-        frapbutton = tk.Radiobutton(topframe,text='FRAP',value="frap",variable=self.perturb)
-        harrbutton = tk.Radiobutton(topframe,text='Harringtonine',value="harr",variable=self.perturb)
+        nonebutton = tk.Radiobutton(topframe,text='No Perturbation',value="none",variable=self.perturb,font=('SystemButtonText',global_font_size))
+        frapbutton = tk.Radiobutton(topframe,text='FRAP',value="frap",variable=self.perturb,font=('SystemButtonText',global_font_size))
+        harrbutton = tk.Radiobutton(topframe,text='Harringtonine',value="harr",variable=self.perturb,font=('SystemButtonText',global_font_size))
 
         nonebutton.grid(row=1,column=12,sticky=tk.W,padx=4)
         frapbutton.grid(row=2,column=12,sticky=tk.W,padx=4)
@@ -1124,17 +1124,17 @@ class GUI(Frame):
         self.Seq_props = [gne,tte,nee,epe,gle,tle,ttle]
 
 
-        veiwframeshow = tk.Button(seq_frame,text='View Sequence',command=self.view_sequence_newwin)
+        veiwframeshow = tk.Button(seq_frame,text='View Sequence',command=self.view_sequence_newwin,font=('SystemButtonText',global_font_size))
         veiwframeshow.grid(row=6, column=9, padx=2)
 
-        plotseq = tk.Button(seq_frame,text='Sequence Map',command=self.seqmap)
+        plotseq = tk.Button(seq_frame,text='Sequence Map',command=self.seqmap,font=('SystemButtonText',global_font_size))
         plotseq.grid(row=7,column=9,padx=2)
 
         #Text entry for the ATA... nucleotide sequence
         self.textframe = tk.Frame()
         self.viewframe = tk.Frame()
 
-        colorize = tk.Button(self.textframe,text='Colorize',command=self.color_text)
+        colorize = tk.Button(self.textframe,text='Colorize',command=self.color_text,font=('SystemButtonText',global_font_size))
         colorize.grid(row=6,column=8)
 
         colorize_tt = tooltip(colorize,text='Color the sequence display by G, C, T, and A')
@@ -1327,7 +1327,7 @@ class GUI(Frame):
         
         self.kymintense = tk.BooleanVar(value=True)
         
-        intensity_on = tk.Checkbutton(kyminfoframe,text='Show Intensity', var =self.kymintense )
+        intensity_on = tk.Checkbutton(kyminfoframe,text='Show Intensity', var =self.kymintense,font=('SystemButtonText',global_font_size) )
         intensity_on.grid(row=0,column=7,padx=2,pady=2,sticky=tk.W)
 
         self.traj_select = tk.Entry(kyminfoframe,width=10)
@@ -1338,7 +1338,7 @@ class GUI(Frame):
         kymlabel3 = tk.Label(kyminfoframe,text='Trajectory: ',font=('SystemLabelText',global_font_size))
         kymlabel3.grid(row=0,column=8,padx=2,pady=2)
         
-        plot_kym = tk.Button(kyminfoframe,text='Plot',command=self.kymograph)
+        plot_kym = tk.Button(kyminfoframe,text='Plot',command=self.kymograph,font=('SystemButtonText',global_font_size))
         plot_kym.grid(row=0,column=10,padx=2,pady=2)
                 
         
@@ -1420,12 +1420,14 @@ class GUI(Frame):
 
         timecourse_tt = tooltip(timecourse,self.tooltips['Time Courses'][0])
 
-        seqpop = tk.Button(tccframe,image=photo1,command=self.popout_fig_ssa) #button for expanding out the sequence plot
+        seqpop = tk.Button(tccframe,image=photo1,command=self.popout_fig_ssa,font=('SystemButtonText',global_font_size)) #button for expanding out the sequence plot
         seqpop.grid(row=0,column=1,columnspan=1,sticky=tk.W)
         seqpop.image = photo1 #keep photo alive
 
         self.tcplottype = tk.StringVar(value='All')
         tt_dropdown = tk.OptionMenu(ss_frame,self.tcplottype,"All","Average Time Course","PDF")
+        tt_dropdown.config(font=('SystemButtonText',global_font_size))
+        tt_dropdown['menu'].config(font=('SystemButtonText',global_font_size))
 
         tt_dropdown.grid(row=5,column=4,sticky=tk.EW,padx=3)
 
@@ -1498,13 +1500,13 @@ class GUI(Frame):
 
 
 
-        play = tk.Button(simbuttonframe,image=photo2,command=self.play_sim)  #play button
+        play = tk.Button(simbuttonframe,image=photo2,command=self.play_sim,font=('SystemButtonText',global_font_size))  #play button
         play.grid(row=1,column=5,sticky=tk.NW,pady=2,padx=gpx)
         play.image=photo2  #be sure to keep the object handle alive so its not garbage collected
         
         photo3 = self.icondict['pause']
         #photo2 = tk.PhotoImage(file=os.path.join("icons","pause.gif"))
-        pause = tk.Button(simbuttonframe,image=photo3,command=self.pause_sim)
+        pause = tk.Button(simbuttonframe,image=photo3,command=self.pause_sim,font=('SystemButtonText',global_font_size))
         pause.grid(row=1,column=6,sticky=tk.NW,pady=2,padx=gpx)
         pause.image=photo3  #be sure to keep the object handle alive so its not garbage collected
         try:
@@ -1593,8 +1595,8 @@ class GUI(Frame):
         rnacl = tk.Label(frame2,text='RNA color',fg='#FFFFFF',bg='#000000')
         fluorcl = tk.Label(frame2,text='Tag color',fg='#FFFFFF',bg='#000000')
 
-        self.rnacb = tk.Button(frame2,text='      ',command=self.rna_color_picker,bg='#ff0000',relief=tk.FLAT)
-        self.fluorcb = tk.Button(frame2,text='      ',command=self.fluor_color_picker,bg='#00ff00',relief=tk.FLAT)
+        self.rnacb = tk.Button(frame2,text='      ',command=self.rna_color_picker,bg='#ff0000',relief=tk.FLAT,font=('SystemButtonText',global_font_size))
+        self.fluorcb = tk.Button(frame2,text='      ',command=self.fluor_color_picker,bg='#00ff00',relief=tk.FLAT,font=('SystemButtonText',global_font_size))
         self.rnacb.grid(row=1,column=4,pady=2,padx=2,sticky=tk.E)
         self.fluorcb.grid(row=2,column=4,pady=2,padx=2,sticky=tk.E)
         rnacl.grid(row=1,column=3,sticky=tk.W,pady=2,padx=2)
@@ -1639,7 +1641,7 @@ class GUI(Frame):
         self.expected_rna.grid(row=8,column=0,columnspan=3,sticky=tk.E)
 
 
-        runsim = tk.Button(dialogframe,text='RUN',command=self.gui_sim_cell)
+        runsim = tk.Button(dialogframe,text='RUN',command=self.gui_sim_cell,font=('SystemButtonText',global_font_size))
         runsim.grid(row=8,column=3,columnspan=2,sticky=tk.E)
 
         try:
@@ -2693,17 +2695,17 @@ class GUI(Frame):
 
                 e.config(readonlybackground=color)
                 #self.sensitivity_entries.append(e)
-
+        global_font_size= 8
         l = tk.Label(rbframe,text='* Sensitivity of the codon manipulation can vary between 0 and 1, where 1 is the most sensitive amino acid for manipulation',font=('SystemButtonText',8,))
         l.grid(row=16,column=0,columnspan=15)
 
-        allnatural = tk.Button(codon_frame,text='All Wild Type Codons',command=self.set_natural_codons)
+        allnatural = tk.Button(codon_frame,text='All Wild Type Codons',command=self.set_natural_codons,font=('SystemButtonText',global_font_size))
         allnatural.grid(row=6,column=0,columnspan=3,pady=gpy,padx=gpx)
 
-        allcommon = tk.Button(codon_frame,text='All Common Codons',command=self.set_common_codons)
+        allcommon = tk.Button(codon_frame,text='All Common Codons',command=self.set_common_codons,font=('SystemButtonText',global_font_size))
         allcommon.grid(row=6,column=3,columnspan=4,pady=gpy,padx=gpx)
 
-        allrare = tk.Button(codon_frame,text='All Rare Codons',command=self.set_rare_codons)
+        allrare = tk.Button(codon_frame,text='All Rare Codons',command=self.set_rare_codons,font=('SystemButtonText',global_font_size))
         allrare.grid(row=6,column=7,columnspan=4,pady=gpy,padx=gpx)
 
 
@@ -2737,7 +2739,7 @@ class GUI(Frame):
             pass
 
 
-        colorize = tk.Button(self.textframe,text='Colorize',command=self.color_text)
+        colorize = tk.Button(self.textframe,text='Colorize',command=self.color_text,font=('SystemButtonText',global_font_size))
         colorize.pack()
 
         colorize_tt = tooltip(colorize,text='Color the sequence display by G, C, T, and A')
@@ -5439,13 +5441,13 @@ class GUI(Frame):
         starttimelabel = tk.Label(newf,text=('start time: ' + str(self.ssa.start_time) + '     steady state: ' + ss + '  Sim time: ' + str(self.ssa.solvetime)),bg=bgc,width=40)
         starttimelabel.grid(row=0,column=3,padx=2,pady=2)
 
-        savebutton = tk.Button(newf,text='Save',command=lambda j=ssaruns: self.save_ss_data(j))
+        savebutton = tk.Button(newf,text='Save',command=lambda j=ssaruns: self.save_ss_data(j),font=('SystemButtonText',8))
         savebutton.grid(row=0,column=8,padx=2,pady=2)
 
-        savebutton = tk.Button(newf,text='Plot',command= lambda j=ssaruns: self.plot_ssa_psim(j))
+        savebutton = tk.Button(newf,text='Plot',command= lambda j=ssaruns: self.plot_ssa_psim(j),font=('SystemButtonText',8))
         savebutton.grid(row=0,column=9,padx=2,pady=2)
         
-        savebutton = tk.Button(newf,text='Del',command= lambda j=ssaruns: self.delete_ss_data(j))
+        savebutton = tk.Button(newf,text='Del',command= lambda j=ssaruns: self.delete_ss_data(j),font=('SystemButtonText',8))
         savebutton.grid(row=0,column=10,padx=2,pady=2)
 
 
@@ -5511,13 +5513,13 @@ class GUI(Frame):
             starttimelabel = tk.Label(newf,text=('start time: ' + str(self.ssas[k].start_time) + '     steady state: ' + ss + '  Sim time: ' + str(self.ssas[k].solvetime)),bg=bgc,width=40)
             starttimelabel.grid(row=0,column=3,padx=2,pady=2)
     
-            savebutton = tk.Button(newf,text='Save',command=lambda j=k: self.save_ss_data(j))
+            savebutton = tk.Button(newf,text='Save',command=lambda j=k: self.save_ss_data(j),font=('SystemButtonText',8))
             savebutton.grid(row=0,column=8,padx=2,pady=2)
     
-            savebutton = tk.Button(newf,text='Plot',command= lambda j=k: self.plot_ssa_psim(j))
+            savebutton = tk.Button(newf,text='Plot',command= lambda j=k: self.plot_ssa_psim(j),font=('SystemButtonText',8))
             savebutton.grid(row=0,column=9,padx=2,pady=2)
             
-            savebutton = tk.Button(newf,text='Del',command= lambda j=k: self.delete_ss_data(j))
+            savebutton = tk.Button(newf,text='Del',command= lambda j=k: self.delete_ss_data(j),font=('SystemButtonText',8))
             savebutton.grid(row=0,column=10,padx=2,pady=2)
 
     def plot_ssa_psim(self,num):
