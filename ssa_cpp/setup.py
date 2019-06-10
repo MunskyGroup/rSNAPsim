@@ -18,7 +18,7 @@ cythonize('*.pyx', language='c++')
 
 if os.name == 'nt':
 
-    setup(name='SSA',ext_modules=[Extension('ssa_translation', sources, language='c++',include_dirs = ['/usr/local/include','/Library/Developer/CommandLineTools/usr/bin','/anaconda/lib/python3.6/site-packages/numpy/core/include','/anaconda/lib/python2.7/site-packages/numpy/core/include',np.get_include(),os.getcwd()])],cmdclass = {'build_ext': build_ext})
+    setup(name='SSA',ext_modules=[Extension('ssa_translation', sources, language='c++',include_dirs = ['/usr/local/include','/Library/Developer/CommandLineTools/usr/bin','/anaconda/lib/python3.6/site-packages/numpy/core/include','/anaconda/lib/python2.7/site-packages/numpy/core/include','/anaconda/lib/python3.6/site-packages/numpy/core/include',np.get_include(),'.',os.getcwd()])],cmdclass = {'build_ext': build_ext})
 else:
     setup(name='SSA',ext_modules=cythonize([Extension('ssa_translation', sources,language='c++',extra_compile_args=[    "-stdlib=libc++"],    include_dirs = ['usr/include','/usr/local/include','/Library/Developer/CommandLineTools/usr/bin','/anaconda/lib/python3.6/site-packages/numpy/core/include'])]),cmdclass = {'build_ext': build_ext})
 

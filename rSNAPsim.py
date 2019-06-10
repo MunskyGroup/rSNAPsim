@@ -1135,6 +1135,8 @@ class rSNAPsim():
         
         time_vec_fixed = np.linspace(0, npoints-1, npoints, dtype=np.float64)
         truetime = np.linspace(0, tf, tstep, dtype=np.float64)
+        
+        print(truetime[0],truetime[-1])
 
         rib_vec = []
 
@@ -1187,7 +1189,7 @@ class rSNAPsim():
                 nribs = np.array([0],dtype=np.int32)
                 
                 ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-                
+                #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
                 all_results[i, :] = result
                 all_frapresults[i,:] = frapresult
                 all_ribtimes[i,:] = ribtimes
@@ -1321,13 +1323,15 @@ class rSNAPsim():
         
         else:
             fraptime = time_inhibit
+         
             
             inds = np.where(truetime > fraptime)
 
             inds2 = np.where(truetime  < fraptime+20)
             inds = np.intersect1d(inds,inds2)
             endfrap = inds[-1]-1
-         
+            
+
             
             for i in range(n_traj):
     
@@ -1338,13 +1342,23 @@ class rSNAPsim():
                 #ribloc = solutionssave[i][:,endfrap]
                 
                 #adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
-                revI = self.__get_negative_intensity(traj,genelength,pv,truetime,fraptime,fraptime+20)
-                print(revI)
+                frap_app = 20
+                print(fraptime+start_time)
+                print(fraptime+start_time+frap_app)
+                print(len(traj))
+                print(genelength)
+                print(truetime.shape)
+                revI = self.get_negative_intensity(traj,genelength,pv,truetime,fraptime+start_time,fraptime+start_time+frap_app)
+                
 
-                I[i, :inds[0]-startindex] = np.sum(pv[traj], axis=1)[startindex:inds[0]].T
-                I[i,inds[0]-startindex:] = 0
-                I[i,endfrap-startindex:] = np.sum(pv[traj],axis=1)[endfrap-startindex:].T
-                I[i,endfrap-startindex:len(revI)+endfrap-startindex] = I[i,endfrap-startindex:len(revI)+endfrap-startindex] + revI
+                I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
+                             
+                I[i,inds[0]:inds[0]+20] = 0
+                #I[i,endfrap-startindex:] = np.sum(pv[traj],axis=1)[endfrap-startindex:].T
+
+                I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] = I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] + revI
+                
+                print(np.min(I))
       
                 
                 
@@ -1538,7 +1552,7 @@ class rSNAPsim():
         return ssa_obj
 
 
-    def __get_negative_intensity(self,solution,gene_length,pv,tvec,ti,stop_frap):
+    def get_negative_intensity(self,solution,gene_length,pv,tvec,ti,stop_frap):
         
         startindex = np.where(tvec >= ti)[0][0]
         stop_frap = np.where(tvec >= stop_frap)[0][0]
@@ -1666,6 +1680,8 @@ class rSNAPsim():
             
         affected_frags = []
         fragindexes = []
+        
+        
         for i in range(len(fragtimes)):
         
            if  np.sum([fragtimes[i]> np.array([startindex, stop_frap]), endfragtimes[i] > np.array([startindex, stop_frap])]) in [1,2,3]:
@@ -1683,7 +1699,7 @@ class rSNAPsim():
             
             relevantfrags = np.array(affected_frags)[np.where(frange > 0 )]
             if len(relevantfrags) > 0:
-                cooked_ribs = (len(affected_frags) - len(relevantfrags))*max(pv)
+                cooked_ribs = 0#(len(affected_frags) - len(relevantfrags))*max(pv)
       
                 stopfrapindex = stop_frap - afterfrapribs[:,0]
                 
@@ -1704,7 +1720,7 @@ class rSNAPsim():
                 trailing_intensity = np.array([0])
         else:
             trailing_intensity = np.array([0])
-            
+        
         return trailing_intensity
 
 

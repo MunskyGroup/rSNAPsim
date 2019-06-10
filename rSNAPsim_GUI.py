@@ -4,12 +4,34 @@ Created on Fri Jul 06 13:40:30 2018
 
 @author: William
 """
+
+import os
+import sys
+os.chdir('ssa_cpp')
+print(os.getcwd())
+print(os.listdir(os.getcwd()))
+
+
+
+import ssa_translation
+
+try:
+
+
+    import ssa_translation
+
+except:
+    pass
+os.chdir('..')
+
 import re                         #import regex
 import matplotlib                 #matplotlib
 #matplotlib.use("TkAgg")          #switch backends for matplotlib for tkinter
 
 
 
+
+'''
 try:
    # sys.path.append('C:\\Users\\wsraymon\\Github\\ssa_cpp\\translation_ssa')
 
@@ -27,21 +49,11 @@ except:
 
     pass
 
-
+'''
 import rSNAPsim
 
 
-import os
 
-os.chdir('ssa_cpp')
-try:
-
-
-    import ssa_translation
-
-except:
-    pass
-os.chdir('..')
 
 
 import platform
@@ -4677,10 +4689,7 @@ class GUI(Frame):
 
 
 
-
-
-    def ssa_solver_gui(self,nt_seq=None,all_k=None,k_elongationMean=10,k_initiation=.03,probePosition=[],start_time = 0, nRepetitions=100,tf = 1000,tstep = 1000,multi=False,time_inhibit = False,evaluating_frap = False,evaluating_inhibitor = False,numssa=1):
-
+    def ssa_solver_gui2(self, nt_seq=None, all_k=None, k_elong_mean=10, k_initiation=.03, probePosition=[], n_traj=100, tf=1000, start_time=0, tstep=1000, time_inhibit=0, evaluating_frap=False, evaluating_inhibitor=False,force_python = False):
         '''
         Solve stochastic simulation algorithms (SSA) for the translation simulation.
 
@@ -4713,8 +4722,9 @@ class GUI(Frame):
             **ssa_obj**, a ssa() class containing the raw ribosome posistions simulated and statistics such as intensity vectors from the SSA trajectory group
 
         '''
-        n_traj = nRepetitions
+
         if len(probePosition) == 0:
+            '''
             try:
                 probePosition = []
                 for key in self.POI.tag_epitopes.keys():
@@ -4723,9 +4733,13 @@ class GUI(Frame):
             except:
                 print('No POI found')
                 #nt_seq = self.tag_full['T_flag'] + nt_seq
+            '''
+            
+            pv,probePosition = self.sms.get_probvec()
+        
 
         if nt_seq == None:
-            nt_seq = self.POI.nt_seq
+          nt_seq = self.POI.nt_seq
         genelength = int(len(nt_seq)/3)
 
         if all_k == None:
@@ -4738,31 +4752,43 @@ class GUI(Frame):
             tRNA_copynumber = np.zeros((1, genelength))
 
             for i in range(len(seperated_codons)):
-                tRNA_copynumber[0, i] = self.sms.strGeneCopy[seperated_codons[i]]
+                tRNA_copynumber[0, i] = self.strGeneCopy[seperated_codons[i]]
 
-            mean_tRNA_copynumber = np.mean(list(self.sms.strGeneCopy.values()))
+            mean_tRNA_copynumber = np.mean(list(self.strGeneCopy.values()))
 
             k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
             all_k = [k_initiation] + k_elongation.flatten().tolist()[:-1] + [10]
 
-
-
+        
+        if isinstance(probePosition,list):
+            probePosition = np.array([probePosition]).astype(int)
+            
+     
 
         non_consider_time = start_time
-        pv = np.zeros((1, genelength+1)).astype(int).flatten()
-
-        for i in range(len(probePosition)):
-            pv[probePosition[i]:] = i+1
+      
+        '''
+        if probePosition.shape[0] <= 1:
+            pv = np.zeros((1, genelength+1)).astype(int).flatten()
+            
+            for i in range(len(probePosition[0])):
+                pv[probePosition[0][i]:] = i+1
+        else:
+            pv = np.zeros((probePosition.shape[0], genelength+1)).astype(int)
+            for j in range(probePosition.shape[0]):
+                for i in range(len(probePosition)):
+                    pv[j][probePosition[j][i]:] = i+1      
+        '''
 
         npoints = tstep #non_consider_time + tstep
-        offset=self.prog['value']
-
+        
         time_vec_fixed = np.linspace(0, npoints-1, npoints, dtype=np.float64)
-        truetime = np.linspace(0,tf,tstep,dtype=np.float64)
+        truetime = np.linspace(0, tf, tstep, dtype=np.float64)
 
         rib_vec = []
 
         solutions = []
+        
 
 
         evf = int(evaluating_frap)
@@ -4779,78 +4805,56 @@ class GUI(Frame):
 #                solutions.append(soln)
 #        else:
 
-
-
-            
+        solutionssave = []
+        
+        st = time.time() 
         
         try:
-            N_rib = 200
-                        
+            if force_python == True:
+                st[0]
+                
             rib_vec = []
     
             solutions = []            
             solutionssave = []
-            
+            N_rib = 200
             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
-            result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
             all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
-            nribs = np.array([0])
-    
+            result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+            nribs = np.array([0],dtype=np.int32)
+            k = np.array(all_k)
+            seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
             all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
             all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
             all_nribs = np.zeros((n_traj,1))
-    
-            k = np.array(all_k)
-            seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
-    
-            updatetime = time.time()
-    
+            
             for i in range(n_traj):
-    
-                stime = time.time()
-                sstime = time.time()
-                
+                result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+                ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
                 frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
                 coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
                 nribs = np.array([0],dtype=np.int32)
-                result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
-                ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
                 
                 ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-    
-                ttime = time.time()
-                simtime = ttime-stime
-                if i ==0:
-                    ptime = simtime
-                else:
-                    ptime = (ptime*i + simtime)/(i+1)
-    
-                if ttime-updatetime > .02:
-                    self.prog['value'] = i+offset
-                    self.nssa.config(text=str(i+offset))
-                    if i < int(.1*n_traj):
-                        self.time.config(text=('Av. time per sim: ' + str(np.round(ptime,3)) + 's ETA: ' + str(np.round(ptime*n_traj,3))+ 's'))
-    
-                    self.newwin.update()
-                    updatetime = ttime
-    
-    
-    
+                #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
                 all_results[i, :] = result
+                all_frapresults[i,:] = frapresult
                 all_ribtimes[i,:] = ribtimes
+                all_collisions[i,:] = coltimes
+                all_nribs[i,:] = nribs
     
             for i in range(n_traj):
                 soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
-    
                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
                 if np.max(validind) != N_rib-1:
                     validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
-    
-                so = soln[validind]
-    
-                solutions.append(so)
-                collisions = np.array([[]])
+            
+                so = soln[(validind,)]
                 
+                solutionssave.append(so)
+                solutions.append(soln)
+            
+            collisions = np.array([[]])
             for i in range(n_traj):
                 totalrib = all_nribs[0][0]
             
@@ -4860,52 +4864,41 @@ class GUI(Frame):
                 else:
                    
                     collisions = np.append(collisions, all_collisions[0][:])
-    
-            self.prog['value'] = i+offset
-            self.nssa.config(text=str(i+offset))
-            #self.time.config(text=('Av. time per sim: ' + str(np.round(ptime,3)) + 's ETA: ' + str(np.round(ptime*n_traj,6))+ 's'))
-    
-            self.newwin.update()
-            updatetime = ttime
-
-        
+            
+            sttime = time.time() - st
         except:
+            
             print('C++ library failed, Using Python Implementation')
-
+            rib_vec = []
+    
+            solutions = []            
+            solutionssave = []
             N_rib = 200
             collisions = np.array([[]])
             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
-            sstime = time.time()
-            updatetime = time.time()
+            all_col_points = []
             for i in range(n_traj):
-                stime = time.time()
-                soln,all_ribtimes,Ncol,colpoints = self.sms.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
-
+                
+                soln,all_ribtimes,Ncol,col_points = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
+                #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
+                
                 collisions = np.append(collisions,Ncol)
                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
+                all_col_points.append(np.array(col_points))
                 if np.max(validind) != N_rib-1:
                     validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+                
+                so = soln[(validind,)]
+               
+                solutionssave.append(so)
 
-                so = soln[validind]
-
-                solutions.append(so)
+                solutions.append(soln)
+            
                 result = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
                 all_results[i, :] = result
+            
+            sttime = time.time() - st
 
-                ttime = time.time()
-                elap = ttime-sstime
-                simtime = ttime-stime
-                if i ==0:
-                    ptime = simtime
-                else:
-                    ptime = (ptime*i + simtime)/(i+1)
-
-                if ttime-updatetime > .02:
-                    self.prog['value'] = i+offset
-                    self.nssa.config(text=str(i+offset))
-                    self.time.config(text=('Av. time per traj: ' + str(np.round(ptime,3)) + 's    ETA: ' + str(np.round(ptime*n_traj,2))+ 's   Elapsed: ' + str(np.round(elap,2)) + 's'))
-                    self.newwin.update()
-                    updatetime = ttime
 
                 #rb = sparse.lil_matrix((len(time_vec_fixed),genelength),dtype=int)
                 #for j in range(soln.shape[1]):
@@ -4922,25 +4915,21 @@ class GUI(Frame):
                             #rb[j, value-1] = 1
 
                 #rib_vec.append(rb)
+
         
 
-        self.prog['value'] = self.prog['value']+1
-        self.nssa.config(text=('Complete, Collecting... '+ str(self.prog['value'])))
-        self.newwin.update()
+
 
         no_ribosomes = np.zeros((n_traj, (genelength+1)))
-        startindex = np.where(truetime >= non_consider_time)[0][0]
-
         
+        startindex = np.where(truetime >= non_consider_time)[0][0]
         
         #all_results = all_results[:,startindex*N_rib:]
 
         for i in range(len(solutions)):
             for j in range(len(solutions[0][0][startindex:])):
-
-                #print( solutions[i][startindex:, j])
-                rib_pos = solutions[i][:, startindex+j][np.nonzero(solutions[i][:, startindex+j])]
-
+                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+            
                 no_ribosomes[i, rib_pos.astype(int)] += 1
         no_ribosomes = no_ribosomes[:, 1:]
 
@@ -4948,25 +4937,70 @@ class GUI(Frame):
         ribosome_density = ribosome_means/npoints
 
         no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+ 
 
-
-
-        I = np.zeros((n_traj, len(time_vec_fixed[startindex:])))
+        if probePosition.shape[0] <=1:
+            I = np.zeros((n_traj, len(time_vec_fixed[startindex:])))
+         
+            
+        else:
+            I = np.zeros((int(probePosition.shape[0]),n_traj, len(time_vec_fixed[startindex:])))
+         
 
         #I = np.zeros((1,tstep+1))
-
-        for i in range(n_traj):
-
-            traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
-
-            I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
-
-
-        intensity_vec = I
-
-
-
+        
+        if evaluating_frap == False:
+            if probePosition.shape[0] <=1:
+                for i in range(n_traj):
+        
+                    traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+        
+                    I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
+            else:
+                for j in range(probePosition.shape[0]):
+                    for i in range(n_traj):
+            
+                        traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+            
+                        I[j,i, :] = np.sum(pv[j][traj], axis=1)[startindex:].T                
     
+    
+            intensity_vec = I
+        
+        else:
+            fraptime = time_inhibit
+            
+            inds = np.where(truetime > fraptime)
+
+            inds2 = np.where(truetime  < fraptime+20)
+            inds = np.intersect1d(inds,inds2)
+            endfrap = inds[-1]-1
+         
+            
+            for i in range(n_traj):
+    
+                traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+                
+                nribs = np.sum(solutionssave[i][:,endfrap]!=0)
+             
+                #ribloc = solutionssave[i][:,endfrap]
+                
+                #adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
+                revI = self.__get_negative_intensity(traj,genelength,pv,truetime,fraptime,fraptime+20)
+                print(revI)
+
+                I[i, :inds[0]-startindex] = np.sum(pv[traj], axis=1)[startindex:inds[0]].T
+                I[i,inds[0]-startindex:] = 0
+                I[i,endfrap-startindex:] = np.sum(pv[traj],axis=1)[endfrap-startindex:].T
+                I[i,endfrap-startindex:len(revI)+endfrap-startindex] = I[i,endfrap-startindex:len(revI)+endfrap-startindex] + revI
+      
+                
+                
+    
+    
+            intensity_vec = I
+
 
 
 
@@ -4983,32 +5017,33 @@ class GUI(Frame):
         ssa_obj.time = truetime
         ssa_obj.time_rec = truetime[startindex:]
         ssa_obj.start_time = non_consider_time
+        try:
+            ssa_obj.col_points = all_col_points
+        except:
+            pass
 
 
         ssa_obj.evaluating_inhibitor = evaluating_inhibitor
         ssa_obj.evaluating_frap = evaluating_frap
         ssa_obj.time_inhibit = time_inhibit
-        ssa_obj.solutions = solutions
-        
+        ssa_obj.solutions = solutionssave
+        ssa_obj.solvetime = sttime
         ssa_obj.collisions = collisions
-
-
+        
+        
         try:
             ssa_obj.ribtimes = all_ribtimes[np.where(all_ribtimes > 0)]
         except:
             pass
 
+
         #solt = solutions.T
 
-        #flatt = solt[solt>0]
-
-        #ind = [next(j for j in range(0,solutions) if int(solutions[j,i]) == 0 or int(solutions[j,i]) == -1) for i in range(0,1001) ]
         fragmented_trajectories = []
-        maxlen = 0
-        kes = []
         fragtimes = []
-        fragmentspertraj=[]
-        
+        maxlen = 0
+    
+        fragmentspertraj= []
         for k in range(n_traj):
             ind = np.array([next(j for j in range(0,solutions[k].shape[0]) if int(solutions[k][j, i]) == 0 or int(solutions[k][j, i]) == -1) for i in range(0, solutions[k].shape[1])])
             changes = ind[1:] - ind[:-1]
@@ -5102,7 +5137,7 @@ class GUI(Frame):
                    
                 
                     
-                    fragtimes.append(addindexes[m])
+                    fragtimes.append(addindexes[m]+1)
                        
                     
                     fragmented_trajectories.append(fragment)
@@ -5120,15 +5155,593 @@ class GUI(Frame):
         ssa_obj.fragments = fragarray
         ssa_obj.fragtimes = fragtimes
         ssa_obj.frag_per_traj = fragmentspertraj
-        autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec, truetime, truetime[startindex:], genelength)
+        ssa_obj.full_frags = truefrags
+        ssa_obj.all_results = all_results
+        
+        if probePosition.shape[0] > 1:
+            for i in range(probePosition.shape[0]):
+                if i > 0:
+                    autocorr_vec2, mean_autocorr2, error_autocorr2, dwelltime2, ke_sim2  = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+                    autocorr_vec = np.vstack((autocorr_vec,autocorr_vec2))
+                    mean_autocorr = np.vstack((mean_autocorr,mean_autocorr2))
+                    error_autocorr = np.vstack((error_autocorr,error_autocorr2))
+                    dwelltime.append(dwelltime2)
+                    ke_sim.append(ke_sim2)
+                else:
+                    autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+                    dwelltime = [dwelltime]
+                    ke_sim = [ke_sim]
+            
+        else:
+            autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
+        
+        
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
         ssa_obj.error_autocorr = error_autocorr
         ssa_obj.dwelltime = dwelltime
         ssa_obj.ke_sim = ke_sim
+        ssa_obj.ke_true = float(genelength)/np.mean(ssa_obj.ribtimes)
+        ssa_obj.probe = probePosition
+
+        return ssa_obj
+
+
+
+
+    def ssa_solver_gui(self,nt_seq=None,all_k=None,k_elong_mean=10,k_initiation=.03,probePosition=[],start_time = 0, nRepetitions=100,tf = 1000,tstep = 1000,multi=False,time_inhibit = False,evaluating_frap = False,evaluating_inhibitor = False,numssa=1):
+
+        '''
+        Solve stochastic simulation algorithms (SSA) for the translation simulation.
+
+        *keyword args*
+
+            **nt_seq**, nucleotide sequence to simulate
+
+            **all_k**, the propensity rates for each codon location (obtained via get_k)
+
+            **k_elong_mean**, average elongation rate to normalize by
+
+            **k_initiation**, rate of mRNA translation initiation
+
+            **probePosition**, binary vector of probe positions, i.e. where the tag epitopes start by codon position
+
+            **n_traj**, number of trajectories
+
+            **tf**, final time point
+
+            **tstep**, number of time steps to record from 0 to tf
+
+            **time_inhibit**, inhibition time of translation either, harringtonine assay or FRAP
+
+            **evaluating_frap**, true or false for evaluating frap assay at time_inhibit
+
+            **evaluating_inhibitor**, true or false for evaluating harringtonine at time_inhibit
+
+        *returns*
+
+            **ssa_obj**, a ssa() class containing the raw ribosome posistions simulated and statistics such as intensity vectors from the SSA trajectory group
+
+        '''
         
-        ssa_obj.ke_true  = float(genelength)/np.mean(ssa_obj.ribtimes)
-        ssa.probe = probePosition
+        force_python = False
+        
+        n_traj = nRepetitions
+        if len(probePosition) == 0:
+            '''
+            try:
+                probePosition = []
+                for key in self.POI.tag_epitopes.keys():
+                    probePosition = probePosition + self.POI.tag_epitopes[key]
+                probePosition = np.unique(probePosition).tolist()
+            except:
+                print('No POI found')
+                #nt_seq = self.tag_full['T_flag'] + nt_seq
+            '''
+            
+            pv,probePosition = self.sms.get_probvec()
+                #nt_seq = self.tag_full['T_flag'] + nt_seq
+        pv,probePosition = self.sms.get_probvec()
+        if nt_seq == None:
+            nt_seq = self.POI.nt_seq
+        genelength = int(len(nt_seq)/3)
+
+        if all_k == None:
+
+
+            codons = nt_seq
+            genelength = int(len(codons)/3)
+            seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
+            k_elongation = np.zeros((1, genelength))
+            tRNA_copynumber = np.zeros((1, genelength))
+
+            for i in range(len(seperated_codons)):
+                tRNA_copynumber[0, i] = self.sms.strGeneCopy[seperated_codons[i]]
+
+            mean_tRNA_copynumber = np.mean(list(self.sms.strGeneCopy.values()))
+
+            k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
+            all_k = [k_initiation] + k_elongation.flatten().tolist()[:-1] + [10]
+
+        if isinstance(probePosition,list):
+            probePosition = np.array([probePosition]).astype(int)
+
+
+        non_consider_time = start_time
+        #pv = np.zeros((1, genelength+1)).astype(int).flatten()
+
+        #for i in range(len(probePosition)):
+            #pv[probePosition[i]:] = i+1
+
+        npoints = tstep #non_consider_time + tstep
+        offset=self.prog['value']
+
+        time_vec_fixed = np.linspace(0, npoints-1, npoints, dtype=np.float64)
+        
+        
+        truetime = np.linspace(0,tf,tstep,dtype=np.float64)
+
+        rib_vec = []
+
+        solutions = []
+
+
+        evf = int(evaluating_frap)
+        evi = int(evaluating_inhibitor)
+        try:
+            intime = float(time_inhibit)
+        except:
+            intime = 0
+
+#        if evaluating_frap == True or evaluating_inhibitor == True:
+#            for i in range(nRepetitions):
+#
+#                soln = self.SSA(all_k,time_vec_fixed,inhibit_time=time_inhibit+non_consider_time,FRAP=evaluating_frap,Inhibitor=evaluating_inhibitor)
+#                solutions.append(soln)
+#        else:
+
+
+        solutionssave = []
+        
+        st = time.time() 
+            
+        
+        try:
+            if force_python:
+                st[0]
+        
+            N_rib = 200
+                        
+            rib_vec = []
+    
+            solutions = []            
+            solutionssave = []
+            
+            all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
+            result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+            all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
+            nribs = np.array([0])
+    
+            all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
+            all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
+            all_nribs = np.zeros((n_traj,1))
+    
+            k = np.array(all_k)
+            seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+    
+            updatetime = time.time()
+    
+            for i in range(n_traj):
+    
+                stime = time.time()
+                sstime = time.time()
+                
+                frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
+                coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+                nribs = np.array([0],dtype=np.int32)
+                result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+                ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+                
+                ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+                
+                ttime = time.time()
+                simtime = ttime-stime
+                if i ==0:
+                    ptime = simtime
+                else:
+                    ptime = (ptime*i + simtime)/(i+1)
+    
+                if ttime-updatetime > .02:
+                    self.prog['value'] = i+offset
+                    self.nssa.config(text=str(i+offset))
+                    if i < int(.1*n_traj):
+                        self.time.config(text=('Av. time per sim: ' + str(np.round(ptime,3)) + 's ETA: ' + str(np.round(ptime*n_traj,3))+ 's'))
+    
+                    self.newwin.update()
+                    updatetime = ttime
+    
+    
+    
+                all_results[i, :] = result
+                all_ribtimes[i,:] = ribtimes
+    
+            for i in range(n_traj):
+                soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
+    
+                validind = np.where(np.sum(soln,axis=1)!=0)[0]
+                if np.max(validind) != N_rib-1:
+                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+    
+                so = soln[validind]
+    
+                solutions.append(so)
+                solutionssave.append(so)
+                
+            collisions = np.array([[]])
+                
+            for i in range(n_traj):
+                totalrib = all_nribs[0][0]
+            
+                if totalrib > all_collisions.shape[1]:
+                    collisions = np.append(collisions, all_collisions[0][:totalrib])
+            
+                else:
+                   
+                    collisions = np.append(collisions, all_collisions[0][:])
+    
+            self.prog['value'] = i+offset
+            self.nssa.config(text=str(i+offset))
+            #self.time.config(text=('Av. time per sim: ' + str(np.round(ptime,3)) + 's ETA: ' + str(np.round(ptime*n_traj,6))+ 's'))
+    
+            self.newwin.update()
+            updatetime = ttime
+            
+            sttime = time.time() - st
+
+        
+        except:
+            print('C++ library failed, Using Python Implementation')
+            rib_vec = []
+    
+            solutions = []            
+            solutionssave = []
+            N_rib = 200
+            collisions = np.array([[]])
+            all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
+            sstime = time.time()
+            updatetime = time.time()
+            for i in range(n_traj):
+                stime = time.time()
+                soln,all_ribtimes,Ncol,colpoints = self.sms.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
+
+                collisions = np.append(collisions,Ncol)
+                validind = np.where(np.sum(soln,axis=1)!=0)[0]
+                if np.max(validind) != N_rib-1:
+                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+
+                so = soln[validind]
+
+                solutions.append(so)
+                solutionssave.append(so)
+                result = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
+                all_results[i, :] = result
+
+                ttime = time.time()
+                elap = ttime-sstime
+                simtime = ttime-stime
+                if i ==0:
+                    ptime = simtime
+                else:
+                    ptime = (ptime*i + simtime)/(i+1)
+
+                if ttime-updatetime > .02:
+                    self.prog['value'] = i+offset
+                    self.nssa.config(text=str(i+offset))
+                    self.time.config(text=('Av. time per traj: ' + str(np.round(ptime,3)) + 's    ETA: ' + str(np.round(ptime*n_traj,2))+ 's   Elapsed: ' + str(np.round(elap,2)) + 's'))
+                    self.newwin.update()
+                    updatetime = ttime
+
+                #rb = sparse.lil_matrix((len(time_vec_fixed),genelength),dtype=int)
+                #for j in range(soln.shape[1]):
+
+                    #if len(np.where(soln[:,j]!=0)[0]) !=0:
+                    #print(np.where(soln[:,j]!=0)[0])
+
+
+                    #rb[j,np.where(soln[:,j]!=0)[0]] = 1
+
+
+                        #for value in soln[:,j][np.where(soln[:,j]!=0)[0]].astype(int):
+
+                            #rb[j, value-1] = 1
+
+                #rib_vec.append(rb)
+        
+
+        self.prog['value'] = self.prog['value']+1
+        self.nssa.config(text=('Complete, Collecting... '+ str(self.prog['value'])))
+        self.newwin.update()
+
+        no_ribosomes = np.zeros((n_traj, (genelength+1)))
+        startindex = np.where(truetime >= non_consider_time)[0][0]
+
+        
+        
+        #all_results = all_results[:,startindex*N_rib:]
+
+        for i in range(len(solutions)):
+            for j in range(len(solutions[0][0][startindex:])):
+
+                #print( solutions[i][startindex:, j])
+                rib_pos = solutions[i][:, startindex+j][np.nonzero(solutions[i][:, startindex+j])]
+
+                no_ribosomes[i, rib_pos.astype(int)] += 1
+        no_ribosomes = no_ribosomes[:, 1:]
+
+        ribosome_means = np.mean(no_ribosomes, axis=0)
+        ribosome_density = ribosome_means/npoints
+
+        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+
+
+
+
+        if probePosition.shape[0] <=1:
+            I = np.zeros((n_traj, len(time_vec_fixed[startindex:])))
+         
+            
+        else:
+            I = np.zeros((int(probePosition.shape[0]),n_traj, len(time_vec_fixed[startindex:]) ))
+        #I = np.zeros((1,tstep+1))
+
+        if evaluating_frap == False:
+            if probePosition.shape[0] <=1:
+                for i in range(n_traj):
+        
+                    traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+        
+                    I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
+            else:
+                for j in range(probePosition.shape[0]):
+                    for i in range(n_traj):
+            
+                        traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+            
+                        I[j,i, :] = np.sum(pv[j][traj], axis=1)[startindex:].T                
+    
+    
+            intensity_vec = I
+        
+        else:
+            fraptime = time_inhibit
+            
+       
+            
+
+            inds = np.where(truetime > fraptime)
+
+            inds2 = np.where(truetime  < fraptime+20)
+            inds = np.intersect1d(inds,inds2)
+            
+          
+            endfrap = inds[-1]-1
+
+         
+            
+            for i in range(n_traj):
+    
+                traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+                
+                nribs = np.sum(solutionssave[i][:,endfrap]!=0)
+             
+                #ribloc = solutionssave[i][:,endfrap]
+                
+                #adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
+                frap_app = 20
+
+                revI = self.sms.get_negative_intensity(traj,genelength,pv,truetime,fraptime+start_time,fraptime+start_time+frap_app)
+                
+
+                I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
+                
+                             
+                I[i,inds[0]:inds[0]+20] = 0
+                #I[i,endfrap-startindex:] = np.sum(pv[traj],axis=1)[endfrap-startindex:].T
+
+                I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] = I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] + revI
+                
+               
+                
+                
+            print(np.min(I))
+    
+            intensity_vec = I
+
+
+
+    
+
+
+
+        ssa_obj = ssa()
+        ssa_obj.no_ribosomes = no_ribosomes
+        ssa_obj.n_traj = n_traj
+        ssa_obj.k = all_k
+        ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+        ssa_obj.rib_density = ribosome_density
+        ssa_obj.rib_means = ribosome_means
+        ssa_obj.rib_vec = rib_vec
+        ssa_obj.intensity_vec = intensity_vec
+        ssa_obj.time_vec_fixed = time_vec_fixed
+        ssa_obj.time = truetime
+        ssa_obj.time_rec = truetime[startindex:]
+        ssa_obj.start_time = non_consider_time
+        try:
+            ssa_obj.col_points = all_col_points
+        except:
+            pass
+
+
+        ssa_obj.evaluating_inhibitor = evaluating_inhibitor
+        ssa_obj.evaluating_frap = evaluating_frap
+        ssa_obj.time_inhibit = time_inhibit
+        ssa_obj.solutions = solutionssave
+        ssa_obj.solvetime = sttime
+        ssa_obj.collisions = collisions
+        
+        
+        try:
+            ssa_obj.ribtimes = all_ribtimes[np.where(all_ribtimes > 0)]
+        except:
+            pass
+
+
+        #solt = solutions.T
+        fragmented_trajectories = []
+        fragtimes = []
+        maxlen = 0
+    
+        fragmentspertraj= []
+        for k in range(n_traj):
+            ind = np.array([next(j for j in range(0,solutions[k].shape[0]) if int(solutions[k][j, i]) == 0 or int(solutions[k][j, i]) == -1) for i in range(0, solutions[k].shape[1])])
+            changes = ind[1:] - ind[:-1]
+            addindexes = np.where(changes > 0)[0]
+            subindexes = np.where(changes < 0)[0]
+            
+            sub = solutions[k][:,1:] - solutions[k][:,:-1]
+            neutralindexes = np.unique(np.where(sub < 0)[1])
+            neutralindexes = np.setxor1d(neutralindexes, subindexes)
+            
+            for index in neutralindexes:
+                pre = solutions[k][:,index]
+                post = solutions[k][:,index+1]
+                changecount = 0
+                while len(np.where(post - pre < 0)[0]) > 0:
+    
+                    post = np.append([genelength],post)
+                    pre = np.append(pre,0)
+                    
+                    changecount+=1
+                
+                for i in range(changecount):
+                    addindexes = np.sort(np.append(addindexes,index))
+                    subindexes = np.sort(np.append(subindexes,index))
+                    
+                changes[index] = -changecount
+                ind[index] += changecount
+             
+                
+            for index in np.where(np.abs(changes)>1)[0]:
+                if changes[index] < 0:
+                    for i in range(np.abs(changes[index])-1):
+                        subindexes = np.sort(np.append(subindexes,index))
+                else:
+                    for i in range(np.abs(changes[index])-1):
+                        addindexes = np.sort(np.append(addindexes,index))   
+                
+            truefrags = len(subindexes)
+     
+                
+        
+           
+            if len(subindexes) < len(addindexes):
+                subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(truetime)-1)).astype(int))
+                
+            
+            fragmentspertraj.append(len(subindexes))
+            
+            for m in range(min(len(subindexes),len(addindexes))):
+                traj = solutions[k][:, addindexes[m]:subindexes[m]+1]
+                traj_ind = changes[addindexes[m]:subindexes[m]+1]
+                
+                startind = ind[addindexes[m]]
+                minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
+                fragment = np.array([])
+            
+                    
+                
+                iterind = startind
+                
+                if subindexes[m]-addindexes[m] > 0:
+                    if len(minusloc) > 1:
+                        if m <= truefrags:
+                            for n in range(len(minusloc)-1):
+                                iterind = iterind + min(0,traj_ind[minusloc[n]])
+                                fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                                
+                                
+                                
+                  
+                
+                      
+                            
+                            fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
+                            
+                        else:
+                            for n in range(len(minusloc)-1):
+
+                                iterind = iterind + min(0,traj_ind[minusloc[n]])
+                                
+                                fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                  
+                                
+                            fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
+          
+                        
+                    
+                    else:
+
+                        fragment = solutions[k][startind][addindexes[m]:subindexes[m]+1].flatten()
+                   
+                
+                    
+                    fragtimes.append(addindexes[m]+1)
+                       
+                    
+                    fragmented_trajectories.append(fragment)
+                    #if m <= truefrags:
+                        #kes.append(genelength/truetime[len(fragment)])
+            
+                    if len(fragment) > maxlen:
+                        maxlen = len(fragment)
+                    
+    
+            fragarray = np.zeros((len(fragmented_trajectories), maxlen))
+            for i in range(len(fragmented_trajectories)):
+                fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
+            
+        ssa_obj.fragments = fragarray
+        ssa_obj.fragtimes = fragtimes
+        ssa_obj.frag_per_traj = fragmentspertraj
+        ssa_obj.full_frags = truefrags
+        ssa_obj.all_results = all_results
+        
+        if probePosition.shape[0] > 1:
+            for i in range(probePosition.shape[0]):
+                if i > 0:
+                    autocorr_vec2, mean_autocorr2, error_autocorr2, dwelltime2, ke_sim2  = self.sms.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+                    autocorr_vec = np.vstack((autocorr_vec,autocorr_vec2))
+                    mean_autocorr = np.vstack((mean_autocorr,mean_autocorr2))
+                    error_autocorr = np.vstack((error_autocorr,error_autocorr2))
+                    dwelltime.append(dwelltime2)
+                    ke_sim.append(ke_sim2)
+                else:
+                    autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+                    dwelltime = [dwelltime]
+                    ke_sim = [ke_sim]
+            
+        else:
+            autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec, truetime, 0, genelength)
+        
+        
+        ssa_obj.autocorr_vec = autocorr_vec
+        ssa_obj.mean_autocorr = mean_autocorr
+        ssa_obj.error_autocorr = error_autocorr
+        ssa_obj.dwelltime = dwelltime
+        ssa_obj.ke_sim = ke_sim
+        ssa_obj.ke_true = float(genelength)/np.mean(ssa_obj.ribtimes)
+        ssa_obj.probe = probePosition
+        
         ssa.solvetime = np.round(time.time()-sstime,3)
         return ssa_obj
 
@@ -5205,23 +5818,23 @@ class GUI(Frame):
 
         tvec = np.linspace(0,  float(self.ssa_inputs[6].get())+float(self.ssa_inputs[1].get()), int(self.time_res_e.get())  + int(self.ssa_inputs[1].get())+1)
 
-
+      
         pt = self.perturb.get()
         if pt == 'none':
             self.ssa = self.ssa_solver_gui(all_k = all_k_design,nt_seq = self.sms.POI.nt_seq,nRepetitions=int(self.ssa_inputs[2].get()),
                                        probePosition = self.sms.POI.tag_epitopes['T_Flag'],tf = tvec[-1], tstep = len(tvec),
-                                       k_elongationMean=float(self.ssa_inputs[4].get()),k_initiation=float(self.ssa_inputs[5].get()),start_time=float(self.ssa_inputs[6].get()))
+                                       k_elong_mean=float(self.ssa_inputs[4].get()),k_initiation=float(self.ssa_inputs[5].get()),start_time=float(self.ssa_inputs[6].get()))
         if pt == 'harr':
 
             self.ssa = self.ssa_solver_gui(all_k = all_k_design,nt_seq = self.sms.POI.nt_seq,nRepetitions=int(self.ssa_inputs[2].get()),
                                        probePosition = self.sms.POI.tag_epitopes['T_Flag'],tf = tvec[-1], tstep = len(tvec),
-                                       k_elongationMean=float(self.ssa_inputs[4].get()),k_initiation=float(self.ssa_inputs[5].get()),
+                                       k_elong_mean=float(self.ssa_inputs[4].get()),k_initiation=float(self.ssa_inputs[5].get()),
                                        time_inhibit=float(self.ssa_inputs[0].get()) + float(self.ssa_inputs[6].get()),evaluating_frap=False,evaluating_inhibitor=True,start_time=float(self.ssa_inputs[6].get()))
         if pt == 'frap':
 
             self.ssa = self.ssa_solver_gui(all_k = all_k_design,nt_seq = self.sms.POI.nt_seq,nRepetitions=int(self.ssa_inputs[2].get()),
                                        probePosition = self.sms.POI.tag_epitopes['T_Flag'],tf = tvec[-1], tstep = len(tvec),
-                                       k_elongationMean=float(self.ssa_inputs[4].get()),k_initiation=float(self.ssa_inputs[5].get()),
+                                       k_elong_mean=float(self.ssa_inputs[4].get()),k_initiation=float(self.ssa_inputs[5].get()),
                                        time_inhibit=float(self.ssa_inputs[0].get()),evaluating_frap=True,evaluating_inhibitor=False,start_time=float(self.ssa_inputs[6].get()) )
 
         self.newwin.destroy()
@@ -6572,6 +7185,11 @@ class GUI(Frame):
             tvec = self.ssa.time_vec_fixed[time_inds]
 
             timeindex = np.where(tvec >= ti)[0][0]
+            
+            print(tvec)
+            print(ti)
+            print(np.where(meaniv_norm[timeindex:] <.005   ))
+            print(timeindex)
             runoffindex = np.where(meaniv_norm[timeindex:] <.005   )[0][0] + timeindex
 
             application_time = float(self.ssa_inputs[6].get())
