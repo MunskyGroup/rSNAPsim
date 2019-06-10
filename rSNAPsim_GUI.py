@@ -5550,10 +5550,7 @@ class GUI(Frame):
 
                 I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] = I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] + revI
                 
-               
-                
-                
-            print(np.min(I))
+  
     
             intensity_vec = I
 
@@ -6725,7 +6722,7 @@ class GUI(Frame):
         f = open(filename,'w')
         if '.txt' in filename:
             for key in self.ssa.__dict__.keys():
-                print(key)
+               
                 #if key != 'rib_vec' and key != 'ribosome_means':
 
                 if key == 'solutions':
@@ -7185,11 +7182,7 @@ class GUI(Frame):
             tvec = self.ssa.time_rec-self.ssa.start_time
 
             timeindex = np.where(tvec >= ti)[0][0]
-            
-            print(tvec)
-            print(ti)
-            print(np.where(meaniv_norm[timeindex:] <.005   ))
-            print(timeindex)
+
             runoffindex = np.where(meaniv_norm[timeindex:] <.005   )[0][0] + timeindex
 
 
@@ -7204,7 +7197,7 @@ class GUI(Frame):
             recoverytime = 1
 
             application_time = float(self.ssa_inputs[0].get()) 
-            print(application_time)
+      
 
 
             tvec_inds = np.where(tvec>=application_time)

@@ -300,7 +300,7 @@ class rSNAPsim():
             'UGC':'C', 'UGU':'C', 'UGA':'*', 'UGG':'W',}
 
         self.aa_table_r = {'A':['GCA', 'GCC', 'GCG', 'GCT','GCU'],
-                          'R':['CGA', 'CGC', 'CGG', 'CGT','AGG','AGA''CGU'],
+                          'R':['CGA', 'CGC', 'CGG', 'CGT','AGG','AGA','CGU'],
                           'N':['AAC', 'AAT','AAU'],
                           'D':['GAC', 'GAT','GAU'],
                           'C':['TGC', 'TGT','UGC','UGU'],
