@@ -7181,8 +7181,8 @@ class GUI(Frame):
             norm_iv = self.ssa.intensity_vec/np.max(self.ssa.intensity_vec)
             sem_iv = np.std(self.ssa.intensity_vec,axis=0) / float(self.ssa.n_traj)
             ti = self.ssa.time_inhibit
-            time_inds = np.where(self.ssa.time_vec_fixed  > 0)
-            tvec = self.ssa.time_vec_fixed[time_inds]
+            
+            tvec = self.ssa.time_rec-self.ssa.start_time
 
             timeindex = np.where(tvec >= ti)[0][0]
             
@@ -7191,8 +7191,6 @@ class GUI(Frame):
             print(np.where(meaniv_norm[timeindex:] <.005   ))
             print(timeindex)
             runoffindex = np.where(meaniv_norm[timeindex:] <.005   )[0][0] + timeindex
-
-            application_time = float(self.ssa_inputs[6].get())
 
 
 
@@ -7204,7 +7202,9 @@ class GUI(Frame):
             tempind = 50
             recoverythresh = .9
             recoverytime = 1
-            application_time = float(self.ssa_inputs[6].get())
+
+            application_time = float(self.ssa_inputs[0].get()) 
+            print(application_time)
 
 
             tvec_inds = np.where(tvec>=application_time)
