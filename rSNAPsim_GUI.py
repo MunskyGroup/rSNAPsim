@@ -8,8 +8,7 @@ Created on Fri Jul 06 13:40:30 2018
 import os
 import sys
 os.chdir('ssa_cpp')
-print(os.getcwd())
-print(os.listdir(os.getcwd()))
+
 
 
 import base64
@@ -1861,7 +1860,7 @@ class GUI(Frame):
         animationframe.grid(row=5,column=0,columnspan=4,rowspan=2,sticky=tk.W+tk.E+tk.N+tk.S)
 
         #animation canvas
-        print(im2.width)
+   
         w,h = im2.width(),im2.height()
         self.animation = tk.Canvas(animationframe,width=w-40,height=h-40,bg='#FFFFFF')
         self.animation.pack(fill=tk.BOTH)
@@ -3958,7 +3957,7 @@ class GUI(Frame):
             
             
             self.sequence_name = os.path.basename(seq)
-            print(self.sequence_name)
+      
             
             if len(raw[0].splitlines()[0])< 50:
                 if raw[0].splitlines()[0] != '':
@@ -3967,7 +3966,7 @@ class GUI(Frame):
 
             raw = ''.join(raw)
            
-            print(self.sequence_name)
+        
             
             self.sequence_str= ''
             
@@ -5324,8 +5323,7 @@ class GUI(Frame):
                 
                 #adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
                 revI = self.__get_negative_intensity(traj,genelength,pv,truetime,fraptime,fraptime+20)
-                print(revI)
-
+              
                 I[i, :inds[0]-startindex] = np.sum(pv[traj], axis=1)[startindex:inds[0]].T
                 I[i,inds[0]-startindex:] = 0
                 I[i,endfrap-startindex:] = np.sum(pv[traj],axis=1)[endfrap-startindex:].T
@@ -6914,12 +6912,27 @@ class GUI(Frame):
         
         
         
-    def tau_plot_internal(self, ax, fig, ssa_obj,t,tau,plot_type='contour', plot_all = False):
+    def tau_plot_internal(self, ax, fig, ssa_obj,t,tau,plot_type='density', plot_all = False):
         
         stime = ssa_obj.time_rec-ssa_obj.start_time
         idx_t = (np.abs(stime - t)).argmin()
         idx_tau = (np.abs(stime - tau)).argmin()
         
+        if plot_type == 'density':
+           
+            nbins = int(np.max(ssa_obj.intensity_vec/np.sum(ssa_obj.probe)))+2
+            x, y = ssa_obj.intensity_vec[:,idx_t]/np.sum(ssa_obj.probe),ssa_obj.intensity_vec[:,idx_tau]/np.sum(ssa_obj.probe)
+            k = kde.gaussian_kde([x,y])
+            xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]
+            zi = k(np.vstack([xi.flatten(), yi.flatten()])) 
+            
+            R = pearsonr(x,y)[0]
+            ax.set_title(('Density Plot' + ' R = ' + str(np.round(R,3))))
+            ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='gouraud', cmap=plt.cm.viridis)
+            ax.contour(xi, yi, zi.reshape(xi.shape) )   
+            ax.set_ylabel(('I(t=' + str(tau)+')'))
+            ax.set_xlabel(('I(t=' + str(t)+')'))
+            
         if plot_type == 'scatter':
             if not plot_all:
                 ax.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau] )

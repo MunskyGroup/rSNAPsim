@@ -37,6 +37,7 @@ import time
 import json, codecs
 
 from scipy import sparse
+from scipy.stats import pearsonr
 
 cwd = os.getcwd()
 try:
@@ -67,6 +68,7 @@ from matplotlib import gridspec
 from matplotlib.patches import Ellipse
 #import scipy.stats.trim_mean as tmean
 
+from scipy.stats import kde
 
 try:
     from Bio import SeqIO
@@ -2806,15 +2808,32 @@ class rSNAPsim():
         idx_t = (np.abs(stime - t)).argmin()
         idx_tau = (np.abs(stime - tau)).argmin()
         
+        
+        if plot_type == 'density':
+            fig,ax= plt.subplots()
+            nbins = int(np.max(ssa_obj.intensity_vec/np.sum(ssa_obj.probe)))+2
+            x, y = ssa_obj.intensity_vec[:,idx_t]/np.sum(ssa_obj.probe),ssa_obj.intensity_vec[:,idx_tau]/np.sum(ssa_obj.probe)
+            k = kde.gaussian_kde([x,y])
+            xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]
+            zi = k(np.vstack([xi.flatten(), yi.flatten()])) 
+            
+            R = pearsonr(x,y)[0]
+            ax.set_title(('Density Plot' + ' R = ' + str(np.round(R,3))))
+            ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='gouraud', cmap=plt.cm.viridis)
+            ax.contour(xi, yi, zi.reshape(xi.shape) )   
+            ax.set_ylabel(('I(t=' + str(tau)+')'))
+            ax.set_xlabel(('I(t=' + str(t)+')'))
+            fig.show()    
+            
         if plot_type == 'scatter':
             if not plot_all:
-                plt.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau] )
+                plt.scatter(ssa_obj.intensity_vec[:,idx_t]/np.sum(ssa_obj.probe), ssa_obj.intensity_vec[:,idx_tau]/np.sum(ssa_obj.probe) )
                 plt.ylabel(('I(t=' + str(tau)+')'))
             else:
                
                 for i in range(idx_t,len(stime)):
                     idx_tau = (np.abs(stime - (idx_t+i))).argmin()                
-                    plt.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau],c= cm.viridis(1.*i/len(stime)),alpha=.01  )
+                    plt.scatter(ssa_obj.intensity_vec[:,idx_t]/np.sum(ssa_obj.probe), ssa_obj.intensity_vec[:,idx_tau]/np.sum(ssa_obj.probe),c= cm.viridis(1.*i/len(stime)),alpha=.1  )
                     plt.ylabel('I(tau)')
             plt.xlabel(('I(t=' + str(t)+')'))
             
