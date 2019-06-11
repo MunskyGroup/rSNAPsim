@@ -126,6 +126,7 @@ except:
     from matplotlib.backends.backend_tkagg import (
         FigureCanvasTkAgg)    
 
+from matplotlib.patches import Ellipse
 
 import copy
 
@@ -894,6 +895,8 @@ class GUI(Frame):
         kym_frame = tk.Frame(self.stoc_Nb,name='kym')
         kym_frame.pack(expand=True,side='top', fill='both')
 
+        tau_frame = tk.Frame(self.stoc_Nb,name='tau')
+        tau_frame.pack(expand=True,side='top', fill='both')
 
         #ccodon_frame = tk.Frame(self.stoc_Nb,name="codon")        #codon notebook Frame
         #ccodon_frame.pack(expand=True,side='top',fill='both')
@@ -904,6 +907,7 @@ class GUI(Frame):
         #self.stoc_Nb.add(ccodon_frame,text="   Codon Optimization  ")
         
         self.stoc_Nb.add(kym_frame, text="   Kymographs   ")
+        self.stoc_Nb.add(tau_frame, text="   Tau Plot   ")
         self.stoc_Nb.add(sim_frame, text="   Simulated Cell  ")
         
         global_font_size = 9
@@ -1566,6 +1570,50 @@ class GUI(Frame):
         #topframe.grid_columnconfigure(2,weight=2)
 
         '''
+        
+        
+        
+        tautopframe = tk.Frame(tau_frame)
+        tautopframe.grid(row=0,column=0,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
+        taubottomframe = tk.Frame(tau_frame)
+        taubottomframe.grid(row=1,column=0,sticky=tk.W+tk.E+tk.S+tk.N,padx=gpx,pady=gpy)
+        
+        
+        tauplotbutton = tk.Button(tautopframe,text='Plot',command=self.tau_plot,font=('SystemButtonText',global_font_size))
+        tauplotbutton.grid(row=0,column=5)
+        
+        
+        tau_tlabel = tk.Label(tautopframe,text='t: ',font=('SystemLabelText',global_font_size))
+        tau_tlabel.grid(row=0,column=0)
+        self.tauplot_t = tk.Entry(tautopframe,width=10)
+        self.tauplot_t.grid(row=0,column=1)
+        
+        tau_taulabel = tk.Label(tautopframe,text='tau: ',font=('SystemLabelText',global_font_size))
+        tau_taulabel.grid(row=0,column=2)
+        self.tauplot_tau = tk.Entry(tautopframe,width=10)
+        self.tauplot_tau.grid(row=0,column=3)
+        
+        self.tau_fig = mpl.figure.Figure(figsize=(1,1))#figsize=(2,5),dpi=60)
+        self.tau_fig.set_tight_layout(True)
+        self.tauax = self.tau_fig.add_subplot(111)
+        self.tau_fig.patch.set_facecolor(self.default_color)
+        self.tau_fig.tight_layout(h_pad=1.0)
+
+        #self.kymax.set_xlabel('time (sec)')
+        #self.kymax.set_ylabel('Intensity (a.u.)')
+        self.tauax.set_title("")
+        
+        
+
+
+
+        self.tau_canvas = FigureCanvasTkAgg(self.tau_fig,master=taubottomframe)
+        self.tau_canvas.draw()
+        self.tau_canvas.get_tk_widget().pack(expand=True,fill='both',side='left') #stickying this way it makes it fill all avaliable space
+        tau_frame.rowconfigure(1,weight=3)
+        
+        tau_frame.columnconfigure(0,weight=3)
+        
         
         
         
@@ -6854,6 +6902,108 @@ class GUI(Frame):
         ax.legend(handles=p)
         #ax.text(int(2*len(t)/3),-.4,'time (sec)')
         
+        
+    def tau_plot(self):
+        self.tauax.clear()
+        
+        t = float(self.tauplot_t.get())
+        tau = float(self.tauplot_tau.get())
+        
+        self.tau_plot_internal(self.tauax,self.tau_fig,self.ssa,t,tau)
+        self.tau_canvas.draw()
+        
+        
+        
+    def tau_plot_internal(self, ax, fig, ssa_obj,t,tau,plot_type='contour', plot_all = False):
+        
+        stime = ssa_obj.time_rec-ssa_obj.start_time
+        idx_t = (np.abs(stime - t)).argmin()
+        idx_tau = (np.abs(stime - tau)).argmin()
+        
+        if plot_type == 'scatter':
+            if not plot_all:
+                ax.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau] )
+                ax.ylabel(('I(t=' + str(tau)+')'))
+            else:
+               
+                for i in range(idx_t,len(stime)):
+                    idx_tau = (np.abs(stime - (idx_t+i))).argmin()                
+                    ax.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau],c= cm.viridis(1.*i/len(stime)),alpha=.01  )
+                    ax.set_ylabel('I(tau)')
+            ax.set_xlabel(('I(t=' + str(t)+')'))
+            
+        if plot_type == 'contour':
+         
+            if not plot_all:
+                It = ssa_obj.intensity_vec[:,idx_t]/float(np.sum(ssa_obj.probe))
+                Itau = ssa_obj.intensity_vec[:,idx_tau]/float(np.sum(ssa_obj.probe))
+                
+                cov = np.cov(It,Itau)
+                
+                eigs, v = np.linalg.eig(cov)
+                eigs = np.sqrt(eigs)
+                ax.set_ylabel(('I(t=' + str(tau)+')'))
+                colors = [cm.viridis(1.0),cm.viridis(.5),cm.viridis(0.0),cm.viridis(0.0)]
+      
+                
+                for j in xrange(3, 0,-1):
+                   
+                    ell_artist = Ellipse(xy=(np.mean(It), np.mean(Itau)),
+                                  width=eigs[0]*j*2, height=eigs[1]*j*2,
+                                  angle=np.rad2deg(np.arccos(v[0, 0])))
+                    
+                    ell_artist.set_linewidth(2)
+                    ell_artist.set_edgecolor(colors[j-1])
+                    ell_artist.set_color(colors[j-1])
+                    ax.add_patch(ell_artist)
+                    
+                ax.autoscale()      
+                ax.set_xlim(0)
+                ax.set_ylim(0)
+                ax.scatter(It, Itau,zorder=3,alpha=0.3,color='red',marker='.')
+                
+            else:
+                plt.ylabel('I(tau)')
+                It = ssa_obj.intensity_vec[:,idx_t]
+                for i in range(len(stime)-idx_t,0,-10):
+                    idx_tau = (np.abs(stime - (idx_t+i))).argmin()  
+                    Itau = ssa_obj.intensity_vec[:,idx_tau]
+                   
+                    cov = np.cov(It,Itau)
+                    
+                    eigs, v = np.linalg.eig(cov)
+                    eigs = np.sqrt(eigs)
+                    
+                    
+                    j = 3
+                    ell_artist = Ellipse(xy=(np.mean(It), np.mean(Itau)),
+                                  width=eigs[0]*j*2, height=eigs[1]*j*2,
+                                  angle=np.rad2deg(np.arccos(v[0, 0])))
+                    
+                    ell_artist.set_linewidth(2)
+                    ell_artist.set_edgecolor( cm.viridis_r(1.*i/len(stime)))
+                    ell_artist.set_color( cm.viridis_r(1.*i/len(stime)))
+                    ax.autoscale()    
+                    ax.add_patch(ell_artist)
+                    ax.figure.canvas.draw()
+            
+                
+                    
+                ax.set_xlabel(('I(t=' + str(t)+')'))
+                ax.set_xlim(0)
+                ax.set_ylim(0)
+                c_map_ax = fig.add_axes([.95, 0.1, 0.1, 0.8])
+              
+
+                c_map_ax.axes.get_xaxis().set_visible(False)
+
+                cbar = mpl.colorbar.ColorbarBase(c_map_ax, cmap=cm.viridis_r, orientation = 'vertical')
+                
+                cbar.ax.set_yticklabels(np.linspace(idx_t,stime[-1],6).astype(int) )
+                
+                  
+                
+                
     def kymograph(self):
         
         self.kymax.clear()
