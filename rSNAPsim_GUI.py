@@ -1659,20 +1659,23 @@ class GUI(Frame):
         kymcmaplabel2.grid(row=0,column=5,pady=2,padx=2,sticky=tk.W)
         
         self.kymintense = tk.BooleanVar(value=True)
-        
+        self.kymcol = tk.BooleanVar(value=True)
         intensity_on = tk.Checkbutton(kyminfoframe,text='Show Intensity', var =self.kymintense,font=('SystemButtonText',global_font_size) )
         intensity_on.grid(row=0,column=7,padx=2,pady=2,sticky=tk.W)
 
+        intensity_on = tk.Checkbutton(kyminfoframe,text='Show Collisions', var =self.kymcol,font=('SystemButtonText',global_font_size) )
+        intensity_on.grid(row=0,column=8,padx=2,pady=2,sticky=tk.W)
+
         self.traj_select = tk.Entry(kyminfoframe,width=10)
-        self.traj_select.grid(row=0,column=9,padx=2,pady=2)
+        self.traj_select.grid(row=0,column=10,padx=2,pady=2)
         
         self.insert_entry_readable(self.traj_select,'0')
         
         kymlabel3 = tk.Label(kyminfoframe,text='Trajectory: ',font=('SystemLabelText',global_font_size))
-        kymlabel3.grid(row=0,column=8,padx=2,pady=2)
+        kymlabel3.grid(row=0,column=9,padx=2,pady=2)
         
         plot_kym = tk.Button(kyminfoframe,text='Plot',command=self.kymograph,font=('SystemButtonText',global_font_size))
-        plot_kym.grid(row=0,column=10,padx=2,pady=2)
+        plot_kym.grid(row=0,column=11,padx=2,pady=2)
                 
         
 
@@ -5664,7 +5667,7 @@ class GUI(Frame):
             seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
     
             updatetime = time.time()
-    
+            all_col_points = []
             for i in range(n_traj):
     
                 stime = time.time()
@@ -5675,8 +5678,14 @@ class GUI(Frame):
                 nribs = np.array([0],dtype=np.int32)
                 result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
                 ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+                colpointsx = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+                colpointst = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+                                
+                ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+                endcolrec = np.where(colpointsx == 0)[0][0]
                 
-                ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+                colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+                all_col_points.append(colpoints.T)
                 
                 ttime = time.time()
                 simtime = ttime-stime
@@ -5713,16 +5722,19 @@ class GUI(Frame):
                 
             collisions = np.array([[]])
                 
+          
+            watched_ribs = []
             for i in range(n_traj):
-                totalrib = all_nribs[0][0]
+                totalrib = all_nribs[i]
             
                 if totalrib > all_collisions.shape[1]:
-                    collisions = np.append(collisions, all_collisions[0][:totalrib])
+                    collisions = np.append(collisions, all_collisions[i][:])
+                    watched_ribs.append(int(all_collisions.shape[1]))
             
                 else:
                    
-                    collisions = np.append(collisions, all_collisions[0][:])
-    
+                    collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+                    watched_ribs.append(int(totalrib[0]))
             self.prog['value'] = i+offset
             self.nssa.config(text=str(i+offset))
             #self.time.config(text=('Av. time per sim: ' + str(np.round(ptime,3)) + 's ETA: ' + str(np.round(ptime*n_traj,6))+ 's'))
@@ -5744,11 +5756,13 @@ class GUI(Frame):
             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
             sstime = time.time()
             updatetime = time.time()
+            watched_ribs = []
             for i in range(n_traj):
                 stime = time.time()
                 soln,all_ribtimes,Ncol,colpoints = self.sms.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
 
                 collisions = np.append(collisions,Ncol)
+                watched_ribs.append(int(len(collisions)))
                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
                 if np.max(validind) != N_rib-1:
                     validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
@@ -5759,6 +5773,7 @@ class GUI(Frame):
                 solutionssave.append(so)
                 result = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
                 all_results[i, :] = result
+                
 
                 ttime = time.time()
                 elap = ttime-sstime
@@ -5907,6 +5922,7 @@ class GUI(Frame):
         ssa_obj.time = truetime
         ssa_obj.time_rec = truetime[startindex:]
         ssa_obj.start_time = non_consider_time
+        ssa_obj.watched_ribs = watched_ribs
         try:
             ssa_obj.col_points = all_col_points
         except:
@@ -7022,7 +7038,7 @@ class GUI(Frame):
         self.kymax.clear()
         self.kymax2.clear()
         n_traj = int(self.traj_select.get())
-        self.kymograph_internal(self.kymax,self.kymax2,self.ssa,n_traj,color=self.main_color,bg_intense=self.kymintense.get())
+        self.kymograph_internal(self.kymax,self.kymax2,self.ssa,n_traj,color=self.main_color,bg_intense=self.kymintense.get(),show_col=self.kymcol.get())
         
         self.kymax3.clear()
         self.plot_rib_dense_kym(self.kymax3,self.ssa.rib_density)
@@ -7032,7 +7048,7 @@ class GUI(Frame):
         self.kym_canvas3.draw()
         
         
-    def kymograph_internal(self,ax,ax1,ssa_obj,n_traj,bg_intense=True,show_intense = True, *args,**kwargs):
+    def kymograph_internal(self,ax,ax1,ssa_obj,n_traj,bg_intense=True,show_col = True,show_intense = True, *args,**kwargs):
         '''
         Constructs a kymograph of ribosome locations
         '''
@@ -7088,8 +7104,12 @@ class GUI(Frame):
                 timeseg = time[ftimes[i]:]
                 stop = np.where(fragments[i] > 0 )[0][-1]+1
                 timelen = len(fragments[i][0:stop]) 
-                
-                ax.plot(fragments[i][0:stop]   ,timeseg[0:timelen],color=linecolor)
+
+                if len(timeseg[0:timelen]) != len(fragments[i][0:stop]):
+                    smallerseg = min(len(timeseg[0:timelen]),len(fragments[i][0:stop]))
+                    ax.plot(fragments[i][0:smallerseg]   ,timeseg[0:smallerseg],color=linecolor)
+                else:
+                    ax.plot(fragments[i][0:stop]   ,timeseg[0:timelen],color=linecolor)
 
         segtime = ssa_obj.time[0:len(ssa_obj.time_rec)]
         
@@ -7099,7 +7119,13 @@ class GUI(Frame):
         ax.set_ylim(ssa_obj.time_rec[-1], ssa_obj.time_rec[0])
         ax.set_xlim(-10,max(ssa_obj.rib_density.shape)+10 )
                 
+        if show_col == True:
+            try:
+                col = ssa_obj.col_points[n_traj]
 
+                ax.plot(col[:,0],col[:,1],color='#00ff00',markersize=2,linestyle='none',marker='o')
+            except:
+                pass
             
         
         ax.set_facecolor(bgcolor )
