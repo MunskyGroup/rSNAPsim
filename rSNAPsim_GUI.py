@@ -1592,6 +1592,17 @@ class GUI(Frame):
         self.tauplot_tau = tk.Entry(tautopframe,width=10)
         self.tauplot_tau.grid(row=0,column=3)
         
+        
+        self.tauplottype = tk.StringVar(value='Density')
+        tt_dropdown = tk.OptionMenu(tautopframe,self.tauplottype,"Density","Scatter","Ellipse")
+        tt_dropdown.config(font=('SystemButtonText',global_font_size))
+        tt_dropdown['menu'].config(font=('SystemButtonText',global_font_size))
+
+        tt_dropdown.grid(row=0,column=4,padx=3)
+
+        tt_dropdown.config(width=20)
+        
+        
         self.tau_fig = mpl.figure.Figure(figsize=(1,1))#figsize=(2,5),dpi=60)
         self.tau_fig.set_tight_layout(True)
         self.tauax = self.tau_fig.add_subplot(111)
@@ -6923,7 +6934,14 @@ class GUI(Frame):
         t = float(self.tauplot_t.get())
         tau = float(self.tauplot_tau.get())
         
-        self.tau_plot_internal(self.tauax,self.tau_fig,self.ssa,t,tau)
+        ptype = self.tauplottype.get()
+        if ptype == 'Density':
+            ptype = 'density'
+        if ptype == 'Ellipse':
+            ptype = 'contour'
+        if ptype == 'Scatter':
+            ptype = 'scatter'
+        self.tau_plot_internal(self.tauax,self.tau_fig,self.ssa,t,tau,plot_type =ptype )
         self.tau_canvas.draw()
         
         
@@ -6941,7 +6959,7 @@ class GUI(Frame):
             k = kde.gaussian_kde([x,y])
             xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]
             zi = k(np.vstack([xi.flatten(), yi.flatten()])) 
-            
+
             R = pearsonr(x,y)[0]
             ax.set_title(('Density Plot' + ' R = ' + str(np.round(R,3))))
             ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='gouraud', cmap=plt.cm.viridis)
@@ -6952,13 +6970,19 @@ class GUI(Frame):
         if plot_type == 'scatter':
             if not plot_all:
                 ax.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau] )
-                ax.ylabel(('I(t=' + str(tau)+')'))
+                ax.set_ylabel(('I(t=' + str(tau)+')'))
+                x, y = ssa_obj.intensity_vec[:,idx_t]/np.sum(ssa_obj.probe),ssa_obj.intensity_vec[:,idx_tau]/np.sum(ssa_obj.probe)
+
+                R = pearsonr(x,y)[0]
+                ax.set_xlabel(('I(t=' + str(t)+')'))
             else:
                
                 for i in range(idx_t,len(stime)):
                     idx_tau = (np.abs(stime - (idx_t+i))).argmin()                
                     ax.scatter(ssa_obj.intensity_vec[:,idx_t], ssa_obj.intensity_vec[:,idx_tau],c= cm.viridis(1.*i/len(stime)),alpha=.01  )
-                    ax.set_ylabel('I(tau)')
+ 
+                ax.set_ylabel('I(tau)')
+            ax.set_title(('Scatter Plot' + ' R = ' + str(np.round(R,3))))
             ax.set_xlabel(('I(t=' + str(t)+')'))
             
         if plot_type == 'contour':
@@ -6989,7 +7013,12 @@ class GUI(Frame):
                 ax.autoscale()      
                 ax.set_xlim(0)
                 ax.set_ylim(0)
+                x, y = ssa_obj.intensity_vec[:,idx_t]/np.sum(ssa_obj.probe),ssa_obj.intensity_vec[:,idx_tau]/np.sum(ssa_obj.probe)
+
+                R = pearsonr(x,y)[0]
+                ax.set_title(('Ellipse Plot' + ' R = ' + str(np.round(R,3))))
                 ax.scatter(It, Itau,zorder=3,alpha=0.3,color='red',marker='.')
+                ax.set_xlabel(('I(t=' + str(t)+')'))
                 
             else:
                 plt.ylabel('I(tau)')
