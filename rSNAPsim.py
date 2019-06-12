@@ -1210,17 +1210,21 @@ class rSNAPsim():
                 solutions.append(soln)
             
             collisions = np.array([[]])
+            watched_ribs = []
             for i in range(n_traj):
-                totalrib = all_nribs[0][0]
+                totalrib = all_nribs[i]
             
                 if totalrib > all_collisions.shape[1]:
-                    collisions = np.append(collisions, all_collisions[0][:totalrib])
+                    collisions = np.append(collisions, all_collisions[i][:])
+                    watched_ribs.append(int(all_collisions.shape[1]))
             
                 else:
                    
-                    collisions = np.append(collisions, all_collisions[0][:])
+                    collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+                    watched_ribs.append(int(totalrib[0]))
             
             sttime = time.time() - st
+
         except:
             
             print('C++ library failed, Using Python Implementation')
@@ -1232,12 +1236,14 @@ class rSNAPsim():
             collisions = np.array([[]])
             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
             all_col_points = []
+            watched_ribs = []
             for i in range(n_traj):
                 
                 soln,all_ribtimes,Ncol,col_points = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
                 #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
                 
                 collisions = np.append(collisions,Ncol)
+                watched_ribs.append(int(len(collisions)))
                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
                 all_col_points.append(np.array(col_points))
                 if np.max(validind) != N_rib-1:
@@ -1384,6 +1390,7 @@ class rSNAPsim():
         ssa_obj.time = truetime
         ssa_obj.time_rec = truetime[startindex:]
         ssa_obj.start_time = non_consider_time
+        ssa_obj.watched_ribs = watched_ribs
         try:
             ssa_obj.col_points = all_col_points
         except:
