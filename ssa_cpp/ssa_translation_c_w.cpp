@@ -11,8 +11,9 @@
 using Eigen::MatrixXd;
 using Eigen::MatrixXi;
 using Eigen::VectorXd;
+using Eigen::VectorXi;
 
-void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_result, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result)
+void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_result, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result, double* col_t, int* col_x, int colNp )
 {
     // Declare the variables
     int R = 9; // ribosome exclusion.
@@ -61,6 +62,7 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 	
 	//VectorXd T_array(200);
 	int t_counter = 0;
+	int col_counter = 0;
 	
     // Create an eigen matrix that stores the results. 
     Eigen::Map<Eigen::MatrixXi> X_array(SSA_result,Nt,N_rib);
@@ -72,9 +74,15 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 	
 	Eigen::Map<Eigen::VectorXd> T_array(SSA_ribtimes,ribtimesize);
 	Eigen::Map<Eigen::VectorXi> col_array(col_result,cNt);
+	
+	
+	Eigen::Map<Eigen::VectorXd> colarrayt(col_t,colNp);
+	Eigen::Map<Eigen::VectorXi> colarrayx(col_x,colNp);
+	
 	Eigen::Map<Eigen::VectorXi> n_ribs(nribs,1);
 
 	int tsize = T_array.size();
+	int col_size = colarrayt.size();
 
     while( t < tf)
     {
@@ -245,6 +253,12 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 		else {
 			if (X(0,ind-2) == X(0,ind-1) + R){
 				col(0,ind-1) +=1;
+				if (col_counter < col_size){
+					colarrayt(col_counter) = t;
+					colarrayx(col_counter) = X(0,ind-1);
+					col_counter+=1;
+				}
+				
 			}
 
 

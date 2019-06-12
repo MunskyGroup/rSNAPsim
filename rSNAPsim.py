@@ -1182,21 +1182,31 @@ class rSNAPsim():
             all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
             all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
             all_nribs = np.zeros((n_traj,1))
-            
+            all_col_points = []
             for i in range(n_traj):
                 result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
                 ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
                 frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
                 coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+                colpointsx = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+                colpointst = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+                
                 nribs = np.array([0],dtype=np.int32)
                 
-                ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+                ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
                 #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
                 all_results[i, :] = result
                 all_frapresults[i,:] = frapresult
                 all_ribtimes[i,:] = ribtimes
                 all_collisions[i,:] = coltimes
                 all_nribs[i,:] = nribs
+                
+                endcolrec = np.where(colpointsx == 0)[0][0]
+                
+                colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+                all_col_points.append(colpoints.T)
+                
+                
     
             for i in range(n_traj):
                 soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
