@@ -2,3 +2,8 @@ eigen/
 __pycache__/
 build/
 *.pyc
+*.o
+*.so
+*/.DS_Store
+.DS_Store
+
