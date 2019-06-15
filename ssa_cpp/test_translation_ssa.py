@@ -30,18 +30,28 @@ all_coltimes = np.zeros((n_trajectories,400),dtype=np.int32)
 nribs = np.array([0],dtype=np.int32)
 all_ribs = np.zeros((n_trajectories,1))
 seeds = np.random.randint(0,0x7FFFFFF,n_trajectories)
+all_col_points = []
 for i in range(n_trajectories):
     result = np.zeros((len(t_array)*N_rib),dtype=np.int32)    
     frapresult = np.zeros((len(t_array)*N_rib),dtype=np.int32)
     
     ribtimes = np.zeros((400),dtype=np.float64)
     coltimes = np.zeros((400),dtype=np.int32)
-    ssa_translation.run_SSA(result,ribtimes,coltimes, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs)
+    
+    colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
+    colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
+    
+    ssa_translation.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs)
     all_results[i,:] = result
     all_frapresults[i,:] = frapresult
     all_coltimes[i,:] = coltimes
     all_ribtimes[i,:] = ribtimes
     all_ribs[i,:] = nribs[0]
+
+    endcolrec = np.where(colpointsx == 0)[0][0]
+    
+    colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+    all_col_points.append(colpoints.T)
 print('time for {0} trajectories {1}'.format(n_trajectories,time.time()-start))
 #plt.hist(result[result>0])
 #plt.show()
