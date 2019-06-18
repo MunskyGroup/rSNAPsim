@@ -70,6 +70,8 @@ try:
 except:
     from tkinter.colorchooser import *
 from scipy.stats import norm
+from scipy.stats import kde
+from scipy.stats import pearsonr
 
 try:
     from Bio import SeqIO
