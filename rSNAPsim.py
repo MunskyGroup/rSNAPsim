@@ -2825,7 +2825,46 @@ class rSNAPsim():
         idx_t = (np.abs(stime - t)).argmin()
         idx_tau = (np.abs(stime - tau)).argmin()
         
-        
+        diff = idx_tau - idx_t
+        if plot_type == 'average':
+            
+            minx = 10000000
+            maxx = 0
+            
+            miny = 10000000
+            maxy = 0
+            
+            fig,ax= plt.subplots()
+            for i in range(len(stime)-idx_tau,0,-10):
+                idx_tau = (np.abs(stime - (idx_t+i))).argmin()  
+                Itau = ssa_obj.intensity_vec[:,idx_tau]
+                x,y = np.mean(ssa_obj.intensity_vec[:,idx_tau]/np.sum(ssa_obj.probe)),np.mean(ssa_obj.intensity_vec[:,idx_tau+diff]/np.sum(ssa_obj.probe))
+                minx = min(np.min(x),minx)
+                miny = min(np.min(y),miny)
+                maxx = max(np.max(x),maxx)
+                maxy = max(np.max(y),maxy)
+                
+                ax.scatter(x, y,zorder=3,color= cm.viridis_r(1.*i/len(stime)))
+
+
+            c_map_ax = fig.add_axes([.95, 0.1, 0.1, 0.8])
+          
+
+            c_map_ax.axes.get_xaxis().set_visible(False)
+
+            cbar = mpl.colorbar.ColorbarBase(c_map_ax, cmap=cm.viridis_r, orientation = 'vertical')
+            
+            
+            cbar.ax.set_yticklabels(np.linspace(idx_t,stime[-1],6).astype(int) )
+            cbar.ax.set_title('t')
+            
+            ax.plot([min(minx,miny),max(maxx,maxy)],[min(minx,miny),max(maxx,maxy)], color='red',ls='--')
+            
+            ax.set_ylabel(('<I(t=' + 't + tau'+')>'))
+            ax.set_xlabel(('<I(t=' +'t'+')>'))
+            ax.set_title(( 'Average I(t) vs Average I(t+tau) for tau = ' + str(diff) ) )
+            
+            
         if plot_type == 'density':
             fig,ax= plt.subplots()
             nbins = int(np.max(ssa_obj.intensity_vec/np.sum(ssa_obj.probe)))+2
