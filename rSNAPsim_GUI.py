@@ -1596,7 +1596,7 @@ class GUI(Frame):
         
         
         self.tauplottype = tk.StringVar(value='Density')
-        tt_dropdown = tk.OptionMenu(tautopframe,self.tauplottype,"Density","Scatter","Ellipse","Average")
+        tt_dropdown = tk.OptionMenu(tautopframe,self.tauplottype,"Density","Scatter","Ellipse","Average","Set Tau")
         tt_dropdown.config(font=('SystemButtonText',global_font_size))
         tt_dropdown['menu'].config(font=('SystemButtonText',global_font_size))
 
@@ -6932,7 +6932,7 @@ class GUI(Frame):
         
     def tau_plot(self):
         self.tauax.clear()
-        print(self.tau_fig.get_axes())
+     
         if len(self.tau_fig.get_axes()) > 1:
             cbar = self.tau_fig.get_axes()[1]
             tmpax = self.tau_fig.get_axes()[2]
@@ -6954,6 +6954,8 @@ class GUI(Frame):
             ptype = 'scatter'
         if ptype == 'Average':
             ptype = 'average'
+        if ptype == 'Set Tau':
+            ptype = 'set_tau'
         self.tau_plot_internal(self.tauax,self.tau_fig,self.ssa,t,tau,plot_type =ptype )
         self.tau_canvas.draw()
         
@@ -7007,7 +7009,29 @@ class GUI(Frame):
             temp_ax.set_ylabel(('<I(t=' + 't + tau'+')>'))
             temp_ax.set_xlabel(('<I(t=' +'t'+')>'))
             temp_ax.set_title(( 'Average I(t) vs Average I(t+tau) for tau = ' + str(diff) ) )
+
+        if plot_type == 'set_tau':
+            tmpax = fig.add_axes([.1, .1, 0.6, .8])
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
             
+            
+            for i in range(len(stime)-diff-idx_t):
+                    idx_tau = (np.abs(stime - (idx_t+i))).argmin()                
+                    tmpax.scatter(ssa_obj.intensity_vec[:,i]/np.sum(ssa_obj.probe), ssa_obj.intensity_vec[:,i+diff]/np.sum(ssa_obj.probe),c= cm.viridis(1.*i/len(stime)),alpha=.5  )
+            tmpax.set_ylabel('I(t + s)')
+            tmpax.set_xlabel(('I(t)'))
+            tmpax.set_title(('Set tau, all times s = ' + str(diff) ))            
+
+            c_map_ax = fig.add_axes([.8, 0.1, 0.1, 0.8])
+          
+
+            c_map_ax.axes.get_xaxis().set_visible(False)
+
+            cbar = mpl.colorbar.ColorbarBase(c_map_ax, cmap=cm.viridis, orientation = 'vertical')
+            
+            cbar.ax.set_yticklabels(np.linspace(idx_t,stime[-1],6).astype(int) )
+            cbar.ax.set_title('t')        
                     
         if plot_type == 'density':
            
