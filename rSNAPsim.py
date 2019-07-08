@@ -2826,12 +2826,13 @@ class rSNAPsim():
         idx_tau = (np.abs(stime - tau)).argmin()
         
         diff = idx_tau - idx_t
+        difftime = t-tau
         
         if plot_type == 'Average':
 
             fig,ax= plt.subplots()
-            for i in range(len(stime)-idx_tau,0,-10):
-                idx_tau = (np.abs(stime - (idx_t+i))).argmin()  
+            for i in range(len(stime)-idx_tau,0,-4):
+                idx_tau = (np.abs(stime- (stime[i]+difftime ))).argmin() 
                 Itau = ssa_obj.intensity_vec[:,idx_tau]
                 x,y = np.mean(ssa_obj.intensity_vec[:,idx_tau]/np.sum(ssa_obj.probe)),np.mean(ssa_obj.intensity_vec[:,idx_tau+diff]/np.sum(ssa_obj.probe))
 

@@ -6175,7 +6175,6 @@ class GUI(Frame):
 
         all_k_design = [k_init] + k_elongation_design.flatten().tolist() + [10]
 
-
         tvec = np.linspace(0,  float(self.ssa_inputs[6].get())+float(self.ssa_inputs[1].get()), int(self.time_res_e.get())  + int(self.ssa_inputs[1].get())+1)
 
       
@@ -6967,6 +6966,8 @@ class GUI(Frame):
         idx_t = (np.abs(stime - t)).argmin()
         idx_tau = (np.abs(stime - tau)).argmin()
         diff = idx_tau - idx_t
+        difftime = tau-t
+
         
         if plot_type == 'average':
             
@@ -6980,11 +6981,14 @@ class GUI(Frame):
             maxy = 0
             
          
-            for i in range(len(stime)-diff-idx_t-1,0,-1):
+            for i in range(len(stime)-abs(diff),0,-1):
                 
-                idx_tau = (np.abs(stime - (idx_t+i))).argmin()  
+                idx_tau = (np.abs(stime- (stime[i]+difftime ))).argmin()
+                
+             
+                
                 Itau = ssa_obj.intensity_vec[:,idx_tau]
-                x,y = np.mean(ssa_obj.intensity_vec[:,idx_tau]/np.sum(ssa_obj.probe)),np.mean(ssa_obj.intensity_vec[:,idx_tau+diff]/np.sum(ssa_obj.probe))
+                x,y = np.mean(ssa_obj.intensity_vec[:,i]/np.sum(ssa_obj.probe)),np.mean(ssa_obj.intensity_vec[:,idx_tau]/np.sum(ssa_obj.probe))
                 minx = min(np.min(x),minx)
                 miny = min(np.min(y),miny)
                 maxx = max(np.max(x),maxx)
