@@ -29,6 +29,9 @@ import matplotlib                 #matplotlib
 #matplotlib.use("TkAgg")          #switch backends for matplotlib for tkinter
 
 
+from scipy.stats import kde
+from scipy.stats import pearsonr
+
 
 
 '''
