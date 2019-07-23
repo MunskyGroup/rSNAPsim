@@ -877,6 +877,7 @@ class rSNAPsim():
 
 
     def open_seq_file(self, seqfile):
+        
         '''
         Reads a sequence file, either a .txt file or a .gb genbank file
 
@@ -887,6 +888,7 @@ class rSNAPsim():
 
         '''
         seq = seqfile
+        self.sequence_name = ''
         if '.txt' in seq:
             with open(seq) as f:
                 raw = f.readlines()
@@ -917,9 +919,6 @@ class rSNAPsim():
                         self.sequence_name = section
                         namelen = len(section)
                     
-                    
-                    
-
 
         if '.gb' in seq:
             gb_record = SeqIO.read(open(seq, "r"), "genbank")
@@ -927,7 +926,10 @@ class rSNAPsim():
             self.sequence_name = gb_record.name
             self.gb_obj = gb_record
 
-
+        if self.sequence_name == '':
+            self.sequence_name = seqfile.replace('.txt','')
+            self.sequence_name = seqfile.replace('.gb','')
+            
 
 
 

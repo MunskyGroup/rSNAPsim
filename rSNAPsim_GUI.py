@@ -7,13 +7,15 @@ Created on Fri Jul 06 13:40:30 2018
 
 import os
 import sys
-os.chdir('ssa_cpp')
 
 
 
 import base64
 import io
+
+os.chdir('ssa_cpp')
 import ssa_translation
+os.chdir('..')
 
 try:
 
@@ -22,7 +24,7 @@ try:
 
 except:
     pass
-os.chdir('..')
+
 
 import re                         #import regex
 import matplotlib                 #matplotlib
@@ -6351,13 +6353,23 @@ class GUI(Frame):
 
         self.acax.clear()
         self.acax.cla()
-        self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr,self.ssa.error_autocorr)
+        if self.ssa.mean_autocorr.shape[0] == 2: 
+        
+            self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr[0],self.ssa.error_autocorr[0],color=self.main_color)
+            self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr[1],self.ssa.error_autocorr[1],color='#2294e6')
+        else:
+            self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr,self.ssa.error_autocorr)
+        
         self.ac_canvas.draw()
 
         self.update_ss_frame_data()
 
         self.rbax.clear()
-        self.plot_rib_dense(self.rbax,self.ssa.rib_density)
+        if self.ssa.mean_autocorr.shape[0] == 2: 
+            self.plot_rib_dense(self.rbax,self.ssa.rib_density[0],color=self.main_color)
+            self.plot_rib_dense(self.rbax,self.ssa.rib_density[1],color='#2294e6')
+        else:
+            self.plot_rib_dense(self.rbax,self.ssa.rib_density)
         self.rb_canvas.draw()
 
         self.cuax.clear()
@@ -6515,7 +6527,11 @@ class GUI(Frame):
 
         self.acax.clear()
         self.acax.cla()
-        self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr,self.ssa.error_autocorr)
+        if self.ssa.mean_autocorr.shape[0] == 2: 
+            self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr[0],self.ssa.error_autocorr[0])
+            self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr[1],self.ssa.error_autocorr[1])
+        else:
+            self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr,self.ssa.error_autocorr)
         self.ac_canvas.draw()
 
         self.update_ss_frame_data()
@@ -6544,7 +6560,14 @@ class GUI(Frame):
 
         self.acax.clear()
         self.acax.cla()
-        self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr,self.ssa.error_autocorr)
+        
+        if self.ssa.mean_autocorr.shape[0] == 2: 
+        
+            self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr[0],self.ssa.error_autocorr[0])
+            self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr[1],self.ssa.error_autocorr[1])
+        else:
+            self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr,self.ssa.error_autocorr)
+        
         self.ac_canvas.draw()
 
         self.update_ss_frame_data()
@@ -6784,45 +6807,106 @@ class GUI(Frame):
 
     def plot_ssa_intensity(self,ax,i_vec):
         ax.cla()
-        ax.axis([0,int(i_vec.shape[1]),0,np.max(i_vec)+5] )
-        ticks = np.linspace(0,int(i_vec.shape[1]) ,6).astype(int)
-        yticks = np.linspace(0,np.max(i_vec)+5,4).astype(int)
-        ax.set_xticks(ticks)
-        ax.set_yticks(yticks)
+        if len(i_vec.shape) == 3:
+            maxint = 0
+            for i in range(i_vec.shape[0]):
+                traj = i_vec[i]
+        
+              
+                maxint = max(maxint,int((np.max(traj)+5)))
+                ax.axis([0,int(traj.shape[1]) ,0,np.max(traj)+5] )
+                
+                
+                
+                ticks = np.linspace(0,int(traj.shape[1]) ,6).astype(int)
+                yticks = np.linspace(0,maxint,4).astype(int)
+                ax.set_xticks(ticks)
+                ax.set_yticks(yticks)
+
+                colors = [self.main_color,'#2294e6']
+                for j in range(0,traj.shape[0]):
+                    
+                    
+                    ax.plot(traj[j],alpha=.6,color=colors[i])
+    
+            #ax.plot(i_vec[0],color=self.main_color,linewidth=3)
+            ax.set_xlabel('time (sec)')
+            ax.set_ylabel('Intensity (a.u.)')
+
+            
+        else:
+           
+            ax.axis([0,int(i_vec.shape[1]),0,np.max(i_vec)+5] )
+            ticks = np.linspace(0,int(i_vec.shape[1]) ,6).astype(int)
+            yticks = np.linspace(0,np.max(i_vec)+5,4).astype(int)
+            ax.set_xticks(ticks)
+            ax.set_yticks(yticks)
 
 
 
 
-        for i in range(0,i_vec.shape[0]):
-
-            ax.plot(i_vec[i],alpha=.6,color=self.main_color)
-
-        #ax.plot(i_vec[0],color=self.main_color,linewidth=3)
-        ax.set_xlabel('time (sec)')
-        ax.set_ylabel('Intensity (a.u.)')
+            for i in range(0,i_vec.shape[0]):
+    
+                ax.plot(i_vec[i],alpha=.6,color=self.main_color)
+    
+            #ax.plot(i_vec[0],color=self.main_color,linewidth=3)
+            ax.set_xlabel('time (sec)')
+            ax.set_ylabel('Intensity (a.u.)')
 
 
     def plot_ssa_average(self,ax,i_vec):
         ax.cla()
-        ax.axis([0,int(i_vec.shape[1]),0,np.max(i_vec)+5] )
-        ticks = np.linspace(0,int(i_vec.shape[1]) ,6).astype(int)
-        yticks = np.linspace(0,np.max(i_vec)+5,4).astype(int)
-        ax.set_xticks(ticks)
-        ax.set_yticks(yticks)
+        if len(i_vec.shape) == 3:
+            
+            maxint = 0
+            for i in range(i_vec.shape[0]):
+                traj = i_vec[i]
+        
+              
+                maxint = max(maxint,int((np.max(traj)+5)))
+                ax.axis([0,int(traj.shape[1]) ,0,np.max(traj)+5] )
+                
+                
+                
+                ticks = np.linspace(0,int(traj.shape[1]) ,6).astype(int)
+                yticks = np.linspace(0,maxint,4).astype(int)
+                ax.set_xticks(ticks)
+                ax.set_yticks(yticks)
 
-
-
-
-        for i in range(0,i_vec.shape[0]):
-
-            ax.plot(i_vec[i],alpha=.1,color='gray')
-
-        ax.plot(np.mean(i_vec,axis=0),color=self.main_color,linewidth=3)
-
-        ax.plot(np.mean(i_vec,axis=0) - np.std(i_vec,axis=0  ), color=self.main_color,linewidth=1)
-        ax.plot(np.mean(i_vec,axis=0) + np.std(i_vec,axis=0  ), color=self.main_color,linewidth=1)
-        ax.set_xlabel('time (sec)')
-        ax.set_ylabel('Intensity (a.u.)')
+                colors = [self.main_color,'#2294e6']
+                for j in range(0,traj.shape[0]):
+                    
+                    
+                    ax.plot(traj[j],alpha=.1,color='gray')
+                    
+                ax.plot(np.mean(traj,axis=0),color=colors[i],linewidth=3)
+    
+                ax.plot(np.mean(traj,axis=0) - np.std(traj,axis=0  ), color=colors[i],linewidth=1)
+                ax.plot(np.mean(traj,axis=0) + np.std(traj,axis=0  ), color=colors[i],linewidth=1)
+                ax.set_xlabel('time (sec)')
+                ax.set_ylabel('Intensity (a.u.)')
+         
+            
+        else:
+            ax.axis([0,int(i_vec.shape[1]),0,np.max(i_vec)+5] )
+            ticks = np.linspace(0,int(i_vec.shape[1]) ,6).astype(int)
+            yticks = np.linspace(0,np.max(i_vec)+5,4).astype(int)
+            ax.set_xticks(ticks)
+            ax.set_yticks(yticks)
+    
+    
+    
+    
+            for i in range(0,i_vec.shape[0]):
+    
+                ax.plot(i_vec[i],alpha=.1,color='gray')
+    
+            ax.plot(np.mean(i_vec,axis=0),color=self.main_color,linewidth=3)
+    
+            ax.plot(np.mean(i_vec,axis=0) - np.std(i_vec,axis=0  ), color=self.main_color,linewidth=1)
+            ax.plot(np.mean(i_vec,axis=0) + np.std(i_vec,axis=0  ), color=self.main_color,linewidth=1)
+            ax.set_xlabel('time (sec)')
+            ax.set_ylabel('Intensity (a.u.)')
 
 
     def __is_number(self, string):
@@ -6844,54 +6928,51 @@ class GUI(Frame):
 
     def plot_ssa_pdf(self,ax,i_vec):
         ax.cla()
-        nbins = int(np.max(i_vec))
-
-        stime = self.ssa.time_rec-self.ssa.start_time
         
-        timeslice = self.pdf_time_entry.get()
         
-        if self.__is_number(timeslice):
-            idx = self.__get_closest_val(int(timeslice),stime)
-            ivec_slice = i_vec.T[idx]
+        if len(i_vec.shape) == 3:
+            pass
         else:
-            ivec_slice = i_vec
-
-        argmin = int(np.min(np.floor(ivec_slice/len(self.ssa.probe))))
-        argmax = int(np.max(np.ceil(ivec_slice/len(self.ssa.probe))))
-
-        histdata = np.histogram(ivec_slice/len(self.ssa.probe), bins = np.linspace(argmin,argmax, argmax+1).astype(int))
-
-   
-     
-        '''
-        ax.axis([0,np.max(i_vec)+5,0,np.max(hist[0])+5] )
-        ticks = np.linspace(0,np.max(i_vec)+5 ,6).astype(int)
-        yticks = np.linspace(0,np.max(hist[0])+5,4).astype(int)
-        ax.set_xticks(ticks)
-        ax.set_yticks(yticks)
-        '''
-
-
-        ax.bar(histdata[1][:-1],histdata[0],color=self.main_color,width=.96)
-        
-        maxhist = np.sum(histdata[0])
-        ticks = ax.get_yticks()
-        p_ticks = []
-        for tick in ticks:
-            val = float(tick)
-            p_ticks.append(str(np.round(val/maxhist,2)))
+            nbins = int(np.max(i_vec))
+    
+            stime = self.ssa.time_rec-self.ssa.start_time
             
-        
-        ax.set_yticklabels(p_ticks)
-        
-        '''
-        for i in range(0,i_vec.shape[1])
-            nbins = int(np.max(ivect))
-            ax.hist(ivect[i],bins = nbins,alpha=.5,color=self.main_color,histtype='step',fill=self.main_color)
-        '''
-
-        ax.set_xlabel('intensity (ump)')
-        ax.set_ylabel('Probability ')
+            timeslice = self.pdf_time_entry.get()
+            
+            if self.__is_number(timeslice):
+                idx = self.__get_closest_val(int(timeslice),stime)
+                ivec_slice = i_vec.T[idx]
+            else:
+                ivec_slice = i_vec
+    
+            argmin = int(np.min(np.floor(ivec_slice/len(self.ssa.probe))))
+            argmax = int(np.max(np.ceil(ivec_slice/len(self.ssa.probe))))
+    
+            histdata = np.histogram(ivec_slice/len(self.ssa.probe), bins = np.linspace(argmin,argmax, argmax+1).astype(int))
+    
+       
+    
+    
+            ax.bar(histdata[1][:-1],histdata[0],color=self.main_color,width=.96)
+            
+            maxhist = np.sum(histdata[0])
+            ticks = ax.get_yticks()
+            p_ticks = []
+            for tick in ticks:
+                val = float(tick)
+                p_ticks.append(str(np.round(val/maxhist,2)))
+                
+            
+            ax.set_yticklabels(p_ticks)
+            
+            '''
+            for i in range(0,i_vec.shape[1])
+                nbins = int(np.max(ivect))
+                ax.hist(ivect[i],bins = nbins,alpha=.5,color=self.main_color,histtype='step',fill=self.main_color)
+            '''
+    
+            ax.set_xlabel('intensity (ump)')
+            ax.set_ylabel('Probability ')
 
 
     def plot_ssa_acc_codon(self,ax,mean_acc,error_acc,color=None,name=None):
@@ -7255,7 +7336,7 @@ class GUI(Frame):
 
 
     def plot_ssa_acc(self,ax,mean_acc,error_acc,color=None,name=None):
-
+  
 
         if color == None:
             color = self.main_color
@@ -7287,12 +7368,14 @@ class GUI(Frame):
         ax.set_ylim(np.max(rib_density)+.1*np.max(rib_density),np.min(rib_density)+.1*np.min(rib_density) )
         ax.set_xlim(-10,rib_density.shape[0] + 10)
 
-    def plot_rib_dense(self,ax,rib_density):
+    def plot_rib_dense(self,ax,rib_density,color=None):
         ax.cla()
         ax.axis([0,int(len(rib_density)),0,np.max(rib_density)+.1*np.max(rib_density)])
         ax.set_xlabel('Codon Position')
         ax.set_ylabel('P')
-        ax.plot(rib_density,self.main_color)
+        if not color:
+            color = self.main_color
+        ax.plot(rib_density,color)
 
     def plot_cai_codons(self,ax,cai_codon):
         ax.cla()
