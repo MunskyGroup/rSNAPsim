@@ -2075,6 +2075,9 @@ class GUI(Frame):
         aclabel = tk.Label(acframe,text='Autocorrelation',font=('SystemButtonText',11,'bold'))
         acframe.pack(expand=False,fill='x',side='top',anchor=tk.N) #(row=9,column=0,columnspan=3,sticky=tk.NW,padx=10)
         aclabel.grid(row=0,column=0)
+        self.norm_acc = tk.BooleanVar(value=False)
+        normalized_acc = tk.Checkbutton(acframe,text='Normalized',variable = self.norm_acc,command=self.replot_acc )
+        normalized_acc.grid(row=0,column=3,sticky=tk.E)
 
         '''
         self.CAIlabel = tk.Entry(ss_frame,width=5)
@@ -5511,24 +5514,28 @@ class GUI(Frame):
         if probePosition.shape[0] > 1:
             for i in range(probePosition.shape[0]):
                 if i > 0:
-                    autocorr_vec2, mean_autocorr2, error_autocorr2, dwelltime2, ke_sim2  = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+                    autocorr_vec2, mean_autocorr2, error_autocorr2, dwelltime2, ke_sim2  = self.sms.get_autocorr(intensity_vec[i], truetime, 0, genelength)
                     autocorr_vec = np.vstack((autocorr_vec,autocorr_vec2))
                     mean_autocorr = np.vstack((mean_autocorr,mean_autocorr2))
                     error_autocorr = np.vstack((error_autocorr,error_autocorr2))
                     dwelltime.append(dwelltime2)
                     ke_sim.append(ke_sim2)
                 else:
-                    autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+                    autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+                    autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.sms.get_autocorr_norm(intensity_vec[i], truetime, 0, genelength)
                     dwelltime = [dwelltime]
                     ke_sim = [ke_sim]
             
         else:
-            autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
-        
-        
+            autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec, truetime, 0, genelength)
+            autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.sms.get_autocorr_norm(intensity_vec, truetime, 0, genelength)
+                        
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
         ssa_obj.error_autocorr = error_autocorr
+        ssa_obj.autocorr_vec_norm = autocorr_vec_norm
+        ssa_obj.mean_autocorr_norm = mean_autocorr_norm
+        ssa_obj.error_autocorr_norm = error_autocorr_norm
         ssa_obj.dwelltime = dwelltime
         ssa_obj.ke_sim = ke_sim
         ssa_obj.ke_true = float(genelength)/np.mean(ssa_obj.ribtimes)
@@ -6087,16 +6094,21 @@ class GUI(Frame):
                     ke_sim.append(ke_sim2)
                 else:
                     autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+                    autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.sms.get_autocorr_norm(intensity_vec[i], truetime, 0, genelength)
                     dwelltime = [dwelltime]
                     ke_sim = [ke_sim]
             
         else:
             autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec, truetime, 0, genelength)
-        
+            autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.sms.get_autocorr_norm(intensity_vec, truetime, 0, genelength)
+                        
         
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
         ssa_obj.error_autocorr = error_autocorr
+        ssa_obj.autocorr_vec_norm = autocorr_vec_norm
+        ssa_obj.mean_autocorr_norm = mean_autocorr_norm
+        ssa_obj.error_autocorr_norm = error_autocorr_norm
         ssa_obj.dwelltime = dwelltime
         ssa_obj.ke_sim = ke_sim
         ssa_obj.ke_true = float(genelength)/np.mean(ssa_obj.ribtimes)
@@ -7252,7 +7264,19 @@ class GUI(Frame):
         ax1.set_xlim(0,maxin+5)
        
             
-
+    def replot_acc(self):
+        
+        if len(self.ssas)!=0:
+            self.acax.clear()
+            self.acax.cla()
+      
+            print(self.norm_acc.get())
+            if self.norm_acc.get():
+                self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr_norm,self.ssa.error_autocorr_norm)
+            else:
+                self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr,self.ssa.error_autocorr)
+            self.ac_canvas.draw()
+        print('tried')
 
     def plot_ssa_acc(self,ax,mean_acc,error_acc,color=None,name=None):
 
@@ -7260,10 +7284,10 @@ class GUI(Frame):
         if color == None:
             color = self.main_color
 
-        ax.axis([0,int(len(mean_acc)),-.5,1.1] )
+        ax.axis([0,int(len(mean_acc)),min(mean_acc)-.3,max(mean_acc)+.3] )
         t = np.linspace(0,len(mean_acc),len(mean_acc)+1)
         ticks = np.linspace(0,int(len(mean_acc)),6).astype(int)
-        yticks = np.linspace(-.5,1.1,4).astype(int)
+        yticks = np.linspace(np.min(mean_acc)-.3,np.max(mean_acc)+.3,4).astype(int)
         ax.set_xticks(ticks)
         ax.set_yticks(yticks)
         ax.set_xlabel('time (sec)')

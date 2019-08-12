@@ -1553,16 +1553,21 @@ class rSNAPsim():
                     ke_sim.append(ke_sim2)
                 else:
                     autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+                    autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.get_autocorr_norm(intensity_vec[i], truetime, 0, genelength)
                     dwelltime = [dwelltime]
                     ke_sim = [ke_sim]
             
         else:
             autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
-        
+            autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.get_autocorr_norm(intensity_vec, truetime, 0, genelength)
+                          
         
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
         ssa_obj.error_autocorr = error_autocorr
+        ssa_obj.autocorr_vec_norm = autocorr_vec_norm
+        ssa_obj.mean_autocorr_norm = mean_autocorr_norm
+        ssa_obj.error_autocorr_norm = error_autocorr_norm
         ssa_obj.dwelltime = dwelltime
         ssa_obj.ke_sim = ke_sim
         ssa_obj.ke_true = float(genelength)/np.mean(ssa_obj.ribtimes)
@@ -3092,8 +3097,7 @@ class rSNAPsim():
 
             
 
-
-    def get_autocorr(self, intensity_vec, time_vec, totalSimulationTime, geneLength):
+    def get_autocorr_norm(self, intensity_vec, time_vec, totalSimulationTime, geneLength):
         '''
         returns the autocorrelations
         '''
@@ -3105,7 +3109,51 @@ class rSNAPsim():
 
         normalized_autocorr = autocorr_vec.T/ autocorr_vec[:,0]
         mean_autocorr = np.mean(normalized_autocorr, axis=1)
+        
         error_autocorr = np.std(normalized_autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
+ 
+        dwelltime = None
+
+        try:
+            dwelltime = time_vec[np.where(mean_autocorr < .01)[0][0]]
+            
+        except:
+            try:
+                dwelltime = time_vec[np.where(mean_autocorr < .05)[0][0]]
+                
+            except:
+                dwelltime = 1
+
+        try:
+            zeroind = np.where(mean_autocorr<0)[0][0]
+            zeromean = np.mean(mean_autocorr[zeroind:])
+            normalized_autocorr = normalized_autocorr-zeromean
+            mean_autocorr = np.mean(normalized_autocorr, axis=1)
+            
+            error_autocorr = np.std(normalized_autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
+     
+        except:
+            pass
+
+
+        ke_exp = np.round(geneLength/dwelltime ,1)
+
+        return normalized_autocorr, mean_autocorr, error_autocorr, dwelltime, ke_exp
+
+
+    def get_autocorr(self, intensity_vec, time_vec, totalSimulationTime, geneLength):
+        '''
+        returns the autocorrelations
+        '''
+
+        autocorr_vec = np.zeros((intensity_vec.shape))
+        
+        for i in range(intensity_vec.shape[0]):
+            autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
+
+        autocorr = autocorr_vec.T
+        mean_autocorr = np.mean(autocorr, axis=1)
+        error_autocorr = np.std(autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
         
  
         dwelltime = None
@@ -3124,7 +3172,7 @@ class rSNAPsim():
 
         ke_exp = np.round(geneLength/dwelltime ,1)
 
-        return autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_exp
+        return autocorr, mean_autocorr, error_autocorr, dwelltime, ke_exp
 
 
     def get_crosscorr(self, iv1,iv2):
