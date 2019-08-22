@@ -3099,15 +3099,29 @@ class rSNAPsim():
 
             
 
-    def get_autocorr_norm(self, intensity_vec, time_vec, totalSimulationTime, geneLength):
+    def get_autocorr_norm(self, intensity_vec, time_vec, totalSimulationTime, geneLength,normalization= 'Individual'):
         '''
         returns the autocorrelations
         '''
 
         autocorr_vec = np.zeros((intensity_vec.shape))
-        
-        for i in range(intensity_vec.shape[0]):
-            autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
+
+
+        if normalization in [ 'Individual','I','individual','ind']:
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
+        elif normalization in ['global','Global','g','G']:
+            global_mean = np.mean(intensity_vec)
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-global_mean)
+            
+        else:   
+            print('unrecognized normalization, using indivdual means')
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
+                
+                
+
 
         normalized_autocorr = autocorr_vec.T/ autocorr_vec[:,0]
         mean_autocorr = np.mean(normalized_autocorr, axis=1)
@@ -3143,16 +3157,26 @@ class rSNAPsim():
         return normalized_autocorr, mean_autocorr, error_autocorr, dwelltime, ke_exp
 
 
-    def get_autocorr(self, intensity_vec, time_vec, totalSimulationTime, geneLength):
+    def get_autocorr(self, intensity_vec, time_vec, totalSimulationTime, geneLength, normalization='Individual'):
         '''
         returns the autocorrelations
         '''
 
         autocorr_vec = np.zeros((intensity_vec.shape))
         
-        for i in range(intensity_vec.shape[0]):
-            autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
-
+        
+        if normalization in [ 'Individual','I','individual','ind']:
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
+        elif normalization in ['global','Global','g','G']:
+            global_mean = np.mean(intensity_vec)
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-global_mean)
+            
+        else:   
+            print('unrecognized normalization, using indivdual means')
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
         autocorr = autocorr_vec.T
         mean_autocorr = np.mean(autocorr, axis=1)
         error_autocorr = np.std(autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])

@@ -33,7 +33,7 @@ import matplotlib                 #matplotlib
 
 from scipy.stats import kde
 from scipy.stats import pearsonr
-
+from scipy.signal import savgol_filter
 
 
 '''
@@ -816,7 +816,7 @@ class GUI(Frame):
             self.default_color = '#' + dc[0] + dc[1] + dc[2]
 
         #self.tk_setPalette(background = self.default_color,disabledforeground='#aaaaaa',inactivebackground='#aaaaaa',disabledbackground='#aaaaaa')
-        self.main_color = '#fcaa0a'
+        self.main_color = '#157010'
         self.global_dpi = 70 #global dpi setting for plots
         self.loaded_gif = ''
 
@@ -895,14 +895,15 @@ class GUI(Frame):
         fcs_frame = tk.Frame(self.stoc_Nb,name="fcs") #elongation notebook Frame
         fcs_frame.pack(expand=True,side='top', fill='both')
 
-        sim_frame = tk.Frame(self.stoc_Nb,name="sim") #elongation notebook Frame
-        sim_frame.pack(expand=True,side='top', fill='both')
+        #sim_frame = tk.Frame(self.stoc_Nb,name="sim") #elongation notebook Frame
+        #sim_frame.pack(expand=True,side='top', fill='both')
         
+        #undo after publication
         kym_frame = tk.Frame(self.stoc_Nb,name='kym')
         kym_frame.pack(expand=True,side='top', fill='both')
 
-        tau_frame = tk.Frame(self.stoc_Nb,name='tau')
-        tau_frame.pack(expand=True,side='top', fill='both')
+        #tau_frame = tk.Frame(self.stoc_Nb,name='tau')
+        #tau_frame.pack(expand=True,side='top', fill='both')
 
         #ccodon_frame = tk.Frame(self.stoc_Nb,name="codon")        #codon notebook Frame
         #ccodon_frame.pack(expand=True,side='top',fill='both')
@@ -913,8 +914,14 @@ class GUI(Frame):
         #self.stoc_Nb.add(ccodon_frame,text="   Codon Optimization  ")
         
         self.stoc_Nb.add(kym_frame, text="   Kymographs   ")
-        self.stoc_Nb.add(tau_frame, text="   Tau Plot   ")
-        self.stoc_Nb.add(sim_frame, text="   Simulated Cell  ")
+        
+        
+        
+        
+        #self.stoc_Nb.add(tau_frame, text="   Tau Plot   ")
+        #self.stoc_Nb.add(sim_frame, text="   Simulated Cell  ")
+        
+        
         
         global_font_size = 9
 
@@ -1578,7 +1585,7 @@ class GUI(Frame):
         '''
         
         
-        
+        '''
         tautopframe = tk.Frame(tau_frame)
         tautopframe.grid(row=0,column=0,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
         taubottomframe = tk.Frame(tau_frame)
@@ -1632,7 +1639,7 @@ class GUI(Frame):
         tau_frame.columnconfigure(0,weight=3)
         
         
-        
+        '''
         
 
         kyminfoframe = tk.Frame(kym_frame)
@@ -1794,9 +1801,12 @@ class GUI(Frame):
 
         self.tcplottype.trace('w',lambda name, index, mode,tcplottype= self.tcplottype: self.update_timecourse_plot(self.tcplottype))
 
+        figframe = tk.Frame(ss_frame)
+        figframe.grid(row=6,column=0,columnspan=7,rowspan=2,sticky=tk.W+tk.E+tk.N+tk.S,padx=gpx,pady=gpy)
 
 
 
+        '''
         simbuttonframe = tk.Frame(sim_frame)
         simbuttonframe.grid(row=7,column=0,columnspan=4,sticky=tk.EW,pady=2,padx=gpx)
 
@@ -1894,9 +1904,6 @@ class GUI(Frame):
             pass
 
         simulate_cell_tt = tooltip(self.animation,self.tooltips['Simulated Cell'][0])
-
-        figframe = tk.Frame(ss_frame)
-        figframe.grid(row=6,column=0,columnspan=7,rowspan=2,sticky=tk.W+tk.E+tk.N+tk.S,padx=gpx,pady=gpy)
 
 
 
@@ -2036,7 +2043,7 @@ class GUI(Frame):
 
 
 
-
+        '''
 
 
 
@@ -2083,6 +2090,16 @@ class GUI(Frame):
         self.norm_acc = tk.BooleanVar(value=False)
         normalized_acc = tk.Checkbutton(acframe,text='Normalized',variable = self.norm_acc,command=self.replot_acc )
         normalized_acc.grid(row=0,column=3,sticky=tk.E)
+        
+        
+        normalization_types = ['Global Mean','Global Mean','Individual Mean']           #current filetypes for dropdown
+
+        self.normtype = tk.StringVar(self,value='Individual Mean')
+        meanoptions = ttk.OptionMenu(acframe,self.normtype,*normalization_types,command=self.change_normalization)    #make the dropdown
+        meanoptions.grid(row=0,column=4,sticky=tk.E)
+        meanoptions.config(width=20)
+      
+        
 
         '''
         self.CAIlabel = tk.Entry(ss_frame,width=5)
@@ -3105,7 +3122,7 @@ class GUI(Frame):
             pass
 
 
-        colorize = tk.Button(self.textframe,text='Colorize',command=self.color_text,font=('SystemButtonText',global_font_size))
+        colorize = tk.Button(self.textframe,text='Colorize',command=self.color_text,font=('SystemButtonText',12))
         colorize.pack()
 
         colorize_tt = tooltip(colorize,text='Color the sequence display by G, C, T, and A')
@@ -6100,22 +6117,34 @@ class GUI(Frame):
                 else:
                     autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec[i], truetime, 0, genelength)
                     autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.sms.get_autocorr_norm(intensity_vec[i], truetime, 0, genelength)
+                    autocorr_vec_norm_global, mean_autocorr_norm_global, error_autocorr_norm_global, dwelltime_global, ke_sim_global = self.sms.get_autocorr_norm(intensity_vec, truetime, 0, genelength,normalization='Global')
+                   
                     dwelltime = [dwelltime]
                     ke_sim = [ke_sim]
             
         else:
             autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec, truetime, 0, genelength)
             autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.sms.get_autocorr_norm(intensity_vec, truetime, 0, genelength)
-                        
+            autocorr_vec_norm_global, mean_autocorr_norm_global, error_autocorr_norm_global, dwelltime_global, ke_sim_global = self.sms.get_autocorr_norm(intensity_vec, truetime, 0, genelength,normalization='Global')
+                                             
         
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
         ssa_obj.error_autocorr = error_autocorr
         ssa_obj.autocorr_vec_norm = autocorr_vec_norm
         ssa_obj.mean_autocorr_norm = mean_autocorr_norm
+        
+        ssa_obj.autocorr_vec_norm_global = autocorr_vec_norm_global
+        ssa_obj.mean_autocorr_norm_global = mean_autocorr_norm_global
+        
         ssa_obj.error_autocorr_norm = error_autocorr_norm
         ssa_obj.dwelltime = dwelltime
         ssa_obj.ke_sim = ke_sim
+        
+        ssa_obj.error_autocorr_norm_global = error_autocorr_norm_global
+        ssa_obj.dwelltime_global = dwelltime_global
+        ssa_obj.ke_sim_global = ke_sim_global
+        
         ssa_obj.ke_true = float(genelength)/np.mean(ssa_obj.ribtimes)
         ssa_obj.probe = probePosition
         
@@ -6943,7 +6972,7 @@ class GUI(Frame):
 
     def plot_ssa_pdf(self,ax,i_vec):
         ax.cla()
-        
+        i_vec = i_vec/np.sum(self.ssa.probe)
         
         if len(i_vec.shape) == 3:
             pass
@@ -7240,7 +7269,8 @@ class GUI(Frame):
                 
                 cbar.ax.set_yticklabels(np.linspace(idx_t,stime[-1],6).astype(int) )
                 
-                  
+    
+               
                 
                 
     def kymograph(self):
@@ -7348,19 +7378,32 @@ class GUI(Frame):
         ax1.set_xlim(0,maxin+5)
        
             
+    def change_normalization(self,event):
+        self.replot_acc()
+        self.update_ss_frame_data()
+        
+        pass
+    
     def replot_acc(self):
         
         if len(self.ssas)!=0:
             self.acax.clear()
             self.acax.cla()
       
-            print(self.norm_acc.get())
+            
+        
             if self.norm_acc.get():
-                self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr_norm,self.ssa.error_autocorr_norm)
+                print(self.normtype.get())
+                if self.normtype.get() == 'Individual Mean':
+                    self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr_norm,self.ssa.error_autocorr_norm)
+                else:
+                    self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr_norm_global,self.ssa.error_autocorr_norm_global)
+                
+                
             else:
                 self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr,self.ssa.error_autocorr)
             self.ac_canvas.draw()
-        print('tried')
+        
 
     def plot_ssa_acc(self,ax,mean_acc,error_acc,color=None,name=None):
   
@@ -7379,37 +7422,51 @@ class GUI(Frame):
         ax.plot(mean_acc-error_acc,'--',color=color,alpha=.3)
         ax.plot(mean_acc+error_acc,'--',color=color,alpha=.3)
         ax.plot([0,int(len(mean_acc))],[0,0],color='r',alpha=.5)
+        
+        try:
+            maxxlim = t[np.where(mean_acc <0)[0][0]]+100
+            ax.set_xlim(0,maxxlim)
+            ticks = np.linspace(0,maxxlim,6).astype(int)
+   
+            ax.set_xticks(ticks)
+
+        except:
+            print('failed')
+        
 
 
 
     def plot_rib_dense_kym(self,ax,rib_density):
         ax.cla()
-        ax.axis([0,int(len(rib_density)),0,np.max(rib_density)+.1*np.max(rib_density)])
+        rib_density_smooth = savgol_filter(rib_density, 11, 5) 
+        ax.axis([0,int(len(rib_density)),0,np.max(rib_density_smooth)+.1*np.max(rib_density_smooth)])
         ax.set_xlabel('Codon Position')
         ax.set_ylabel('P')
         
-        ax.plot(rib_density,color=self.kymlinecolor.cget('bg'))
+        ax.plot(rib_density_smooth,color=self.kymlinecolor.cget('bg'))
         bgcolor = self.kymbgcolor.cget('bg')
         ax.set_facecolor(bgcolor )
         
-        ax.set_ylim(np.max(rib_density)+.1*np.max(rib_density),np.min(rib_density)+.1*np.min(rib_density) )
+        ax.set_ylim(np.max(rib_density_smooth)+.1*np.max(rib_density_smooth),np.min(rib_density_smooth)+.1*np.min(rib_density_smooth) )
         ax.set_xlim(-10,rib_density.shape[0] + 10)
 
     def plot_rib_dense(self,ax,rib_density,color=None):
         ax.cla()
+        rib_density_smooth = savgol_filter(rib_density, 11, 5) 
         ax.axis([0,int(len(rib_density)),0,np.max(rib_density)+.1*np.max(rib_density)])
         ax.set_xlabel('Codon Position')
         ax.set_ylabel('P')
         if not color:
             color = self.main_color
-        ax.plot(rib_density,color)
+        ax.plot(rib_density_smooth,color)
 
     def plot_cai_codons(self,ax,cai_codon):
         ax.cla()
+        cai_codon_smooth = savgol_filter(cai_codon, 11, 5) 
         ax.axis([0,int(len(cai_codon)),0,np.max(cai_codon)+.1*np.max(cai_codon)])
         ax.set_xlabel('Codon Position')
         ax.set_ylabel('CAI')
-        ax.plot(cai_codon,color=self.main_color)
+        ax.plot(cai_codon_smooth,color=self.main_color)
 
 
 
@@ -7817,9 +7874,11 @@ class GUI(Frame):
     def update_ss_frame_data(self):
         calc = [1,4,7,10,13]
 
-        
-        params = [str(np.round(self.sms.POI.CAI,3)),str(self.ssa.ke_sim),str(int(np.round(self.sms.POI.total_length/self.ssa.no_rib_per_mrna,0))),str(np.round(self.sms.POI.total_length/self.ssa.ke_sim,2))  ,str(np.round(self.ssa.no_rib_per_mrna,3))]
-        
+        if self.normtype.get() == 'Individual Mean':
+            params = [str(np.round(self.sms.POI.CAI,3)),str(self.ssa.ke_sim),str(int(np.round(self.sms.POI.total_length/self.ssa.no_rib_per_mrna,0))),str(np.round(self.sms.POI.total_length/self.ssa.ke_sim,2))  ,str(np.round(self.ssa.no_rib_per_mrna,3))]
+        else:
+            params = [str(np.round(self.sms.POI.CAI,3)),str(self.ssa.ke_sim_global),str(int(np.round(self.sms.POI.total_length/self.ssa.no_rib_per_mrna,0))),str(np.round(self.sms.POI.total_length/self.ssa.ke_sim_global,2))  ,str(np.round(self.ssa.no_rib_per_mrna,3))]
+
         i = 0
         for index in calc:
             self.calculated_parameters[index].config(state='normal')
