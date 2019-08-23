@@ -84,7 +84,9 @@ try:
 except:
     pass
 
-
+import pandas as pd
+from pandas import ExcelWriter
+from pandas import ExcelFile
 
 import ast
 import operator as op
@@ -2094,10 +2096,18 @@ class GUI(Frame):
         
         normalization_types = ['Global Mean','Global Mean','Individual Mean']           #current filetypes for dropdown
 
-        self.normtype = tk.StringVar(self,value='Individual Mean')
+        self.normtype = tk.StringVar(self,value='Global Mean')
         meanoptions = ttk.OptionMenu(acframe,self.normtype,*normalization_types,command=self.change_normalization)    #make the dropdown
         meanoptions.grid(row=0,column=4,sticky=tk.E)
         meanoptions.config(width=20)
+        
+        self.acc_data = None
+        load_acc_data = tk.Button(acframe,text= 'Load ACC data', command=self.load_acc_data_file)
+        load_acc_data.grid(row=0,column=5,sticky=tk.E)
+        
+        self.acc_label = tk.Label(acframe,text='--')
+        self.acc_label.grid(row=0,column=6,sticky=tk.E)
+        
       
         
 
@@ -7384,6 +7394,13 @@ class GUI(Frame):
         
         pass
     
+    
+    def load_acc_data_file(self):
+        datafile = tfd.askopenfilename(defaultextension='.xls')
+        df = pd.read_excel(datafile, sheetname='Sheet1')
+        self.acc_data = [np.array(df['time (sec)']), np.array(df['G(t)']) , np.array(df['SEM'])  ]
+        self.acc_label.config(text=datafile)
+    
     def replot_acc(self):
         
         if len(self.ssas)!=0:
@@ -7423,17 +7440,24 @@ class GUI(Frame):
         ax.plot(mean_acc+error_acc,'--',color=color,alpha=.3)
         ax.plot([0,int(len(mean_acc))],[0,0],color='r',alpha=.5)
         
-        try:
-            maxxlim = t[np.where(mean_acc <0)[0][0]]+100
-            ax.set_xlim(0,maxxlim)
-            ticks = np.linspace(0,maxxlim,6).astype(int)
+
+        maxxlim = t[np.where(mean_acc <0)[0][0]]+100
+        ax.set_xlim(0,maxxlim)
+        ticks = np.linspace(0,maxxlim,6).astype(int)
    
-            ax.set_xticks(ticks)
+        ax.set_xticks(ticks)
+
+  
+            
+        try:
+            len(self.acc_data)
 
         except:
-            print('failed')
-        
-
+            return
+      
+        ax.errorbar(self.acc_data[0],self.acc_data[1],xerr=self.acc_data[2],yerr=self.acc_data[2] ,color='orange')
+        ax.legend(['model','','','data'])
+        ax.set_xlim(0,maxxlim)
 
 
     def plot_rib_dense_kym(self,ax,rib_density):

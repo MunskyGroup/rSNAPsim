@@ -3140,16 +3140,22 @@ class rSNAPsim():
             except:
                 dwelltime = 1
 
-        try:
-            zeroind = np.where(mean_autocorr<0)[0][0]
-            zeromean = np.mean(mean_autocorr[zeroind:])
-            normalized_autocorr = normalized_autocorr-zeromean
-            mean_autocorr = np.mean(normalized_autocorr, axis=1)
-            
-            error_autocorr = np.std(normalized_autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
-     
-        except:
-            pass
+        
+        #try:
+        zeroind = np.where(mean_autocorr<0)[0][0]
+        length = int(.3*len(mean_autocorr))
+        zeromean = np.mean(mean_autocorr[-length:])
+        zeromean2 = np.mean(mean_autocorr[zeroind:])
+        print(zeromean)
+        print(zeromean2)
+        normalized_autocorr = normalized_autocorr-zeromean2
+        mean_autocorr = np.mean(normalized_autocorr, axis=1)
+        
+        error_autocorr = np.std(normalized_autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
+ 
+        #except:
+            #pass
+        
 
 
         ke_exp = np.round(geneLength/dwelltime ,1)
