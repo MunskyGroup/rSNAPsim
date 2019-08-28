@@ -7480,9 +7480,29 @@ class GUI(Frame):
         ax.axis([0,int(len(rib_density)),0,np.max(rib_density)+.1*np.max(rib_density)])
         ax.set_xlabel('Codon Position')
         ax.set_ylabel('P')
+
+        
+        segments = np.linspace(0,len(rib_density),len(rib_density)/20).astype(int).tolist()
+        maxdensity = 0
+        mindensity=2
+        for i in range(len(segments)-1):
+            local_density = np.mean(rib_density[segments[i]:segments[i+1]])
+            if local_density > maxdensity:
+                maxdensity = local_density
+            if local_density < mindensity:
+                mindensity = local_density
+        
+        for i in range(len(segments)-1):
+            
+            local_density = np.mean(rib_density[segments[i]:segments[i+1]])
+            ldnorm = (local_density - mindensity) / (maxdensity - mindensity)
+            print(segments[i],segments[i+1])
+            ax.fill_between( [segments[i],segments[i+1]], [0,1], color = cm.RdYlGn_r(ldnorm),alpha=.5)   
+            
         if not color:
             color = self.main_color
         ax.plot(rib_density_smooth,color)
+        
 
     def plot_cai_codons(self,ax,cai_codon):
         ax.cla()
