@@ -1562,7 +1562,8 @@ class rSNAPsim():
         else:
             autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
             autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.get_autocorr_norm(intensity_vec, truetime, 0, genelength)
-                          
+            
+            acov,nacov = self.get_all_autocovariances(intensity_vec,truetime,genelength )              
         
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
@@ -1574,6 +1575,11 @@ class rSNAPsim():
         ssa_obj.ke_sim = ke_sim
         ssa_obj.ke_true = float(genelength)/np.mean(ssa_obj.ribtimes)
         ssa_obj.probe = probePosition
+        
+        
+        
+        ssa_obj.autocovariance_dict  = acov
+        ssa_obj.autocovariance_norm_dict = nacov
 
         return ssa_obj
 
@@ -3223,8 +3229,94 @@ class rSNAPsim():
         mean_autocorr = np.mean(normalized_autocorr, axis=1)
 
         return crosscorr_vec, mean_autocorr
+    
+    
+    def get_all_autocovariances(self,intensity_vec,time_vec,geneLength):
+        '''
+        Get all autocovariances for all 4 routines of normalization / means
+        '''
+        ivec = intensity_vec
+        ug = np.mean(ivec)
+ 
+        varg = np.var(ivec)
+        ntraj = ivec.shape[0]
+        
+        autocorr_ui = np.zeros((ivec.shape))
+        for i in range(ivec.shape[0]):
+            autocorr_ui[i,:] = self.get_acc2(ivec[i]-np.mean(ivec[i]))
+            
+        autocorr_ug = np.zeros((ivec.shape))
+        for i in range(ivec.shape[0]):
+            autocorr_ug[i,:] = self.get_acc2(ivec[i]-ug)
+            
+            
+        
+        mean_autocorr_ug = np.mean(autocorr_ug.T, axis=1)
+        mean_autocorr_ui = np.mean(autocorr_ui.T, axis=1)
+        
+        mean_autocorr_ug_norm = np.mean(autocorr_ug.T/varg, axis=1)
+        
+        
+        autocorr_ui_norm = np.zeros((ivec.shape))
+        for i in range(ivec.shape[0]):
+            autocorr_ui_norm[i,:] = self.get_acc2(ivec[i]-np.mean(ivec[i])) 
+            autocorr_ui_norm[i,:] = autocorr_ui_norm[i,:]/np.var(ivec[i,:])
+            
+        mean_autocorr_ui_norm = np.mean(autocorr_ui_norm.T, axis=1)
+        
+        sem_autocorr_ui_norm = 1.0/np.sqrt(ntraj)*np.std(autocorr_ui_norm.T,ddof=1,axis=1)
+        sem_autocorr_ug_norm = 1.0/np.sqrt(ntraj)*np.std(autocorr_ug.T/varg,ddof=1,axis=1)
+        
+        sem_autocorr_ui = 1.0/np.sqrt(ntraj)*np.std(autocorr_ui.T,ddof=1,axis=1)
+        sem_autocorr_ug = 1.0/np.sqrt(ntraj)*np.std(autocorr_ug.T,ddof=1,axis=1)
+        
+        
+        dwelltime_ui = None
+        try:
+            dwelltime_ui = time_vec[np.where(mean_autocorr_ui < .01)[0][0]]
+        except:
+            try:
+                dwelltime_ui = time_vec[np.where(mean_autocorr_ui < .05)[0][0]]
+            except:
+                dwelltime_ui = 1
+        ke_exp_ui = np.round(geneLength/dwelltime_ui ,1)
 
+        dwelltime_ug = None
+        try:
+            dwelltime_ug = time_vec[np.where(mean_autocorr_ug < .01)[0][0]]
+        except:
+            try:
+                dwelltime_ug = time_vec[np.where(mean_autocorr_ug < .05)[0][0]]
+            except:
+                dwelltime_ug = 1
+        ke_exp_ug = np.round(geneLength/dwelltime_ug ,1)
+        
+        dwelltime_ui_norm = None
+        try:
+            dwelltime_ui_norm = time_vec[np.where(mean_autocorr_ui_norm < .01)[0][0]]
+        except:
+            try:
+                dwelltime_ui_norm = time_vec[np.where(mean_autocorr_ui_norm < .05)[0][0]]
+            except:
+                dwelltime_ui_norm = 1
+        ke_exp_ui_norm = np.round(geneLength/dwelltime_ui_norm ,1)
 
+        dwelltime_ug_norm = None
+        try:
+            dwelltime_ug_norm = time_vec[np.where(mean_autocorr_ug_norm < .01)[0][0]]
+        except:
+            try:
+                dwelltime_ug_norm = time_vec[np.where(mean_autocorr_ug_norm < .05)[0][0]]
+            except:
+                dwelltime_ug_norm = 1
+        ke_exp_ug_norm = np.round(geneLength/dwelltime_ug_norm ,1)        
+        
+        nacov = {'global': {'sem': sem_autocorr_ug_norm, 'mean':mean_autocorr_ug_norm,'traj':autocorr_ug.T/varg,'ke': ke_exp_ug_norm, 'dwelltime':dwelltime_ug_norm},
+                 'indiv': {'sem': sem_autocorr_ui_norm, 'mean':mean_autocorr_ui_norm,'traj':autocorr_ui_norm,'ke': ke_exp_ui_norm, 'dwelltime':dwelltime_ui_norm}}
+        acov =  {'global': {'sem': sem_autocorr_ug, 'mean':mean_autocorr_ug,'traj':autocorr_ug,'ke': ke_exp_ug, 'dwelltime':dwelltime_ug },
+                 'indiv': {'sem': sem_autocorr_ui, 'mean':mean_autocorr_ui,'traj':autocorr_ui,'ke': ke_exp_ui, 'dwelltime':dwelltime_ui}}
+        
+        return nacov,acov
 
 
 

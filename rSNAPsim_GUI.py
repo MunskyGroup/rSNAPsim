@@ -769,7 +769,7 @@ class GUI(Frame):
                                      'Simulated Cell':['Gif display of a simulated cell with current parameters'],
                                      'Simulate':['Open dialog to generate a new simulation file'],
                                      'simfile':['Name of the simulated cell gif file to play'],
-                                     'Autocorrelation':['Autocorrelation of fluorescence'],
+                                     'Autocorrelation':['Autocovariance of fluorescence'],
                                      'Ribosome Density':['Ribosome density by codon position, displayed as probability of finding a ribosome at that codon position'],
                                      'Codon Usage':['Codon usage by position on the nucleotide sequence'],
                                      'DC (um^2/s)':['Diffusion Constant for brownian motion'],
@@ -783,8 +783,8 @@ class GUI(Frame):
                                      'FRAP':['Fluorescence Recovery After Photobleaching, manual photobleaching of all current fluorophores, but new fluorophores that fold or are translated are not affected'],
                                      'Dynamic Property Values':['Calculated parameters based on the perturbation simulation'],
                                      'Sensitivity':['A measurement of how much changing the codons copy number would affect fluorescence'],
-                                     'Dynamic Properties':['Calculated parameters from the simulated wild type and modified sequences autocorrelations'],
-                                     'Autocorrelations_codon':['The autocorrelations of the Wild Type sequence and the Modified sequence'],
+                                     'Dynamic Properties':['Calculated parameters from the simulated wild type and modified sequences autocovariances'],
+                                     'Autocorrelations_codon':['The autocovariances of the Wild Type sequence and the Modified sequence'],
 
 
 }
@@ -899,6 +899,10 @@ class GUI(Frame):
 
         #sim_frame = tk.Frame(self.stoc_Nb,name="sim") #elongation notebook Frame
         #sim_frame.pack(expand=True,side='top', fill='both')
+
+
+        data_frame = tk.Frame(self.stoc_Nb,name="data") #elongation notebook Frame
+        data_frame.pack(expand=True,side='top', fill='both')
         
         #undo after publication
         kym_frame = tk.Frame(self.stoc_Nb,name='kym')
@@ -914,7 +918,7 @@ class GUI(Frame):
         self.stoc_Nb.add(fcs_frame, text="   FCS  ")
         #self.stoc_Nb.add(elon_frame,text= "   Elongation Assays   ")
         #self.stoc_Nb.add(ccodon_frame,text="   Codon Optimization  ")
-        
+        self.stoc_Nb.add(data_frame, text="   Data Processing   ")
         self.stoc_Nb.add(kym_frame, text="   Kymographs   ")
         
         
@@ -2086,7 +2090,7 @@ class GUI(Frame):
 
         acframe = tk.Frame(fcs_frame)
 
-        aclabel = tk.Label(acframe,text='Autocorrelation',font=('SystemButtonText',11,'bold'))
+        aclabel = tk.Label(acframe,text='Autocovariance',font=('SystemButtonText',11,'bold'))
         acframe.pack(expand=False,fill='x',side='top',anchor=tk.N) #(row=9,column=0,columnspan=3,sticky=tk.NW,padx=10)
         aclabel.grid(row=0,column=0)
         self.norm_acc = tk.BooleanVar(value=False)
@@ -2229,10 +2233,10 @@ class GUI(Frame):
         width = 3
         lsa = np.array([['Codon Adaptation Index','','--'],
                         #['Gene Length','','codons'],
-                        ['Elongation rate','','aa/sec'],
-                        ['Dist. btw Rib.','','codons'],
-                        ['Elongation ','','sec'],
-                        ['# Rib. per mRNA','','Rib/mRNA']],dtype=object)
+                        ['Apparent Elongation rate (FCS)','','aa/sec'],
+                        ['Av. Dist. btw Rib.','','codons'],
+                        ['Elongation time','','sec'],
+                        ['Av. # Rib. per mRNA','','Rib/mRNA']],dtype=object)
 
         self.calculated_parameters = []
         for i in range(height): #Rows
@@ -2264,11 +2268,11 @@ class GUI(Frame):
 
         height = 5
         width = 3
-        lsa = np.array([['True Elongation rate','','aa/sec'],
+        lsa = np.array([['Effective Elongation rate','','aa/sec'],
                         #['Gene Length','','codons'],
                         ['Run off time (Harr)','','sec'],
                         ['Recovery Time (FRAP)','','sec'],
-                        ['Perturbed Elong. Rate','','aa/sec'],
+                        ['Perturbation Assay Elong. Rate','','aa/sec'],
                         ['---','','---']],dtype=object)
 
 
@@ -5561,7 +5565,7 @@ class GUI(Frame):
         else:
             autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec, truetime, 0, genelength)
             autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.sms.get_autocorr_norm(intensity_vec, truetime, 0, genelength)
-                        
+            acov,nacov = self.get_all_autocovariances(intensity_vec,truetime,genelength )               
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
         ssa_obj.error_autocorr = error_autocorr
@@ -5572,6 +5576,10 @@ class GUI(Frame):
         ssa_obj.ke_sim = ke_sim
         ssa_obj.ke_true = float(genelength)/np.mean(ssa_obj.ribtimes)
         ssa_obj.probe = probePosition
+        ssa_obj.autocovariance_dict  = acov
+        ssa_obj.autocovariance_norm_dict = nacov        
+        
+        
 
         return ssa_obj
 
@@ -6136,7 +6144,7 @@ class GUI(Frame):
             autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.sms.get_autocorr(intensity_vec, truetime, 0, genelength)
             autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.sms.get_autocorr_norm(intensity_vec, truetime, 0, genelength)
             autocorr_vec_norm_global, mean_autocorr_norm_global, error_autocorr_norm_global, dwelltime_global, ke_sim_global = self.sms.get_autocorr_norm(intensity_vec, truetime, 0, genelength,normalization='Global')
-                                             
+            acov,nacov = self.sms.get_all_autocovariances(intensity_vec,truetime,genelength )                                    
         
         ssa_obj.autocorr_vec = autocorr_vec
         ssa_obj.mean_autocorr = mean_autocorr
@@ -6159,6 +6167,9 @@ class GUI(Frame):
         ssa_obj.probe = probePosition
         
         ssa.solvetime = np.round(time.time()-sstime,3)
+        ssa_obj.autocovariance_dict  = acov
+        ssa_obj.autocovariance_norm_dict = nacov        
+        
         return ssa_obj
 
 
@@ -6803,7 +6814,7 @@ class GUI(Frame):
         self.plot_ssa_acc_codon(self.accax,self.ssa_norm.mean_autocorr[:index],self.ssa_norm.error_autocorr[:index],name='Natural')
 
         self.plot_ssa_acc_codon(self.accax,self.ssa_design.mean_autocorr[:index],self.ssa_design.error_autocorr[:index],color='#3a7ce8',name='Design')
-        self.accax.set_ylabel('Autocorrelation')
+        self.accax.set_ylabel('Autocovariance')
         self.acc_canvas.draw()
         #self.codon_parameter_entries = [ere2,rte2,drd,nrd]
         params = [str(self.ssa_design.ke_sim),str(self.ssa_norm.ke_sim),str(int(np.round(self.sms.POI.total_length/self.ssa_design.no_rib_per_mrna,0))),str(int(np.round(self.sms.POI.total_length/self.ssa_norm.no_rib_per_mrna,0))) ]
@@ -7409,22 +7420,28 @@ class GUI(Frame):
       
             
         
-            if self.norm_acc.get():
+            if not self.norm_acc.get():
                 print(self.normtype.get())
                 if self.normtype.get() == 'Individual Mean':
-                    self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr_norm,self.ssa.error_autocorr_norm)
+                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_norm_dict['indiv']['mean'],self.ssa.autocovariance_norm_dict['indiv']['sem'])
                 else:
-                    self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr_norm_global,self.ssa.error_autocorr_norm_global)
+                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_norm_dict['global']['mean'],self.ssa.autocovariance_norm_dict['global']['sem'])
                 
                 
             else:
-                self.plot_ssa_acc(self.acax,self.ssa.mean_autocorr,self.ssa.error_autocorr)
+                if self.normtype.get() == 'Individual Mean':
+                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_dict['indiv']['mean'],self.ssa.autocovariance_dict['indiv']['sem'])
+                else:
+                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_dict['global']['mean'],self.ssa.autocovariance_dict['global']['sem'])
+                
+                
+                
             self.ac_canvas.draw()
         
 
     def plot_ssa_acc(self,ax,mean_acc,error_acc,color=None,name=None):
   
-
+        maxdwelltime = max([self.ssa.autocovariance_dict['global']['dwelltime'],self.ssa.autocovariance_dict['indiv']['dwelltime'],self.ssa.autocovariance_norm_dict['indiv']['dwelltime'],self.ssa.autocovariance_norm_dict['global']['dwelltime']] )
         if color == None:
             color = self.main_color
 
@@ -7443,7 +7460,7 @@ class GUI(Frame):
 
         maxxlim = t[np.where(mean_acc <0)[0][0]]+100
         ax.set_xlim(0,maxxlim)
-        ticks = np.linspace(0,maxxlim,6).astype(int)
+        ticks = np.linspace(0,maxdwelltime+100,6).astype(int)
    
         ax.set_xticks(ticks)
 
@@ -7917,11 +7934,21 @@ class GUI(Frame):
 
     def update_ss_frame_data(self):
         calc = [1,4,7,10,13]
+        
+        if not self.norm_acc.get():
+            
+            if self.normtype.get() == 'Individual Mean':
+                params = [str(np.round(self.sms.POI.CAI,3)),str(self.ssa.autocovariance_norm_dict['indiv']['ke']),str(int(np.round(self.sms.POI.total_length/self.ssa.no_rib_per_mrna,0))),str(np.round(self.sms.POI.total_length/self.ssa.autocovariance_norm_dict['indiv']['ke'],2))  ,str(np.round(self.ssa.no_rib_per_mrna,3))]
+            else:
+                params = [str(np.round(self.sms.POI.CAI,3)),str(self.ssa.autocovariance_norm_dict['global']['ke']),str(int(np.round(self.sms.POI.total_length/self.ssa.no_rib_per_mrna,0))),str(np.round(self.sms.POI.total_length/self.ssa.autocovariance_norm_dict['global']['ke'],2))  ,str(np.round(self.ssa.no_rib_per_mrna,3))]
 
-        if self.normtype.get() == 'Individual Mean':
-            params = [str(np.round(self.sms.POI.CAI,3)),str(self.ssa.ke_sim),str(int(np.round(self.sms.POI.total_length/self.ssa.no_rib_per_mrna,0))),str(np.round(self.sms.POI.total_length/self.ssa.ke_sim,2))  ,str(np.round(self.ssa.no_rib_per_mrna,3))]
         else:
-            params = [str(np.round(self.sms.POI.CAI,3)),str(self.ssa.ke_sim_global),str(int(np.round(self.sms.POI.total_length/self.ssa.no_rib_per_mrna,0))),str(np.round(self.sms.POI.total_length/self.ssa.ke_sim_global,2))  ,str(np.round(self.ssa.no_rib_per_mrna,3))]
+            if self.normtype.get() == 'Individual Mean':
+                params = [str(np.round(self.sms.POI.CAI,3)),str(self.ssa.autocovariance_dict['indiv']['ke']),str(int(np.round(self.sms.POI.total_length/self.ssa.no_rib_per_mrna,0))),str(np.round(self.sms.POI.total_length/self.ssa.autocovariance_dict['indiv']['ke'],2))  ,str(np.round(self.ssa.no_rib_per_mrna,3))]
+            else:
+                params = [str(np.round(self.sms.POI.CAI,3)),str(self.ssa.autocovariance_dict['global']['ke']),str(int(np.round(self.sms.POI.total_length/self.ssa.no_rib_per_mrna,0))),str(np.round(self.sms.POI.total_length/self.ssa.autocovariance_dict['global']['ke'],2))  ,str(np.round(self.ssa.no_rib_per_mrna,3))]
+            
+
 
         i = 0
         for index in calc:
