@@ -835,6 +835,7 @@ class GUI(Frame):
         self.steady_state.set(True)
         settingsmenu = tk.Menu(menubar, tearoff=0)
         settingsmenu.add_command(label="Change tRNA Copynumbers", command=self.change_trna_copys)
+        settingsmenu.add_command(label="Change main plotting color", command=self.change_main_color)
         #settingsmenu.add_checkbutton(label="Steady State", onvalue=True, offvalue=False, variable=self.steady_state)
 
         menubar.add_cascade(label='Settings', menu=settingsmenu)
@@ -7772,7 +7773,14 @@ class GUI(Frame):
         f.close()
 
 
+    def change_main_color(self):
+        try:
+            color = askcolor()
 
+        except:
+            return
+        print(color)
+        self.main_color = color[1]
 
 
     def save_elon_data(self):
