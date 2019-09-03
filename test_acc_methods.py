@@ -68,7 +68,7 @@ plt.legend(['ug','ui'])
     
 plt.figure()
 plt.plot(mean_autocorr_ug_norm,'g')
-plt.plot(mean_autocorr_ui_norm,'m')
+plt.plot(autocorr_ui_norm.T,'m')
 plt.plot(mean_autocorr_ug_norm-sem_autocorr_ug_norm,'g--')
 plt.plot(mean_autocorr_ug_norm+sem_autocorr_ug_norm,'g--')
 

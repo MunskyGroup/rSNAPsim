@@ -1648,9 +1648,49 @@ class GUI(Frame):
         
         '''
         
+        
+        
+        
+        data_display_frame = tk.Frame(data_frame)
+        data_display_frame.grid(row=0,column=0,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
+
+        data_options_frame = tk.Frame(data_frame)
+        data_options_frame.grid(row=1,column=0,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
+        
+        self.data_fig = mpl.figure.Figure(figsize=(1,1))#figsize=(2,5),dpi=60)
+        self.data_fig.set_tight_layout(True)
+        self.datamax = self.data_fig.add_subplot(111)
+        self.data_fig.patch.set_facecolor(self.default_color)
+        self.data_fig.tight_layout(h_pad=1.0)
+
+        #self.kymax.set_xlabel('time (sec)')
+        #self.kymax.set_ylabel('Intensity (a.u.)')
+        self.datamax.set_title("")
+
+
+
+        self.data_canvas = FigureCanvasTkAgg(self.data_fig,master=data_display_frame)
+        self.data_canvas.draw()
+        self.data_canvas.get_tk_widget().pack(expand=True,fill='both',side='left',anchor=tk.NW)  
+        
+        
+        load_intensity = tk.Button(data_options_frame,text='Load Intensity Trajectories', command = self.load_intensity_trajectories)
+        load_intensity.grid(row=0,column=0)
+        
+        self.intensity_label = tk.Label(data_options_frame,text='---')
+        self.intensity_label.grid(row=0,column=1)
+        
+        
+        
+        
+        
+        data_frame.rowconfigure(0,weight=3)
+        data_frame.columnconfigure(0,weight=3)
+        
 
         kyminfoframe = tk.Frame(kym_frame)
         kyminfoframe.grid(row=0,column=0,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
+        
         kymspacerframe = tk.Frame(kym_frame)
         kymspacerframe.grid(row=0,column=1,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
         kymspacer = tk.Label(kymspacerframe,text = '                                                               ')
@@ -1669,8 +1709,6 @@ class GUI(Frame):
         
         self.kym_menu = AutocompleteComboBox(kyminfoframe)
         self.kym_menu.set_completion_list(kym_cmap_list)
-        
-        
         
         self.kym_menu.grid(row=0,column=1,sticky=tk.W,pady=2,padx=2)
         self.kym_menu.config(width=20)        
@@ -1792,8 +1830,8 @@ class GUI(Frame):
         seqpop.grid(row=0,column=1,columnspan=1,sticky=tk.W)
         seqpop.image = photo1 #keep photo alive
 
-        self.tcplottype = tk.StringVar(value='All')
-        tt_dropdown = tk.OptionMenu(ss_frame,self.tcplottype,"All","Average Time Course","PDF")
+        self.tcplottype = tk.StringVar(value='All Trajectories')
+        tt_dropdown = tk.OptionMenu(ss_frame,self.tcplottype,"All Trajectories","Average Trajectories","Probability Density Function")
         tt_dropdown.config(font=('SystemButtonText',global_font_size))
         tt_dropdown['menu'].config(font=('SystemButtonText',global_font_size))
 
@@ -2095,8 +2133,8 @@ class GUI(Frame):
         acframe.pack(expand=False,fill='x',side='top',anchor=tk.N) #(row=9,column=0,columnspan=3,sticky=tk.NW,padx=10)
         aclabel.grid(row=0,column=0)
         self.norm_acc = tk.BooleanVar(value=False)
-        normalized_acc = tk.Checkbutton(acframe,text='Normalized',variable = self.norm_acc,command=self.replot_acc )
-        normalized_acc.grid(row=0,column=3,sticky=tk.E)
+        normalized_acc = tk.Checkbutton(acframe,text=' ',variable = self.norm_acc,command=self.replot_acc )
+        normalized_acc.grid(row=0,column=7,sticky=tk.E)
         
         
         normalization_types = ['Global Mean','Global Mean','Individual Mean']           #current filetypes for dropdown
@@ -2108,10 +2146,16 @@ class GUI(Frame):
         
         self.acc_data = None
         load_acc_data = tk.Button(acframe,text= 'Load ACC data', command=self.load_acc_data_file)
-        load_acc_data.grid(row=0,column=5,sticky=tk.E)
+        load_acc_data.grid(row=0,column=8,sticky=tk.E)
+        
+        acc_mean_label = tk.Label(acframe,text='In reference too ')
+        acc_mean_label.grid(row=0,column=3,sticky=tk.E)
+
+        acc_norm_label = tk.Label(acframe,text='With Normalization ')
+        acc_norm_label.grid(row=0,column=5,sticky=tk.E)
         
         self.acc_label = tk.Label(acframe,text='--')
-        self.acc_label.grid(row=0,column=6,sticky=tk.E)
+        self.acc_label.grid(row=0,column=9,sticky=tk.E)
         
       
         
@@ -4288,6 +4332,41 @@ class GUI(Frame):
         x=1
 
 
+    def load_intensity_trajectories(self):
+        datafile = tfd.askopenfilename(defaultextension='.xls')
+        df = pd.read_excel(datafile, sheetname='Sheet1')
+        
+        
+        potential_headers = df.columns.values
+        
+        for value in potential_headers:
+            if value.lower() in ['time', 'times','time (s)','time (sec)' ]:
+                t_array = np.array(df[value])
+            if value.lower() in ['spot', 'spots']:
+                spot_array = np.array(df[value])
+            if value.lower() in ['intensity', 'i', 'intensities']:
+                intensity_array = np.array(df[value])
+            
+            
+        times = []
+        ivec = []
+        for i,spots in enumerate(np.unique(spot_array)):
+            inds = np.where(spot_array == spots)
+            times.append(t_array[inds])
+            ivec.append(intensity_array[inds])
+                
+                
+                
+            
+                
+                
+        self.intensity_data = [np.array(times), np.array(ivec) ]
+        
+        
+        self.intensity_label.config(text=datafile)
+        
+        
+
     def save_data(self):
         x=1
 
@@ -4652,13 +4731,13 @@ class GUI(Frame):
 
 
 
-        if ptype == 'All':
+        if ptype == 'All Trajectories':
             self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec)
 
-        if ptype == 'Average Time Course':
+        if ptype == 'Average Trajectories':
             self.plot_ssa_average(self.tcax,self.ssa.intensity_vec)
 
-        if ptype == 'PDF':
+        if ptype == 'Probability Density Function':
             self.plot_ssa_pdf(self.tcax,self.ssa.intensity_vec)
 
 
@@ -6406,13 +6485,13 @@ class GUI(Frame):
         ptype = self.tcplottype.get()
         self.tcax.clear()
 
-        if ptype == 'All':
+        if ptype == 'All Trajectories':
 
             self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec)
-        if ptype == 'Average Time Course':
+        if ptype == 'Average Trajectories':
             self.plot_ssa_average(self.tcax,self.ssa.intensity_vec)
 
-        if ptype == 'PDF':
+        if ptype == 'Probability Density Function':
             self.plot_ssa_pdf(self.tcax,self.ssa.intensity_vec)
 
         self.tc_canvas.draw()
@@ -6488,7 +6567,7 @@ class GUI(Frame):
         else:
             ss = 'True'
 
-        starttimelabel = tk.Label(newf,text=('start time: ' + str(self.ssa.start_time) + '     steady state: ' + ss + '  Sim time: ' + str(self.ssa.solvetime)),bg=bgc,width=40)
+        starttimelabel = tk.Label(newf,text=('start time: ' + str(self.ssa.start_time) + '     steady state: ' + ss + '  Sim time: ' + str(np.round(self.ssa.solvetime,2))),bg=bgc,width=40)
         starttimelabel.grid(row=0,column=3,padx=2,pady=2)
 
         savebutton = tk.Button(newf,text='Save',command=lambda j=ssaruns: self.save_ss_data(j),font=('SystemButtonText',8))
@@ -6580,13 +6659,13 @@ class GUI(Frame):
         ptype = self.tcplottype.get()
         self.tcax.clear()
 
-        if ptype == 'All':
+        if ptype == 'All Trajectories':
 
             self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec)
-        if ptype == 'Average Time Course':
+        if ptype == 'Average Trajectories':
             self.plot_ssa_average(self.tcax,self.ssa.intensity_vec)
 
-        if ptype == 'PDF':
+        if ptype == 'Probability Density Function':
             self.plot_ssa_pdf(self.tcax,self.ssa.intensity_vec)
 
         self.tc_canvas.draw()
