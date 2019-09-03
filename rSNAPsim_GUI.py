@@ -1835,14 +1835,19 @@ class GUI(Frame):
         tt_dropdown.config(font=('SystemButtonText',global_font_size))
         tt_dropdown['menu'].config(font=('SystemButtonText',global_font_size))
 
-        tt_dropdown.grid(row=5,column=4,sticky=tk.EW,padx=3)
+        tt_dropdown.grid(row=5,column=5,sticky=tk.EW,padx=3)
 
         tt_dropdown.config(width=20)
         
         pdf_time_label = tk.Label(ss_frame,text='PDF time slice',font=('SystemLabelText',global_font_size))
         pdf_time_label.grid(row=5,column=2,sticky=tk.EW,padx=3)
+        
         self.pdf_time_entry = tk.Entry(ss_frame,width=5)
         self.pdf_time_entry.grid(row=5,column=3,sticky=tk.EW,padx=3)
+        
+        change_pdf = tk.Button(ss_frame,text='Enter',command = self.update_pdf)
+        change_pdf.grid(row=5,column=4,sticky=tk.W,padx=3)
+        
 
         self.tcplottype.trace('w',lambda name, index, mode,tcplottype= self.tcplottype: self.update_timecourse_plot(self.tcplottype))
 
@@ -4732,16 +4737,22 @@ class GUI(Frame):
 
 
         if ptype == 'All Trajectories':
-            self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec)
+            self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec/float(np.sum(self.ssa.probe)))
 
         if ptype == 'Average Trajectories':
-            self.plot_ssa_average(self.tcax,self.ssa.intensity_vec)
+            self.plot_ssa_average(self.tcax,self.ssa.intensity_vec/float(np.sum(self.ssa.probe)))
 
         if ptype == 'Probability Density Function':
             self.plot_ssa_pdf(self.tcax,self.ssa.intensity_vec)
 
 
         self.tc_canvas.draw()
+        
+        
+    def update_pdf(self):
+        self.tcplottype.set('Probability Density Function')
+        
+        self.plot_ssa_pdf(self.tcax,self.ssa.intensity_vec)
 
 
 
@@ -6487,9 +6498,9 @@ class GUI(Frame):
 
         if ptype == 'All Trajectories':
 
-            self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec)
+            self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec/float(np.sum(self.ssa.probe)) )
         if ptype == 'Average Trajectories':
-            self.plot_ssa_average(self.tcax,self.ssa.intensity_vec)
+            self.plot_ssa_average(self.tcax,self.ssa.intensity_vec/float(np.sum(self.ssa.probe)))
 
         if ptype == 'Probability Density Function':
             self.plot_ssa_pdf(self.tcax,self.ssa.intensity_vec)
@@ -6661,9 +6672,9 @@ class GUI(Frame):
 
         if ptype == 'All Trajectories':
 
-            self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec)
+            self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec/float(np.sum(self.ssa.probe)))
         if ptype == 'Average Trajectories':
-            self.plot_ssa_average(self.tcax,self.ssa.intensity_vec)
+            self.plot_ssa_average(self.tcax,self.ssa.intensity_vec/float(np.sum(self.ssa.probe)))
 
         if ptype == 'Probability Density Function':
             self.plot_ssa_pdf(self.tcax,self.ssa.intensity_vec)
@@ -6698,7 +6709,7 @@ class GUI(Frame):
 
     def plot_loaded_ssa(self):
         self.tcax.clear()
-        self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec)
+        self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec/float(np.sum(self.ssa.probe)))
 
 
         self.tc_canvas.draw()
@@ -6951,6 +6962,8 @@ class GUI(Frame):
         ax.set_ylabel('Intensity (a.u.)')
 
     def plot_ssa_intensity(self,ax,i_vec):
+        
+        
         ax.cla()
         if len(i_vec.shape) == 3:
             maxint = 0
@@ -6976,7 +6989,7 @@ class GUI(Frame):
     
             #ax.plot(i_vec[0],color=self.main_color,linewidth=3)
             ax.set_xlabel('time (sec)')
-            ax.set_ylabel('Intensity (a.u.)')
+            ax.set_ylabel('Intensity (ump)')
 
             
         else:
@@ -6996,7 +7009,7 @@ class GUI(Frame):
     
             #ax.plot(i_vec[0],color=self.main_color,linewidth=3)
             ax.set_xlabel('time (sec)')
-            ax.set_ylabel('Intensity (a.u.)')
+            ax.set_ylabel('Intensity (ump)')
 
 
     def plot_ssa_average(self,ax,i_vec):
@@ -7029,7 +7042,7 @@ class GUI(Frame):
                 ax.plot(np.mean(traj,axis=0) - np.std(traj,axis=0  ), color=colors[i],linewidth=1)
                 ax.plot(np.mean(traj,axis=0) + np.std(traj,axis=0  ), color=colors[i],linewidth=1)
                 ax.set_xlabel('time (sec)')
-                ax.set_ylabel('Intensity (a.u.)')
+                ax.set_ylabel('Intensity (ump)')
          
             
         else:
@@ -7051,7 +7064,7 @@ class GUI(Frame):
             ax.plot(np.mean(i_vec,axis=0) - np.std(i_vec,axis=0  ), color=self.main_color,linewidth=1)
             ax.plot(np.mean(i_vec,axis=0) + np.std(i_vec,axis=0  ), color=self.main_color,linewidth=1)
             ax.set_xlabel('time (sec)')
-            ax.set_ylabel('Intensity (a.u.)')
+            ax.set_ylabel('Intensity (ump)')
 
 
     def __is_number(self, string):
@@ -7407,8 +7420,8 @@ class GUI(Frame):
  
         maxlen= fragments.shape[1]
         time  = ssa_obj.time
-        
-        ivec = ssa_obj.intensity_vec[n_traj]
+        print(float(len(ssa_obj.probe)))
+        ivec = ssa_obj.intensity_vec[n_traj] / float(np.sum(ssa_obj.probe))
         
         ftimes = ssa_obj.fragtimes[startfrags:startfrags+endfrags]
         #plt.figure(figsize=(5,10))
@@ -7472,7 +7485,7 @@ class GUI(Frame):
         ax.set_facecolor(bgcolor )
     
         ax1.plot(ivec.T,segtime,color=linecolor)
-        ax1.set_xlabel('Intensity (AU)')
+        ax1.set_xlabel('Intensity (UMP)')
         ax1.set_facecolor(bgcolor)
         ax1.set_ylim(segtime[-1], segtime[0])
         ax1.set_yticks([])
@@ -7922,7 +7935,7 @@ class GUI(Frame):
 
         fig = plt.figure(figsize=(14,5))
         ax = fig.add_subplot('111')
-        self.plot_ssa_intensity(ax,self.ssa.intensity_vec)
+        self.plot_ssa_intensity(ax,self.ssa.intensity_vec/float(np.sum(self.ssa.probe)))
 
         fig.show()
 
