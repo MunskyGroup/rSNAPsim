@@ -3311,7 +3311,7 @@ class rSNAPsim():
                 dwelltime_ug_norm = 1
         ke_exp_ug_norm = np.round(geneLength/dwelltime_ug_norm ,1)        
         
-        nacov = {'global': {'sem': sem_autocorr_ug_norm, 'mean':mean_autocorr_ug_norm,'traj':autocorr_ug.T/varg,'ke': ke_exp_ug_norm, 'dwelltime':dwelltime_ug_norm},
+        nacov = {'global': {'sem': sem_autocorr_ug_norm, 'mean':mean_autocorr_ug_norm,'traj':autocorr_ug/varg,'ke': ke_exp_ug_norm, 'dwelltime':dwelltime_ug_norm},
                  'indiv': {'sem': sem_autocorr_ui_norm, 'mean':mean_autocorr_ui_norm,'traj':autocorr_ui_norm,'ke': ke_exp_ui_norm, 'dwelltime':dwelltime_ui_norm}}
         acov =  {'global': {'sem': sem_autocorr_ug, 'mean':mean_autocorr_ug,'traj':autocorr_ug,'ke': ke_exp_ug, 'dwelltime':dwelltime_ug },
                  'indiv': {'sem': sem_autocorr_ui, 'mean':mean_autocorr_ui,'traj':autocorr_ui,'ke': ke_exp_ui, 'dwelltime':dwelltime_ui}}

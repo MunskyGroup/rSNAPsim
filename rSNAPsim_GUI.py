@@ -357,7 +357,9 @@ class GUI(Frame):
         self.ssas=[]
         self.ssasaves = []
 
-
+        parent.protocol("WM_DELETE_WINDOW", self.close_app)
+        
+        
         self.icons = 1
 
         self.icondata =tk.PhotoImage(data='''
@@ -1652,10 +1654,14 @@ class GUI(Frame):
         
         
         data_display_frame = tk.Frame(data_frame)
-        data_display_frame.grid(row=0,column=0,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
+        data_display_frame.grid(row=1,column=0,sticky=tk.W+tk.E+tk.N+tk.S,padx=gpx,pady=gpy)
+
+        data_display_acc_frame = tk.Frame(data_frame)
+        data_display_acc_frame.grid(row=3,column=0,sticky=tk.W+tk.E+tk.N+tk.S,padx=gpx,pady=gpy)
+
 
         data_options_frame = tk.Frame(data_frame)
-        data_options_frame.grid(row=1,column=0,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
+        data_options_frame.grid(row=0,column=0,sticky=tk.W+tk.E,padx=gpx,pady=gpy)
         
         self.data_fig = mpl.figure.Figure(figsize=(1,1))#figsize=(2,5),dpi=60)
         self.data_fig.set_tight_layout(True)
@@ -1673,6 +1679,24 @@ class GUI(Frame):
         self.data_canvas.draw()
         self.data_canvas.get_tk_widget().pack(expand=True,fill='both',side='left',anchor=tk.NW)  
         
+
+        self.data_acc_fig = mpl.figure.Figure(figsize=(1,1))#figsize=(2,5),dpi=60)
+        self.data_acc_fig.set_tight_layout(True)
+        self.data_acc_ax = self.data_acc_fig.add_subplot(111)
+        self.data_acc_fig.patch.set_facecolor(self.default_color)
+        self.data_acc_fig.tight_layout(h_pad=1.0)
+
+        #self.kymax.set_xlabel('time (sec)')
+        #self.kymax.set_ylabel('Intensity (a.u.)')
+        self.data_acc_ax.set_title("")
+
+
+
+        self.data_acc_canvas = FigureCanvasTkAgg(self.data_acc_fig,master=data_display_acc_frame)
+        self.data_acc_canvas.draw()
+        self.data_acc_canvas.get_tk_widget().pack(expand=True,fill='both',side='left',anchor=tk.NW)  
+        
+        
         
         load_intensity = tk.Button(data_options_frame,text='Load Intensity Trajectories', command = self.load_intensity_trajectories)
         load_intensity.grid(row=0,column=0)
@@ -1680,11 +1704,27 @@ class GUI(Frame):
         self.intensity_label = tk.Label(data_options_frame,text='---')
         self.intensity_label.grid(row=0,column=1)
         
+        self.norm_acc_data = tk.BooleanVar(value=False)
+        normalized_acc = tk.Checkbutton(data_options_frame,text=' ',variable = self.norm_acc_data,command=self.replot_acc_data )
+        normalized_acc.grid(row=0,column=7,sticky=tk.E)
         
         
+        normalization_types = ['Global Mean','Global Mean','Individual Mean']           #current filetypes for dropdown
+
+        self.normtype_data = tk.StringVar(self,value='Global Mean')
+        meanoptions = ttk.OptionMenu(data_options_frame,self.normtype_data,*normalization_types,command=self.change_normalization_data)    #make the dropdown
+        meanoptions.grid(row=0,column=4,sticky=tk.E)
+        meanoptions.config(width=20)        
         
+        acc_mean_label = tk.Label(data_options_frame,text='                    Calculate autocovariance in reference to ')
+        acc_mean_label.grid(row=0,column=3,sticky=tk.E)
         
-        data_frame.rowconfigure(0,weight=3)
+        acc_norm_label = tk.Label(data_options_frame,text='With Normalization ')
+        acc_norm_label.grid(row=0,column=5,sticky=tk.E)        
+        
+        data_frame.rowconfigure(1,weight=3)
+        data_frame.columnconfigure(0,weight=3)
+        data_frame.rowconfigure(3,weight=3)
         data_frame.columnconfigure(0,weight=3)
         
 
@@ -2138,7 +2178,7 @@ class GUI(Frame):
         acframe.pack(expand=False,fill='x',side='top',anchor=tk.N) #(row=9,column=0,columnspan=3,sticky=tk.NW,padx=10)
         aclabel.grid(row=0,column=0)
         self.norm_acc = tk.BooleanVar(value=False)
-        normalized_acc = tk.Checkbutton(acframe,text=' ',variable = self.norm_acc,command=self.replot_acc )
+        normalized_acc = tk.Checkbutton(acframe,text='',variable = self.norm_acc,command=self.replot_acc )
         normalized_acc.grid(row=0,column=7,sticky=tk.E)
         
         
@@ -2149,9 +2189,7 @@ class GUI(Frame):
         meanoptions.grid(row=0,column=4,sticky=tk.E)
         meanoptions.config(width=20)
         
-        self.acc_data = None
-        load_acc_data = tk.Button(acframe,text= 'Load ACC data', command=self.load_acc_data_file)
-        load_acc_data.grid(row=0,column=8,sticky=tk.E)
+
         
         acc_mean_label = tk.Label(acframe,text='In reference too ')
         acc_mean_label.grid(row=0,column=3,sticky=tk.E)
@@ -2159,10 +2197,12 @@ class GUI(Frame):
         acc_norm_label = tk.Label(acframe,text='With Normalization ')
         acc_norm_label.grid(row=0,column=5,sticky=tk.E)
         
-        self.acc_label = tk.Label(acframe,text='--')
-        self.acc_label.grid(row=0,column=9,sticky=tk.E)
+        self.show_traj_acc = tk.BooleanVar(value=False)
+        show_traj_acc_check = tk.Checkbutton(acframe,text='',variable = self.show_traj_acc, command=self.replot_acc)
+        show_traj_acc_check.grid(row=0,column=9,sticky=tk.E)
+        show_traj_label = tk.Label(acframe,text=' Show individual acov? ' )
+        show_traj_label.grid(row=0,column=8,sticky=tk.E)
         
-      
         
 
         '''
@@ -4370,7 +4410,73 @@ class GUI(Frame):
         
         self.intensity_label.config(text=datafile)
         
+        self.datamax.clear()
+        self.plot_intensity_data(self.datamax,self.intensity_data)
+        self.data_canvas.draw()
         
+        self.data_acc_ax.clear()
+        self.plot_intensity_acc_data(self.data_acc_ax,self.intensity_data)
+        self.data_acc_canvas.draw()        
+        
+    
+    def plot_intensity_data(self,ax,data):
+        
+        t = data[0]
+        ivec = data[1]
+        
+     
+        ticks = np.linspace(0,np.max(t),6).astype(int)
+        yticks = np.linspace(np.min(ivec)-.3,np.max(ivec)+.3,4).astype(int)
+        ax.set_xticks(ticks)
+        ax.set_yticks(yticks)
+        ax.set_xlabel('time (sec)')
+        ax.plot(t.T,ivec.T)
+
+        
+        
+    def plot_intensity_acc_data(self,ax,data):
+        
+        self.replot_acc_data()
+
+                
+        
+    def change_normalization_data(self,event):
+        self.replot_acc_data()
+
+    def replot_acc_data(self):
+        try:
+            data = self.intensity_data
+            t = data[0]
+            ivec = data[1]       
+        except:
+            return
+        
+        self.data_acc_ax.clear()
+        self.data_acc_ax.cla()
+  
+        
+        
+        nacov,acov = self.sms.get_all_autocovariances(ivec,t,100)
+        
+        if self.norm_acc_data.get():
+
+            if self.normtype_data.get() == 'Individual Mean':
+                self.plot_ssa_acc_data(self.data_acc_ax,t,nacov['indiv']['mean'],nacov['indiv']['sem'])
+            else:
+                self.plot_ssa_acc_data(self.data_acc_ax,t,nacov['global']['mean'],nacov['global']['sem'])
+            
+            
+        else:
+            
+            if self.normtype_data.get() == 'Individual Mean':
+                
+                self.plot_ssa_acc_data(self.data_acc_ax,t, acov['indiv']['mean'],acov['indiv']['sem'])
+            else:
+                self.plot_ssa_acc_data(self.data_acc_ax,t, acov['global']['mean'],acov['global']['sem'])
+                
+        self.data_acc_canvas.draw()
+            
+                 
 
     def save_data(self):
         x=1
@@ -7420,7 +7526,7 @@ class GUI(Frame):
  
         maxlen= fragments.shape[1]
         time  = ssa_obj.time
-        print(float(len(ssa_obj.probe)))
+
         ivec = ssa_obj.intensity_vec[n_traj] / float(np.sum(ssa_obj.probe))
         
         ftimes = ssa_obj.fragtimes[startfrags:startfrags+endfrags]
@@ -7512,31 +7618,67 @@ class GUI(Frame):
             self.acax.cla()
       
             
+
+
         
             if not self.norm_acc.get():
-                print(self.normtype.get())
+        
                 if self.normtype.get() == 'Individual Mean':
-                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_norm_dict['indiv']['mean'],self.ssa.autocovariance_norm_dict['indiv']['sem'])
+                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_norm_dict['indiv']['mean'],self.ssa.autocovariance_norm_dict['indiv']['sem'],alltraj = self.ssa.autocovariance_norm_dict['indiv']['traj'])
                 else:
-                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_norm_dict['global']['mean'],self.ssa.autocovariance_norm_dict['global']['sem'])
+                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_norm_dict['global']['mean'],self.ssa.autocovariance_norm_dict['global']['sem'],alltraj = self.ssa.autocovariance_norm_dict['global']['traj'])
                 
                 
             else:
                 if self.normtype.get() == 'Individual Mean':
-                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_dict['indiv']['mean'],self.ssa.autocovariance_dict['indiv']['sem'])
+                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_dict['indiv']['mean'],self.ssa.autocovariance_dict['indiv']['sem'],alltraj = self.ssa.autocovariance_dict['indiv']['traj'])
                 else:
-                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_dict['global']['mean'],self.ssa.autocovariance_dict['global']['sem'])
+                    self.plot_ssa_acc(self.acax,self.ssa.autocovariance_dict['global']['mean'],self.ssa.autocovariance_dict['global']['sem'],alltraj = self.ssa.autocovariance_dict['global']['traj'])
                 
                 
                 
             self.ac_canvas.draw()
+
+
+    def plot_ssa_acc_data(self,ax,t, mean_acc,error_acc,color=None,name=None,alltraj = None):
+  
+        if color == None:
+            color = self.main_color
+
+        ax.axis([0,int(len(mean_acc)),min(mean_acc)-.3,max(mean_acc)+.3] )
+    
+        
+        
+        
+        ticks = np.linspace(0,int(len(mean_acc)),6).astype(int)
+        yticks = np.linspace(np.min(mean_acc)-.3,np.max(mean_acc)+.3,4).astype(int)
+        ax.set_xticks(ticks)
+        ax.set_yticks(yticks)
+        ax.set_xlabel('time (sec)')
+        
+        
+        ax.errorbar( t[0], mean_acc,yerr = error_acc,color=color)
+
+        ax.plot([0,t[0][-1]],[0,0],color='r',alpha=.5)
+        
+        if len(np.where(t < 0)[0]) !=0:
+            maxxlim = t[np.where(mean_acc <0)[0][0]]+100
+        else:
+            maxxlim = np.max(t)
+        
+        ax.set_xlim(0,maxxlim)
+        ticks = np.linspace(0,maxxlim,6).astype(int)
+   
+        ax.set_xticks(ticks)
         
 
-    def plot_ssa_acc(self,ax,mean_acc,error_acc,color=None,name=None):
+    def plot_ssa_acc(self,ax,mean_acc,error_acc,color=None,name=None,alltraj=None):
   
         maxdwelltime = max([self.ssa.autocovariance_dict['global']['dwelltime'],self.ssa.autocovariance_dict['indiv']['dwelltime'],self.ssa.autocovariance_norm_dict['indiv']['dwelltime'],self.ssa.autocovariance_norm_dict['global']['dwelltime']] )
         if color == None:
             color = self.main_color
+            
+        
 
         ax.axis([0,int(len(mean_acc)),min(mean_acc)-.3,max(mean_acc)+.3] )
         t = np.linspace(0,len(mean_acc),len(mean_acc)+1)
@@ -7556,8 +7698,16 @@ class GUI(Frame):
         ticks = np.linspace(0,maxdwelltime+100,6).astype(int)
    
         ax.set_xticks(ticks)
+        
+        
+            
+                    
+        if self.show_traj_acc.get():
+            ax.plot(alltraj.T,alpha=.3,color='gray')
+ 
+        
 
-  
+            
             
         try:
             len(self.acc_data)
@@ -7606,7 +7756,7 @@ class GUI(Frame):
             
             local_density = np.mean(rib_density[segments[i]:segments[i+1]])
             ldnorm = (local_density - mindensity) / (maxdensity - mindensity)
-            print(segments[i],segments[i+1])
+           
             ax.fill_between( [segments[i],segments[i+1]], [0,1], color = cm.RdYlGn_r(ldnorm),alpha=.5)   
             
         if not color:
@@ -7871,7 +8021,7 @@ class GUI(Frame):
 
         except:
             return
-        print(color)
+    
         self.main_color = color[1]
 
 
@@ -7893,6 +8043,21 @@ class GUI(Frame):
         for var in self.aa_vars:
             var.set(2)
 
+
+    def close_app(self):
+        self.kymax.clear()
+        self.kymax2.clear()
+        self.kymax3.clear()
+        
+        self.datamax.clear()
+        self.data_acc_ax.clear()
+        
+        self.acax.clear()
+        self.rbax.clear()
+        self.cuax.clear()
+        self.tcax.clear()
+        
+        self.parent.destroy()
 
     def plot_sequence(self,ax,gene_length,tag_length,total_length,epitopes_pos,tag_name,gene_name):
         ax.cla()
@@ -8781,16 +8946,17 @@ def main():
 
 
 
+    
+
+
+    
+        
     root.tk.call('wm','iconphoto',root._w,iconimage)
-
-
-
-
     app = GUI(root)#def app
 
-
+    
     root.mainloop()  #do the GUI stuff
-
+    
 
     try:
         root.destroy() #destroy the GUI if the user hits file exit
