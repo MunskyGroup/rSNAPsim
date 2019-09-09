@@ -2361,8 +2361,10 @@ class GUI(Frame):
                 if i%2 ==0:
 
                     b = tk.Entry(datatable, text="",bd=1,bg='#DDDDDD',relief=tk.RIDGE,font=('SystemButtonText',10))
+                    
                 else:
                     b = tk.Entry(datatable, text="",bd=1,relief= tk.RIDGE,font=('SystemButtonText',10),readonlybackground='#FFFFFF')
+                              
                 if i == 0:
                     b.grid(row=i, column=j,ipady=1,sticky=tk.EW)
 
@@ -2371,7 +2373,8 @@ class GUI(Frame):
 
                 if j == 1:
                     b.config(justify=tk.RIGHT)
-
+                if j == 0:
+                    b.config(width=30)
                 b.insert(tk.END,lsa[i,j])
 
 
@@ -2408,6 +2411,9 @@ class GUI(Frame):
 
                 if j == 1:
                     b.config(justify=tk.RIGHT)
+                if j == 0:
+                    b.config(width=30)
+
 
                 b.insert(tk.END,lsa[i,j])
 
