@@ -1721,11 +1721,32 @@ class GUI(Frame):
         
         acc_norm_label = tk.Label(data_options_frame,text='With Normalization ')
         acc_norm_label.grid(row=0,column=5,sticky=tk.E)        
+
+
+
+        self.data_tcplottype = tk.StringVar(value='All Trajectories')
+        tt_dropdown = tk.OptionMenu(data_options_frame,self.data_tcplottype,"All Trajectories","Average Trajectories","Probability Density Function")
+        tt_dropdown.config(font=('SystemButtonText',global_font_size))
+        tt_dropdown['menu'].config(font=('SystemButtonText',global_font_size))
+
+        tt_dropdown.grid(row=0,column=8,sticky=tk.EW,padx=3)
+
+        tt_dropdown.config(width=20)
+        
+        self.data_tcplottype.trace('w',lambda name, index, mode,data_tcplottype= self.data_tcplottype: self.update_data_timecourse_plot(self.data_tcplottype))
+
         
         data_frame.rowconfigure(1,weight=3)
         data_frame.columnconfigure(0,weight=3)
         data_frame.rowconfigure(3,weight=3)
         data_frame.columnconfigure(0,weight=3)
+
+
+
+
+
+
+
         
 
         kyminfoframe = tk.Frame(kym_frame)
@@ -4837,6 +4858,38 @@ class GUI(Frame):
 
 
 
+    def update_data_timecourse_plot(self,event):
+        try:
+            data = self.intensity_data
+            t = data[0]
+            ivec = data[1]       
+        except:
+            return
+
+        ptype = self.data_tcplottype.get()
+
+        self.datamax.clear()
+        self.datamax.cla()
+  
+        #self.plot_ssa_intensity(self.tcax,self.ssa.intensity_vec)
+
+
+
+
+        if ptype == 'All Trajectories':
+            self.plot_ssa_intensity(self.datamax,ivec)
+
+        if ptype == 'Average Trajectories':
+            self.plot_ssa_average(self.datamax,ivec)
+
+        if ptype == 'Probability Density Function':
+            self.plot_ssa_pdf_data(self.datamax,ivec)
+
+
+        self.data_canvas.draw()
+        
+
+
     def update_timecourse_plot(self,event):
         try:
             self.ssa.intensity_vec
@@ -7198,6 +7251,47 @@ class GUI(Frame):
         idx = (np.abs(array - value)).argmin()
         return idx
 
+
+
+
+    def plot_ssa_pdf_data(self,ax,i_vec):
+        ax.cla()
+        
+        
+        if len(i_vec.shape) == 3:
+            pass
+        else:
+
+            ivec_slice = i_vec
+    
+            argmin = int(np.min(np.floor(ivec_slice)))
+            argmax = int(np.max(np.ceil(ivec_slice)))
+    
+            histdata = np.histogram(ivec_slice, bins = np.linspace(argmin,argmax, argmax+1).astype(int))
+    
+       
+    
+    
+            ax.bar(histdata[1][:-1],histdata[0],color=self.main_color,width=.96)
+            
+            maxhist = np.sum(histdata[0])
+            ticks = ax.get_yticks()
+            p_ticks = []
+            for tick in ticks:
+                val = float(tick)
+                p_ticks.append(str(np.round(val/maxhist,2)))
+                
+            
+            ax.set_yticklabels(p_ticks)
+            
+            '''
+            for i in range(0,i_vec.shape[1])
+                nbins = int(np.max(ivect))
+                ax.hist(ivect[i],bins = nbins,alpha=.5,color=self.main_color,histtype='step',fill=self.main_color)
+            '''
+    
+            ax.set_xlabel('intensity (AU)')
+            ax.set_ylabel('Probability ')
 
     def plot_ssa_pdf(self,ax,i_vec):
         ax.cla()
