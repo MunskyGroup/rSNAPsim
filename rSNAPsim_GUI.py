@@ -4450,8 +4450,15 @@ class GUI(Frame):
                 
         self.intensity_data = [np.array(times), np.array(ivec) ]
         
+        fname1 = datafile.split('/')[-1]
+        fname2 =  datafile.split('\\')[-1]
+        if len(fname1)<len(fname2):
+            fname = fname1
+        else:
+            fname = fname2
         
-        self.intensity_label.config(text=datafile)
+            
+        self.intensity_label.config(text=fname)
         
         self.datamax.clear()
         self.plot_intensity_data(self.datamax,self.intensity_data)
