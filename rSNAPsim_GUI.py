@@ -3304,10 +3304,15 @@ class GUI(Frame):
             self.protein_fig.patch.set_facecolor(self.default_color)  #make the edges of the figure the same as the background so it looks like it blends in
 
             # the blank protien example using plasmid_H2B
-            sample_protein = [146,318,464,[2,11,20,196,206,218,228,300,309,318]]  #plasmid h2b example
-            self.plot_sequence(self.ax,sample_protein[0],sample_protein[1],sample_protein[2],sample_protein[3],'Flag','Plasmid_H2B')
+            sample_protein = [self.sms.POI.gene_length,self.sms.POI.total_length-self.sms.POI.gene_length ,self.sms.POI.total_length,self.sms.POI.tag_epitopes[self.sms.POI.tag_types[0]]]  #plasmid h2b example
+            
+            
+            
+     
+            
+            self.plot_sequence(self.ax,sample_protein[0],sample_protein[1],sample_protein[2],sample_protein[3],self.sms.POI.tag_types[0],self.sms.POI.name)
 
-
+            
 
 
             poi = tk.Label(self.viewframe,text='POI = Protein of intrest',font=('SystemButtonText',8))
