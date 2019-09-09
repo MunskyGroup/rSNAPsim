@@ -2204,6 +2204,12 @@ class GUI(Frame):
         show_traj_label.grid(row=0,column=8,sticky=tk.E)
         
         
+        self.plot_int_data = tk.BooleanVar(value=True)
+        plot_data_acc_check = tk.Checkbutton(acframe,text='',variable = self.plot_int_data, command=self.replot_acc)
+        plot_data_acc_check.grid(row=0,column=11,sticky=tk.E)
+        plot_data_label = tk.Label(acframe,text=' Plot data if available? ' )
+        plot_data_label.grid(row=0,column=10,sticky=tk.E)        
+        
 
         '''
         self.CAIlabel = tk.Entry(ss_frame,width=5)
@@ -4473,7 +4479,10 @@ class GUI(Frame):
                 self.plot_ssa_acc_data(self.data_acc_ax,t, acov['indiv']['mean'],acov['indiv']['sem'])
             else:
                 self.plot_ssa_acc_data(self.data_acc_ax,t, acov['global']['mean'],acov['global']['sem'])
-                
+        
+
+
+                    
         self.data_acc_canvas.draw()
             
                  
@@ -7618,7 +7627,42 @@ class GUI(Frame):
             self.acax.cla()
       
             
+            if not self.plot_int_data.get():
+                pass
+                
+            else:
+                try:
+                    data = self.intensity_data
+                    t = data[0]
+                    ivec = data[1]   
+                    keep_going = True
+                except:
+                    self.ac_canvas.draw()
+                    keep_going = False
+                
 
+          
+                
+                if keep_going == True:
+                    nacov,acov = self.sms.get_all_autocovariances(ivec,t,100)
+                    
+                    if self.norm_acc.get():
+            
+                        if self.normtype.get() == 'Individual Mean':
+                            self.plot_ssa_acc_data(self.acax,t,nacov['indiv']['mean'],nacov['indiv']['sem'],color='#fc5603')
+                        else:
+                            self.plot_ssa_acc_data(self.acax,t,nacov['global']['mean'],nacov['global']['sem'],color='#fc5603')
+                        
+                        
+                    else:
+                        
+                        if self.normtype.get() == 'Individual Mean':
+                            
+                            self.plot_ssa_acc_data(self.acax,t, acov['indiv']['mean'],acov['indiv']['sem'],color='#fc5603' )
+                        else:
+                            self.plot_ssa_acc_data(self.acax,t, acov['global']['mean'],acov['global']['sem'],color='#fc5603' )
+                    
+                            
 
         
             if not self.norm_acc.get():
@@ -7636,7 +7680,9 @@ class GUI(Frame):
                     self.plot_ssa_acc(self.acax,self.ssa.autocovariance_dict['global']['mean'],self.ssa.autocovariance_dict['global']['sem'],alltraj = self.ssa.autocovariance_dict['global']['traj'])
                 
                 
-                
+            
+
+            
             self.ac_canvas.draw()
 
 
@@ -7705,10 +7751,7 @@ class GUI(Frame):
         if self.show_traj_acc.get():
             ax.plot(alltraj.T,alpha=.3,color='gray')
  
-        
-
-            
-            
+    
         try:
             len(self.acc_data)
 
