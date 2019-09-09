@@ -7,7 +7,7 @@ Created on Fri Jul 06 13:40:30 2018
 
 import os
 import sys
-
+import platform
 
 
 import base64
@@ -2929,8 +2929,13 @@ class GUI(Frame):
         '''
         try:
             style = ttk.Style()
-
-            style.theme_create( "new", parent="alt", settings={
+            
+            if platform.system() == 'Windows':
+                styletype = 'alt'
+            else:
+                styletype = 'clam'
+            
+            style.theme_create( "new", parent=styletype, settings={
                     "TProgressbar":{"configure":{"background":['#fcaa0a'],"foreground":['#fcaa0a']}},
                     "TNotebook": {"configure": {"tabmargins": [2, 5, 2, 0], "tabposition":['nw'],"background":['#777777']} } ,
                     "TNotebook.Tab": {
