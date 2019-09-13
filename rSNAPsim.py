@@ -1378,7 +1378,7 @@ class rSNAPsim():
 
                 I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] = I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] + revI
                 
-                print(np.min(I))
+                
       
                 
                 
@@ -3011,7 +3011,7 @@ class rSNAPsim():
             
     
 
-    def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True,tag = 0, show_col=True,col_size = 1.5, custom_fig = None, facecolor='white', *args,**kwargs):
+    def kymograph(self,ssa_obj,n_traj,bg_intense=True,show_intense = True,tag = 0, show_col=True,col_size = 1.5, custom_fig = None, facecolor='black', *args,**kwargs):
         '''
         Constructs a kymograph of ribosome locations
         '''
@@ -3092,7 +3092,7 @@ class rSNAPsim():
             plt.subplot(gs[1])
             ax = plt.gca()
             ax.set_facecolor(facecolor)
-            print((np.sum(ssa_obj.probe)))
+ 
             plt.plot(ivec.T/ np.sum(ssa_obj.probe),segtime,**kwargs)
             plt.xlabel('Intensity (ump)')
             plt.xlim(0,30)
