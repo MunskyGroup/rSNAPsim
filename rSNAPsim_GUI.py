@@ -7866,8 +7866,8 @@ class GUI(Frame):
         ax.set_xlabel('time (sec)')
         ax.plot(mean_acc,color=color)
         ax.plot(mean_acc-error_acc,'--',color=color,alpha=.3)
-        ax.plot(mean_acc+error_acc,'--',color=color,alpha=.3)
-        ax.plot([0,int(len(mean_acc))],[0,0],color='r',alpha=.5)
+        ax.plot(mean_acc+error_acc,'--',color=color,alpha=.3,label='_nolegend_')
+        ax.plot([0,int(len(mean_acc))],[0,0],color='r',alpha=.5,label='_nolegend_')
         
 
         maxxlim = t[np.where(mean_acc <0)[0][0]]+100
@@ -7875,23 +7875,28 @@ class GUI(Frame):
         ticks = np.linspace(0,maxdwelltime+100,6).astype(int)
    
         ax.set_xticks(ticks)
+        legend = ['model','SEM']
+        ax.legend(['model','SEM'])
         
-        
+        if self.plot_int_data.get():
             
+            legend = ['data','model','SEM']
+            ax.legend(['data','model','SEM'])      
+           
+
+      
+     
                     
         if self.show_traj_acc.get():
             ax.plot(alltraj.T,alpha=.3,color='gray')
+            legend.append('indiv')
+            ax.legend(legend)
  
     
-        try:
-            len(self.acc_data)
 
-        except:
-            return
-      
-        ax.errorbar(self.acc_data[0],self.acc_data[1],xerr=self.acc_data[2],yerr=self.acc_data[2] ,color='orange')
-        ax.legend(['model','','','data'])
         ax.set_xlim(0,maxxlim)
+        
+    
 
 
     def plot_rib_dense_kym(self,ax,rib_density):
