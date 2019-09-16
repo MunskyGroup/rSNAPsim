@@ -8225,16 +8225,32 @@ class GUI(Frame):
 
     def close_app(self):
         self.kymax.clear()
+        self.kym_canvas.get_tk_widget().destroy()
+        
         self.kymax2.clear()
+        self.kym_canvas2.get_tk_widget().destroy()
         self.kymax3.clear()
+        self.kym_canvas3.get_tk_widget().destroy()
         
         self.datamax.clear()
+        
         self.data_acc_ax.clear()
         
         self.acax.clear()
+        self.ac_canvas.get_tk_widget().destroy()
+        
         self.rbax.clear()
+        
+        
         self.cuax.clear()
         self.tcax.clear()
+        self.tc_canvas.get_tk_widget().destroy()
+        self.vis_canvas.get_tk_widget().destroy()
+        
+        self.cu_canvas.get_tk_widget().destroy()
+        self.rb_canvas.get_tk_widget().destroy()
+        
+        self.Main_Nb.destroy()
         
         self.parent.destroy()
 
