@@ -7834,7 +7834,7 @@ class GUI(Frame):
         ax.set_xlabel('time (sec)')
         
         
-        ax.errorbar( t[0], mean_acc,yerr = error_acc,color=color)
+        ax.errorbar( t[0], mean_acc,yerr = error_acc,color=color,lw=2,capsize=5,ls='',marker='o')
 
         ax.plot([0,t[0][-1]],[0,0],color='r',alpha=.5)
         
@@ -7864,7 +7864,7 @@ class GUI(Frame):
         ax.set_xticks(ticks)
         ax.set_yticks(yticks)
         ax.set_xlabel('time (sec)')
-        ax.plot(mean_acc,color=color)
+        ax.plot(mean_acc,color=color,lw=2)
         ax.plot(mean_acc-error_acc,'--',color=color,alpha=.3)
         ax.plot(mean_acc+error_acc,'--',color=color,alpha=.3,label='_nolegend_')
         ax.plot([0,int(len(mean_acc))],[0,0],color='r',alpha=.5,label='_nolegend_')
