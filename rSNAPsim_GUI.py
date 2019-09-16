@@ -19,8 +19,8 @@ os.chdir('..')
 import matplotlib as mpl
 
 
-
-mpl.use("TkAgg")
+if platform.system() != 'Windows':
+    mpl.use("TkAgg")
 
 try:
 

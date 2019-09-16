@@ -5,56 +5,34 @@ Created on Tue Oct 23 09:42:24 2018
 @author: William
 """
 
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 06 13:40:30 2018
-
-rSNAPsim CHANGE TOO THIS WHEN PUSHING TO PIP INSTALLLLLLS
-
-
-@author: William
-"""
 import re #import regex
-import sys
-'''
-try:
-   # sys.path.append('C:\\Users\\wsraymon\\Github\\ssa_cpp\\translation_ssa')
 
-    import ssa_translation
-except:
-    try:
-        sys.path.append('C:\\Users\\william\\Documents\\Github\\ssa_cpp\\translation_ssa')
-        import ssa_translation
-    except:
-        pass
 
-    pass
-
-'''
 
 import os
+path_to_cpp = ''
+
+#OS walk to find the cpp compilation
+for root, dirs, files in os.walk(".", topdown=False):
+   for branch in dirs:
+       if 'ssa_cpp' in branch:
+           path_to_cpp = os.path.join(root, branch)
+
+
+if path_to_cpp != '':
+    cwd = os.getcwd()
+    os.chdir(path_to_cpp)
+ 
+    import ssa_translation
+    os.chdir(cwd)
+    
+
 import time
 import json, codecs
 
 from scipy import sparse
 from scipy.stats import pearsonr
 
-cwd = os.getcwd()
-try:
-    os.chdir('../..')
-    os.chdir('ssa_cpp')
-except:
-    os.chdir(cwd)
-    os.chdir('ssa_cpp')  
-
-try:
-    
-    import ssa_translation
-    
-except:
-    pass
-os.chdir('..')
-os.chdir(cwd)
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -74,6 +52,8 @@ try:
     from Bio import SeqIO
     from Bio import Entrez
 except:
+    
+    print('BioPython is not installed, polling genbank will not be possible')
     pass
 
 
