@@ -29,6 +29,7 @@ Dependencies:
  * [SciPy](https://www.scipy.org/)
  * [BioPython](https://biopython.org/)
  * [matplotlib](https://matplotlib.org/)
+ * [pandas](https://pandas.pydata.org/)
 -----------------------------------
 ### Instillation 
 

@@ -2221,7 +2221,7 @@ class GUI(Frame):
         
 
         
-        acc_mean_label = tk.Label(acframe,text='In reference too ')
+        acc_mean_label = tk.Label(acframe,text='In reference to ')
         acc_mean_label.grid(row=0,column=3,sticky=tk.E)
 
         acc_norm_label = tk.Label(acframe,text='With Normalization ')
