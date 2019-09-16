@@ -3205,38 +3205,105 @@ class rSNAPsim():
         return crosscorr_vec, mean_autocorr
     
     
-    def get_all_autocovariances(self,intensity_vec,time_vec,geneLength):
+    def get_all_autocovariances(self,intensity_vec,time_vec,geneLength,shotnoise=True):
         '''
         Get all autocovariances for all 4 routines of normalization / means
         '''
-        ivec = intensity_vec
-        ug = np.mean(ivec)
- 
-        varg = np.var(ivec)
-        ntraj = ivec.shape[0]
         
-        autocorr_ui = np.zeros((ivec.shape))
-        for i in range(ivec.shape[0]):
-            autocorr_ui[i,:] = self.get_acc2(ivec[i]-np.mean(ivec[i]))
+        not_equal = False
+        
+        
+    
+        firstlen = len(intensity_vec[0])
+        for traj in intensity_vec:
+            if len(traj) != firstlen:
+                not_equal = True
+                    
             
-        autocorr_ug = np.zeros((ivec.shape))
-        for i in range(ivec.shape[0]):
-            autocorr_ug[i,:] = self.get_acc2(ivec[i]-ug)
+        if not_equal == True:
+            if shotnoise == True:
+                new_ivec = []
+                for traj in intensity_vec:
+                    new_ivec.append(traj[1:])
+                
+                ivec = new_ivec
+            else:
+                ivec = intensity_vec
+            
+            ivecflat = []
+            
+            maxtraj = 0
+            
+            for traj in ivec:
+                ivecflat = ivecflat + traj.tolist()
+                if len(traj) > maxtraj:
+                    maxtraj = len(traj)
+                
+                
+                
+            ivecflat = np.array(ivecflat)
+            
+            ug = np.mean(ivecflat)
+     
+            varg = np.var(ivecflat)      
+            ivecflat = 0
+            
+            autocorr_ui = np.zeros( (len(ivec), maxtraj))
+            for i in range(len(ivec)):
+                autocorr_ui[i,:len(ivec[i])] = self.get_acc2(ivec[i]-np.mean(ivec[i]))
+                
+            autocorr_ug = np.zeros((autocorr_ui.shape))
+            for i in range(len(ivec)):
+                autocorr_ug[i,:len(ivec[i])] = self.get_acc2(ivec[i]-ug)
+
+
+            mean_autocorr_ug = np.mean(autocorr_ug.T, axis=1)
+            mean_autocorr_ui = np.mean(autocorr_ui.T, axis=1)
+            
+            mean_autocorr_ug_norm = np.mean(autocorr_ug.T/varg, axis=1)
             
             
-        
-        mean_autocorr_ug = np.mean(autocorr_ug.T, axis=1)
-        mean_autocorr_ui = np.mean(autocorr_ui.T, axis=1)
-        
-        mean_autocorr_ug_norm = np.mean(autocorr_ug.T/varg, axis=1)
-        
-        
-        autocorr_ui_norm = np.zeros((ivec.shape))
-        for i in range(ivec.shape[0]):
-            autocorr_ui_norm[i,:] = self.get_acc2(ivec[i]-np.mean(ivec[i])) 
-            autocorr_ui_norm[i,:] = autocorr_ui_norm[i,:]/np.var(ivec[i,:])
+            autocorr_ui_norm = np.zeros((autocorr_ui.shape))
+            for i in range(len(ivec)):
+                autocorr_ui_norm[i,:len(ivec[i])] = self.get_acc2(ivec[i]-np.mean(ivec[i])) 
+                autocorr_ui_norm[i,:len(ivec[i])] = autocorr_ui_norm[i,:len(ivec[i])]/np.var(ivec[i])
+                
+            mean_autocorr_ui_norm = np.mean(autocorr_ui_norm.T, axis=1)    
+            ntraj = len(ivec)                        
             
-        mean_autocorr_ui_norm = np.mean(autocorr_ui_norm.T, axis=1)
+        else:
+            if shotnoise == True:
+                ivec = intensity_vec[:,1:]
+            else:
+                ivec = intensity_vec
+            ug = np.mean(ivec.flatten())
+     
+            varg = np.var(ivec.flatten())
+            
+            ntraj = ivec.shape[0]
+            
+            autocorr_ui = np.zeros((ivec.shape))
+            for i in range(ivec.shape[0]):
+                autocorr_ui[i,:] = self.get_acc2(ivec[i]-np.mean(ivec[i]))
+                
+            autocorr_ug = np.zeros((ivec.shape))
+            for i in range(ivec.shape[0]):
+                autocorr_ug[i,:] = self.get_acc2(ivec[i]-ug)
+                
+                
+            
+            mean_autocorr_ug = np.mean(autocorr_ug.T, axis=1)
+            mean_autocorr_ui = np.mean(autocorr_ui.T, axis=1)
+            
+            mean_autocorr_ug_norm = np.mean(autocorr_ug.T/varg, axis=1)
+            
+            
+            autocorr_ui_norm = np.zeros((autocorr_ui.shape))
+            for i in range(ivec.shape[0]):
+                autocorr_ui_norm[i,:] = self.get_acc2(ivec[i]-np.mean(ivec[i])) 
+                autocorr_ui_norm[i,:] = autocorr_ui_norm[i,:]/np.var(ivec[i,:])
+                
+            mean_autocorr_ui_norm = np.mean(autocorr_ui_norm.T, axis=1)
         
         sem_autocorr_ui_norm = 1.0/np.sqrt(ntraj)*np.std(autocorr_ui_norm.T,ddof=1,axis=1)
         sem_autocorr_ug_norm = 1.0/np.sqrt(ntraj)*np.std(autocorr_ug.T/varg,ddof=1,axis=1)

@@ -4482,14 +4482,15 @@ class GUI(Frame):
         
         t = data[0]
         ivec = data[1]
-        
-     
-        ticks = np.linspace(0,np.max(t),6).astype(int)
-        yticks = np.linspace(np.min(ivec)-.3,np.max(ivec)+.3,4).astype(int)
-        ax.set_xticks(ticks)
-        ax.set_yticks(yticks)
+
+        for i,trac in enumerate(ivec):
+            ax.plot(t[i],ivec[i])        
+            
+
         ax.set_xlabel('time (sec)')
-        ax.plot(t.T,ivec.T)
+        ax.set_ylabel('intensity')
+        
+
 
         
         
@@ -4909,7 +4910,7 @@ class GUI(Frame):
 
 
         if ptype == 'All Trajectories':
-            self.plot_ssa_intensity(self.datamax,ivec)
+            self.plot_intensity_data(self.datamax,self.intensity_data)
 
         if ptype == 'Average Trajectories':
             self.plot_ssa_average(self.datamax,ivec)
@@ -7248,23 +7249,40 @@ class GUI(Frame):
          
             
         else:
-            ax.axis([0,int(i_vec.shape[1]),0,np.max(i_vec)+5] )
-            ticks = np.linspace(0,int(i_vec.shape[1]) ,6).astype(int)
-            yticks = np.linspace(0,np.max(i_vec)+5,4).astype(int)
+            maxint = 0
+            maxshape = 0
+            minshape = 10000000
+            for traj in i_vec:
+                if np.max(traj) > maxint:
+                    maxint = np.max(traj)
+                if len(traj) > maxshape:
+                    maxshape = len(traj)
+                if len(traj)  < minshape:
+                    minshape = len(traj)
+                
+            
+            ax.axis([0,int(maxshape),0,maxint+5] )
+            ticks = np.linspace(0,int(maxshape) ,6).astype(int)
+            yticks = np.linspace(0,maxint+5,4).astype(int)
             ax.set_xticks(ticks)
             ax.set_yticks(yticks)
     
     
-    
+            trim_ivec = []
+            for traj in i_vec:
+                
+                trim_ivec.append(traj[:minshape])
+            
+            trim_ivec = np.array(trim_ivec)
     
             for i in range(0,i_vec.shape[0]):
     
                 ax.plot(i_vec[i],alpha=.1,color='gray')
     
-            ax.plot(np.mean(i_vec,axis=0),color=self.main_color,linewidth=3)
+            ax.plot(np.mean(trim_ivec,axis=0),color=self.main_color,linewidth=3)
     
-            ax.plot(np.mean(i_vec,axis=0) - np.std(i_vec,axis=0  ), color=self.main_color,linewidth=1)
-            ax.plot(np.mean(i_vec,axis=0) + np.std(i_vec,axis=0  ), color=self.main_color,linewidth=1)
+            ax.plot(np.mean(trim_ivec,axis=0) - np.std(trim_ivec,axis=0  ), color=self.main_color,linewidth=1)
+            ax.plot(np.mean(trim_ivec,axis=0) + np.std(trim_ivec,axis=0  ), color=self.main_color,linewidth=1)
             ax.set_xlabel('time (sec)')
             ax.set_ylabel('Intensity (ump)')
 
@@ -7765,6 +7783,7 @@ class GUI(Frame):
             try:
                 data = self.intensity_data
                 t = data[0]
+                
                 ivec = data[1]   
                 keep_going = True
             except:
@@ -7772,7 +7791,7 @@ class GUI(Frame):
                 keep_going = False
             
 
-      
+              
             
             if keep_going == True:
                 nacov,acov = self.sms.get_all_autocovariances(ivec,t,100)
@@ -7818,6 +7837,14 @@ class GUI(Frame):
 
 
     def plot_ssa_acc_data(self,ax,t, mean_acc,error_acc,color=None,name=None,alltraj = None):
+        
+        maxt_arr = 0
+        for time_array in t:
+            if len(time_array) > maxt_arr:
+                
+                maxt_arr = len(time_array)
+                
+                maxt = time_array
   
         if color == None:
             color = self.main_color
@@ -7833,15 +7860,15 @@ class GUI(Frame):
         ax.set_yticks(yticks)
         ax.set_xlabel('time (sec)')
         
-        
-        ax.errorbar( t[0], mean_acc,yerr = error_acc,color=color,lw=2,capsize=5,ls='',marker='o')
+
+        ax.errorbar( maxt[1:], mean_acc,yerr = error_acc,color=color,lw=2,capsize=5,ls='',marker='o')
 
         ax.plot([0,t[0][-1]],[0,0],color='r',alpha=.5)
         
-        if len(np.where(t < 0)[0]) !=0:
-            maxxlim = t[np.where(mean_acc <0)[0][0]]+100
+        if len(np.where(maxt < 0)[0]) !=0:
+            maxxlim = maxt[np.where(mean_acc <0)[0][0]]+100
         else:
-            maxxlim = np.max(t)
+            maxxlim = np.max(maxt)
         
         ax.set_xlim(0,maxxlim)
         ticks = np.linspace(0,maxxlim,6).astype(int)
