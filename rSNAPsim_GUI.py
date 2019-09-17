@@ -134,7 +134,7 @@ except ImportError:  # Python 3
 import matplotlib.backends.tkagg as tkagg
 try:
     from matplotlib.backends.backend_tkagg import (
-        FigureCanvasTkAgg, NavigationToolbar2TkAgg)
+        FigureCanvasTkAgg, NavigationToolbar2Tk)
 except:
     from matplotlib.backends.backend_tkagg import (
         FigureCanvasTkAgg)    
@@ -935,8 +935,14 @@ class GUI(Frame):
         #self.stoc_Nb.add(tau_frame, text="   Tau Plot   ")
         #self.stoc_Nb.add(sim_frame, text="   Simulated Cell  ")
         
-        
-        
+        try:
+            from matplotlib.backends.backend_tkagg import (
+                 NavigationToolbar2Tk)
+            toolbar = True
+        except:
+            toolbar = False
+            print(toolbar)
+                
         global_font_size = 9
 
         '''
@@ -1682,6 +1688,10 @@ class GUI(Frame):
 
         self.data_canvas = FigureCanvasTkAgg(self.data_fig,master=data_display_frame)
         self.data_canvas.draw()
+        if toolbar == True:
+            
+            datatoolbar = NavigationToolbar2Tk(self.data_canvas,data_display_frame)
+            datatoolbar.update()
         self.data_canvas.get_tk_widget().pack(expand=True,fill='both',side='left',anchor=tk.NW)  
         
 
@@ -1699,10 +1709,13 @@ class GUI(Frame):
 
         self.data_acc_canvas = FigureCanvasTkAgg(self.data_acc_fig,master=data_display_acc_frame)
         self.data_acc_canvas.draw()
+
+        if toolbar == True:
+            
+            acctoolbar = NavigationToolbar2Tk(self.data_acc_canvas,data_display_acc_frame)
+            acctoolbar.update()
         self.data_acc_canvas.get_tk_widget().pack(expand=True,fill='both',side='left',anchor=tk.NW)  
-        
-        
-        
+                
         load_intensity = tk.Button(data_options_frame,text='Load Intensity Trajectories', command = self.load_intensity_trajectories)
         load_intensity.grid(row=0,column=0)
         
@@ -2184,6 +2197,10 @@ class GUI(Frame):
 
         self.tc_canvas = FigureCanvasTkAgg(self.time_course_fig,master=figframe)
         self.tc_canvas.draw()
+        if toolbar == True:
+            
+            acctoolbar = NavigationToolbar2Tk(self.tc_canvas,figframe)
+            acctoolbar.update()
         self.tc_canvas.get_tk_widget().pack(expand=True,fill='both',side='top') #stickying this way it makes it fill all avaliable space
 
         ss_frame.columnconfigure(0,weight=3)
@@ -2269,6 +2286,10 @@ class GUI(Frame):
 
         self.ac_canvas = FigureCanvasTkAgg(self.autocor_fig,master=figframe)
         self.ac_canvas.draw()
+        if toolbar == True:
+            
+            datatoolbar = NavigationToolbar2Tk(self.ac_canvas,figframe)
+            datatoolbar.update()
         self.ac_canvas.get_tk_widget().pack(expand=True,side="top",fill="both")
 
 
