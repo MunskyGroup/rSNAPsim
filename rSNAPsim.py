@@ -3224,7 +3224,7 @@ class rSNAPsim():
             if shotnoise == True:
                 new_ivec = []
                 for traj in intensity_vec:
-                    new_ivec.append(traj[1:])
+                    new_ivec.append(traj)
                 
                 ivec = new_ivec
             else:
@@ -3250,25 +3250,47 @@ class rSNAPsim():
             
             autocorr_ui = np.zeros( (len(ivec), maxtraj))
             for i in range(len(ivec)):
-                autocorr_ui[i,:len(ivec[i])] = self.get_acc2(ivec[i]-np.mean(ivec[i]))
+              
+                autocorr_ui[i,:len(ivec[i])] = self.get_acc2( (ivec[i]-np.mean(ivec[i]))/np.std(ivec[i]) ) 
                 
             autocorr_ug = np.zeros((autocorr_ui.shape))
             for i in range(len(ivec)):
                 autocorr_ug[i,:len(ivec[i])] = self.get_acc2(ivec[i]-ug)
 
 
+            
+
             mean_autocorr_ug = np.mean(autocorr_ug.T, axis=1)
             mean_autocorr_ui = np.mean(autocorr_ui.T, axis=1)
+            
+            
+
             
             mean_autocorr_ug_norm = np.mean(autocorr_ug.T/varg, axis=1)
             
             
             autocorr_ui_norm = np.zeros((autocorr_ui.shape))
             for i in range(len(ivec)):
-                autocorr_ui_norm[i,:len(ivec[i])] = self.get_acc2(ivec[i]-np.mean(ivec[i])) 
-                autocorr_ui_norm[i,:len(ivec[i])] = autocorr_ui_norm[i,:len(ivec[i])]/np.var(ivec[i])
+                autocorr_ui_norm[i,:len(ivec[i])] = self.get_acc2((ivec[i]-np.mean(ivec[i]))/np.std(ivec[i])) 
                 
-            mean_autocorr_ui_norm = np.mean(autocorr_ui_norm.T, axis=1)    
+ 
+            if shotnoise == True:
+                X = [1,2,3,4]
+                V = mean_autocorr_ui[X]
+                G0 = np.interp(0,X,V)
+                
+                
+            else:
+                for i in range(len(ivec)):
+                    autocorr_ui_norm[i,:len(ivec[i])] = autocorr_ui_norm[i,:len(ivec[i])]/np.var(ivec[i])
+                    
+            
+            if shotnoise == True: 
+             
+                mean_autocorr_ui_norm = np.mean(autocorr_ui_norm.T, axis=1)/G0  
+            
+            
+            
             ntraj = len(ivec)                        
             
         else:
@@ -3284,7 +3306,7 @@ class rSNAPsim():
             
             autocorr_ui = np.zeros((ivec.shape))
             for i in range(ivec.shape[0]):
-                autocorr_ui[i,:] = self.get_acc2(ivec[i]-np.mean(ivec[i]))
+                autocorr_ui[i,:len(ivec[i])] = self.get_acc2( (ivec[i]-np.mean(ivec[i]))/np.std(ivec[i]) ) 
                 
             autocorr_ug = np.zeros((ivec.shape))
             for i in range(ivec.shape[0]):
@@ -3299,13 +3321,33 @@ class rSNAPsim():
             
             
             autocorr_ui_norm = np.zeros((autocorr_ui.shape))
-            for i in range(ivec.shape[0]):
-                autocorr_ui_norm[i,:] = self.get_acc2(ivec[i]-np.mean(ivec[i])) 
-                autocorr_ui_norm[i,:] = autocorr_ui_norm[i,:]/np.var(ivec[i,:])
+            for i in range(len(ivec)):
+                autocorr_ui_norm[i,:len(ivec[i])] = self.get_acc2((ivec[i]-np.mean(ivec[i]))/np.std(ivec[i])) 
+                
+ 
+            if shotnoise == True:
+                X = [1,2,3,4]
+                V = mean_autocorr_ui[X]
+                G0 = np.interp(0,X,V)
+                
+                
+            else:
+                for i in range(len(ivec)):
+                    autocorr_ui_norm[i,:len(ivec[i])] = autocorr_ui_norm[i,:len(ivec[i])]/np.var(ivec[i])
+                    
+            
+            if shotnoise == True: 
+                
+                mean_autocorr_ui_norm = np.mean(autocorr_ui_norm.T, axis=1)/G0  
+            
+            
                 
             mean_autocorr_ui_norm = np.mean(autocorr_ui_norm.T, axis=1)
         
         sem_autocorr_ui_norm = 1.0/np.sqrt(ntraj)*np.std(autocorr_ui_norm.T,ddof=1,axis=1)
+        if shotnoise==True:
+            sem_autocorr_ui_norm = 1.0/np.sqrt(ntraj)*np.std(autocorr_ui_norm.T,ddof=1,axis=1)/G0**2
+        
         sem_autocorr_ug_norm = 1.0/np.sqrt(ntraj)*np.std(autocorr_ug.T/varg,ddof=1,axis=1)
         
         sem_autocorr_ui = 1.0/np.sqrt(ntraj)*np.std(autocorr_ui.T,ddof=1,axis=1)

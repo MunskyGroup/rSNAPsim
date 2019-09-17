@@ -4435,6 +4435,7 @@ class GUI(Frame):
         
         
         potential_headers = df.columns.values
+        print(df.columns.values)
         
         for value in potential_headers:
             if value.lower() in ['time', 'times','time (s)','time (sec)' ]:
@@ -7860,8 +7861,9 @@ class GUI(Frame):
         ax.set_yticks(yticks)
         ax.set_xlabel('time (sec)')
         
-
-        ax.errorbar( maxt[1:], mean_acc,yerr = error_acc,color=color,lw=2,capsize=5,ls='',marker='o')
+        print(len(maxt))
+        print(len(mean_acc))
+        ax.errorbar( maxt, mean_acc,yerr = error_acc,color=color,lw=2,capsize=5,ls='',marker='o')
 
         ax.plot([0,t[0][-1]],[0,0],color='r',alpha=.5)
         
