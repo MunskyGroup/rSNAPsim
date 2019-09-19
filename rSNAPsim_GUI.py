@@ -1734,13 +1734,16 @@ class GUI(Frame):
         meanoptions.grid(row=0,column=4,sticky=tk.E)
         meanoptions.config(width=20)        
         
-        acc_mean_label = tk.Label(data_options_frame,text='                    Calculate autocovariance in reference to ')
+        acc_mean_label = tk.Label(data_options_frame,text='                    Calculate autocovariance with ')
         acc_mean_label.grid(row=0,column=3,sticky=tk.E)
         
         acc_norm_label = tk.Label(data_options_frame,text='With Normalization ')
         acc_norm_label.grid(row=0,column=5,sticky=tk.E)        
 
 
+        self.trim_data = tk.BooleanVar(value=False)
+        normalized_acc = tk.Checkbutton(data_options_frame,text='Trim identical segments? ',variable = self.trim_data,command=self.trim_data )
+        normalized_acc.grid(row=0,column=9,sticky=tk.E)
 
         self.data_tcplottype = tk.StringVar(value='All Trajectories')
         tt_dropdown = tk.OptionMenu(data_options_frame,self.data_tcplottype,"All Trajectories","Average Trajectories","Probability Density Function")
@@ -4520,7 +4523,28 @@ class GUI(Frame):
         
         self.replot_acc_data()
 
+    def trim_data(self):
+        try:
+            data = self.intensity_data
+            t = data[0]
+            ivec = data[1]       
+        except:
+            return
+        
+        if self.trim_data.get():
+            problem_traj = []
+            for j in range(len(ivec)):
+                for i in range(len(ivec[j])-10):
+                    if len(np.where(np.std(ivec[j][:,i:i+10],axis=1) == 0)[0]) > 1:
+                        problem_traj = problem_traj + [j]
+                    
+            problem_traj = np.unique(problem_traj)
+            
+            for i in problem_traj:
+                for j in len(ivec[i])-1:     
+                    ivec[i,j:j+10]
                 
+        
         
     def change_normalization_data(self,event):
         self.replot_acc_data()
@@ -7335,18 +7359,20 @@ class GUI(Frame):
         if len(i_vec.shape) == 3:
             pass
         else:
-
-            ivec_slice = i_vec
+            ivec_slice = []
+            for traj in i_vec:
+                ivec_slice= ivec_slice + traj.tolist()
+            ivec_slice = np.array(ivec_slice)
+        
+            argmin = np.min(np.floor(ivec_slice))
+            argmax = np.max(np.ceil(ivec_slice))
     
-            argmin = int(np.min(np.floor(ivec_slice)))
-            argmax = int(np.max(np.ceil(ivec_slice)))
-    
-            histdata = np.histogram(ivec_slice, bins = np.linspace(argmin,argmax, argmax+1).astype(int))
-    
+            histdata = np.histogram(ivec_slice, bins =30)
+            print(histdata)
        
     
     
-            ax.bar(histdata[1][:-1],histdata[0],color=self.main_color,width=.96)
+            ax.bar(histdata[1][:-1],histdata[0],color=self.main_color,width=.96*(histdata[1][1]-histdata[1][0]))
             
             maxhist = np.sum(histdata[0])
             ticks = ax.get_yticks()
