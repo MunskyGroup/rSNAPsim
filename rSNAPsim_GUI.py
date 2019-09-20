@@ -9,7 +9,7 @@ import os
 import sys
 import platform
 
-
+import itertools
 import base64
 import io
 
@@ -1741,8 +1741,8 @@ class GUI(Frame):
         acc_norm_label.grid(row=0,column=5,sticky=tk.E)        
 
 
-        self.trim_data = tk.BooleanVar(value=False)
-        normalized_acc = tk.Checkbutton(data_options_frame,text='Trim identical segments? ',variable = self.trim_data,command=self.trim_data )
+        self.trim_data_var = tk.BooleanVar(value=False)
+        normalized_acc = tk.Checkbutton(data_options_frame,text='Trim identical segments? ',variable = self.trim_data_var,command=self.trim_data )
         normalized_acc.grid(row=0,column=9,sticky=tk.E)
 
         self.data_tcplottype = tk.StringVar(value='All Trajectories')
@@ -4169,7 +4169,11 @@ class GUI(Frame):
 
     def open_seq_file(self):
         seq = tfd.askopenfilename(defaultextension='.txt')
-
+        
+        try:
+            seq[0]
+        except:
+            return
         self.seq_file = seq
 
         if '.txt' in seq:
@@ -4455,7 +4459,11 @@ class GUI(Frame):
 
     def load_intensity_trajectories(self):
         datafile = tfd.askopenfilename(defaultextension='.xls')
-        df = pd.read_excel(datafile, sheetname='Sheet1')
+        
+        try:
+            df = pd.read_excel(datafile, sheetname='Sheet1')
+        except:
+            return
         
         
         potential_headers = df.columns.values
@@ -4531,18 +4539,40 @@ class GUI(Frame):
         except:
             return
         
-        if self.trim_data.get():
+    
+        
+        if self.trim_data_var.get():
+            
+            newdata = []
             problem_traj = []
             for j in range(len(ivec)):
                 for i in range(len(ivec[j])-10):
-                    if len(np.where(np.std(ivec[j][:,i:i+10],axis=1) == 0)[0]) > 1:
+                    if np.std(  ivec[j][i:i+10]) == 0:
                         problem_traj = problem_traj + [j]
                     
             problem_traj = np.unique(problem_traj)
             
+            
+            not_a_problem = np.linspace(0,len(ivec)-1,len(ivec)).astype(int).tolist()
+            not_a_problem = list(set(not_a_problem) - set(problem_traj.tolist()))
+            
             for i in problem_traj:
-                for j in len(ivec[i])-1:     
-                    ivec[i,j:j+10]
+                original_len = len(ivec[i])
+                if len(ivec[i]) != len([sum(x) for y, x in itertools.groupby(ivec[i]) if y]):
+                    newdata = newdata.append([sum(x) for y, x in itertools.groupby(ivec[i]) if y])
+                newlen = len([sum(x) for y, x in itertools.groupby(ivec[i]) if y])
+                t[i] = t[i][:(original_len-newlen)]
+                    
+                    
+            for i in not_a_problem:
+                newdata.append(ivec[i])
+                
+                
+                
+                
+                
+            self.intensity_data_trimmed = [t,newdata]
+                    
                 
         
         
@@ -4939,7 +4969,15 @@ class GUI(Frame):
 
     def update_data_timecourse_plot(self,event):
         try:
-            data = self.intensity_data
+            if self.trim_data_var.get():
+                
+                data = self.intensity_data_trimmed
+                
+            else:
+                data = self.intensity_data
+            
+            
+            
             t = data[0]
             ivec = data[1]       
         except:
@@ -4956,7 +4994,7 @@ class GUI(Frame):
 
 
         if ptype == 'All Trajectories':
-            self.plot_intensity_data(self.datamax,self.intensity_data)
+            self.plot_intensity_data(self.datamax,data)
 
         if ptype == 'Average Trajectories':
             self.plot_ssa_average(self.datamax,ivec)
@@ -7263,7 +7301,13 @@ class GUI(Frame):
 
     def plot_ssa_average(self,ax,i_vec):
         ax.cla()
-        if len(i_vec.shape) == 3:
+        
+        if not isinstance(i_vec,list):
+            
+            
+            if len(i_vec.shape) == 3:
+                return
+            
             
             maxint = 0
             for i in range(i_vec.shape[0]):
@@ -7321,7 +7365,7 @@ class GUI(Frame):
             
             trim_ivec = np.array(trim_ivec)
     
-            for i in range(0,i_vec.shape[0]):
+            for i in range(0,len(i_vec)):
     
                 ax.plot(i_vec[i],alpha=.1,color='gray')
     
@@ -7355,9 +7399,13 @@ class GUI(Frame):
     def plot_ssa_pdf_data(self,ax,i_vec):
         ax.cla()
         
-        
-        if len(i_vec.shape) == 3:
-            pass
+        if not isinstance(i_vec,list):
+            
+            
+            if len(i_vec.shape) == 3:
+                return
+            
+            
         else:
             ivec_slice = []
             for traj in i_vec:
@@ -7368,7 +7416,7 @@ class GUI(Frame):
             argmax = np.max(np.ceil(ivec_slice))
     
             histdata = np.histogram(ivec_slice, bins =30)
-            print(histdata)
+            
        
     
     
@@ -7829,7 +7877,12 @@ class GUI(Frame):
             
         else:
             try:
-                data = self.intensity_data
+                if self.trim_data_var.get():
+                    
+                    data = self.intensity_data_trimmed
+                else:
+                    data = self.intensity_data
+                
                 t = data[0]
                 
                 ivec = data[1]   
