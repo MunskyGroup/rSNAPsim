@@ -13,6 +13,13 @@ import itertools
 import base64
 import io
 
+
+try:
+    
+    from snapgene_reader import snapgene_file_to_dict, snapgene_file_to_seqrecord
+except:
+    pass
+
 os.chdir('ssa_cpp')
 import ssa_translation
 os.chdir('..')
@@ -4175,6 +4182,38 @@ class GUI(Frame):
         except:
             return
         self.seq_file = seq
+
+
+        if '.dna' in seq:
+
+            self.sequence_name = seq[:-4]
+            try:
+                seq_record = snapgene_file_to_seqrecord(seq)
+            except:
+                print('To read .dna files please install snapegenereader: pip install snapgene_reader - https://github.com/IsaacLuo/SnapGeneFileReader' )
+            
+            self.sequence_str = seq_record.seq.tostring()
+
+
+            self.seq_name = self.sequence_name
+            self.seqtext = self.sequence_str
+            
+            
+            self.seqdisp.config(state='normal')
+            self.seqdisp.delete(0,tk.END)
+            self.seqdisp.insert(0,self.seq_name)
+
+            self.seqdisp.config(state='readonly')
+
+
+
+
+            self.gs_text.config(state='normal')
+            self.gs_text.delete(0.0,tk.END)
+
+            self.gs_text.insert(0.0,self.sequence_str)
+
+            self.gs_text.config(state='disabled')
 
         if '.txt' in seq:
             with open(seq) as f:

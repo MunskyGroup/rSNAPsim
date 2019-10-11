@@ -30,6 +30,8 @@ Dependencies:
  * [BioPython](https://biopython.org/)
  * [matplotlib](https://matplotlib.org/)
  * [pandas](https://pandas.pydata.org/)
+ * [SnapGene Reader](https://github.com/IsaacLuo/SnapGeneFileReader)
+ 
 -----------------------------------
 ### Instillation 
 
