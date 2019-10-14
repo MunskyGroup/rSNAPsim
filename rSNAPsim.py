@@ -26,6 +26,12 @@ if path_to_cpp != '':
     import ssa_translation
     os.chdir(cwd)
     
+    
+try:
+    
+    from snapgene_reader import snapgene_file_to_dict, snapgene_file_to_seqrecord
+except:
+    pass
 
 import time
 import json, codecs
@@ -923,6 +929,20 @@ class rSNAPsim():
         '''
         seq = seqfile
         self.sequence_name = ''
+        
+        if '.dna' in seq:
+
+            self.sequence_name = seq[:-4]
+            try:
+                seq_record = snapgene_file_to_seqrecord(seq)
+            except:
+                print('To read .dna files please install snapegenereader: pip install snapgene_reader - https://github.com/IsaacLuo/SnapGeneFileReader' )
+            
+            self.sequence_str = seq_record.seq.tostring()
+            
+                    
+        
+        
         if '.txt' in seq:
             with open(seq) as f:
                 raw = f.readlines()
