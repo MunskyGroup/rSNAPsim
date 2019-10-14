@@ -458,6 +458,60 @@ class rSNAPsim():
             self.sensitivity_fast_slow.append(self.strGeneCopy_fast[codonkeys[i]] / self.strGeneCopy_slow[codonkeys[i]])
 
 
+    def load_tags(self):
+        f= open("custom_tags.txt","r")
+         
+        raw = f.readlines()
+        previous_tags = []
+    
+        for line in raw:
+            if line != '\n':
+                previous_tags.append(line)
+                
+        for line in previous_tags:
+          
+            custom_tag = line.strip('\n').split('---')
+   
+            if custom_tag[0] not in self.tag_dict.keys():
+                self.tag_dict[custom_tag[0]] = custom_tag[2]
+              
+                self.tag_full[custom_tag[0]] = custom_tag[1]
+        f.close()
+                
+
+    def add_tag(self,nt_seq,name):
+        '''
+        add a custom tag sequence
+        '''
+
+        f= open("custom_tags.txt","r")
+         
+        raw = f.readlines()
+        previous_tags = []
+    
+        for line in raw:
+            if line != '\n':
+                previous_tags.append(line)
+            
+        if not set(nt_seq.lower()).issubset(  set(['a','t','c','g','u'])):
+            print('invalid NT sequence')
+            f.close()
+            return
+        
+        aa_seq = self.nt2aa(nt_seq)
+        newtag =name+'---'+ nt_seq.lower() + '---'+ aa_seq.upper()+'\n'  
+        
+        if newtag not in previous_tags:
+            previous_tags.append(newtag)
+        f.close()
+        
+        f= open("custom_tags.txt","w+")
+        
+        for item in previous_tags:
+            f.write('%s' % item)
+            
+        f.close()
+
     def nt2aa(self, nt_seq):
         '''
         Translates nucleotides sequences to amino acid sequences
