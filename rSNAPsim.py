@@ -855,7 +855,7 @@ class rSNAPsim():
             self.pois_seq = pois_nt
 
 
-    def analyze_poi(self, protein, sequence):
+    def analyze_poi(self, protein, sequence, epitope_loc = 'front'):
         '''
         Analyzes the protein of intrest and stores it in __.POI
 
@@ -864,6 +864,10 @@ class rSNAPsim():
             **protein**,  amino acid sequence as a string
 
             **sequence**, nucleotide sequence that goes with the protein
+            
+            **epitope_loc**, consider the epitope location as the front, middle or back:
+                
+                DDYDDK: front: 0, middle: 3, back: 6 for epitope location
 
 
         '''
@@ -902,9 +906,14 @@ class rSNAPsim():
                 aa_tag = self.POI.aa_seq[firstep:lastep]
                 nt_tag = self.POI.nt_seq[3*firstep:3*lastep]
                 
+            if epitope_loc == 'front':
+                offset = 0
+            if epitope_loc == 'middle':
+                offset = int(len(self.tag_dict[self.POI.tag_types[i]])/2)
+            if epitope_loc == 'back':
+                offset = len(self.tag_dict[self.POI.tag_types[i]])
                 
-                
-            self.POI.tag_epitopes[self.POI.tag_types[i]] = [m.start()+1 for m in re.finditer(self.tag_dict[self.POI.tag_types[i]], self.POI.aa_seq)]
+            self.POI.tag_epitopes[self.POI.tag_types[i]] = [m.start()+1+offset for m in re.finditer(self.tag_dict[self.POI.tag_types[i]], self.POI.aa_seq)]
 
             gs = gs.replace(aa_tag, '')
 
