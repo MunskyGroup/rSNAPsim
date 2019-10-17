@@ -20,12 +20,14 @@ for root, dirs, files in os.walk(".", topdown=False):
 
 
 if path_to_cpp != '':
-    cwd = os.getcwd()
-    os.chdir(path_to_cpp)
- 
-    import ssa_translation
-    os.chdir(cwd)
-    
+    try:
+        cwd = os.getcwd()
+        os.chdir(path_to_cpp)
+        
+        import ssa_translation
+        os.chdir(cwd)
+    except:
+        os.chdir(cwd)
     
 try:
     
@@ -213,6 +215,10 @@ class rSNAPsim():
         self.tag_dict = {'T_SunTag':'EELLSKNYHLENEVARLKK',
                          'T_Flag':'DYKDDDDK',
                          'T_Hemagglutinin':'YPYDVPDYA'}
+        
+        self.tag_colors = {'T_SunTag':'green',
+                         'T_Flag':'blue',
+                         'T_Hemagglutinin':'blue'}
         
         self.tag_full = {'T_Flag':('ATGGACTACAAGGACGACGACGACAAAGGTGAC'
                                    'TACAAAGATGATGACGATAAAGGCGACTATA'
@@ -1096,6 +1102,32 @@ class rSNAPsim():
                 numind += 1
 
         return pvfull, ploc
+
+
+
+
+    def simple_model(self, poi, tag, ki,ke):
+        '''
+        Simplified model
+        
+        returns the analytical tau, intensity mean, and intensity variance
+        
+        calculated from the simplified model
+        '''
+        
+        L = poi.total_length #get the total length of the gene
+        Lm = np.mean(poi.tag_epitopes[tag])  #the mean location of the tag epitopes
+        
+        L_tag = int((poi.tag_epitopes[tag][-1] - poi.tag_epitopes[tag][0]) / 2)
+        
+        ke_analytical = L*ke / np.sum(self.get_ui(poi.nt_seq[:-3]))
+        
+        
+        tau_analytical = L_tag/ke_analytical  #analytical tau ie autocovariance time 
+        mean_analytical = ki*tau_analytical* (1.-Lm/float(L)) # mean intensity
+        var_analytical = ki*tau_analytical* (1.-Lm/float(L))**2  #var intensity
+        
+        return tau_analytical,mean_analytical,var_analytical
 
 
     def ssa_solver(self, nt_seq=None, all_k=None, k_elong_mean=10, k_initiation=.03, probePosition=[], n_traj=100, tf=1000, start_time=0, tstep=1000, time_inhibit=0, evaluating_frap=False, evaluating_inhibitor=False,force_python = False):
@@ -3475,6 +3507,20 @@ class rSNAPsim():
         
         return nacov,acov
 
+
+
+class suite():
+    '''
+    a coterie of constructs
+    '''
+
+    def __init__(self):
+        self.pois = []
+        self.discernable = False
+        self.models = []
+        self.combo_list = []
+        
+        
 
 
 class poi():

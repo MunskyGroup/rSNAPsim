@@ -20,9 +20,14 @@ try:
 except:
     pass
 
-os.chdir('ssa_cpp')
-import ssa_translation
-os.chdir('..')
+try:
+    os.chdir('ssa_cpp')
+    import ssa_translation
+    os.chdir('..')
+except:
+    os.chdir('..')
+    
+    
 import matplotlib as mpl
 
 
