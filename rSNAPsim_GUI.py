@@ -1397,7 +1397,7 @@ class GUI(Frame):
         ne_t = tooltip(ne,text='Number of epitopes for binding on the Tag sequence')
         ep_t = tooltip(ep,text='Epitope codon locations along the Tag sequence')
 
-
+        
 
         gn.grid(row=0,column=0,padx=2,pady=2,sticky=tk.E)
         tt.grid(row=1,column=0,padx=2,pady=2,sticky=tk.E)
@@ -1405,13 +1405,14 @@ class GUI(Frame):
         ep.grid(row=3,column=0,padx=2,pady=2,sticky=tk.E)
 
         self.Seq_props = []
-
-        gne = tk.Entry(prop_frame,width=25,bg='#FFFFFF')
+        self.seq_name_entry = tk.StringVar(value='')
+        self.seq_name_entry.trace("w",lambda name, index, mode, seq_name_entry = self.seq_name_entry: self.rename_seq(self.seq_name_entry))
+        self.gne = tk.Entry(prop_frame,width=25,bg='#FFFFFF',  textvariable=self.seq_name_entry)
         tte = tk.Entry(prop_frame,width=25,bg='#FFFFFF')
         nee = tk.Entry(prop_frame,width=25,bg='#FFFFFF')
         epe = tk.Entry(prop_frame,width=25,bg='#FFFFFF')
 
-        gne.grid(row=0,column=1,padx=2,pady=2,sticky=tk.W)
+        self.gne.grid(row=0,column=1,padx=2,pady=2,sticky=tk.W)
         tte.grid(row=1,column=1,padx=2,pady=2,sticky=tk.W)
         nee.grid(row=2,column=1,padx=2,pady=2,sticky=tk.W)
         epe.grid(row=3,column=1,padx=2,pady=2,sticky=tk.W)
@@ -1455,8 +1456,9 @@ class GUI(Frame):
         #gle = gene length, seq[4]
         #tle = tag length, seq[5]
         #ttle = total length, seq[6]
-
-        self.Seq_props = [gne,tte,nee,epe,gle,tle,ttle]
+        
+     
+        self.Seq_props = [self.gne,tte,nee,epe,gle,tle,ttle]
 
 
         veiwframeshow = tk.Button(seq_frame,text='View Sequence',command=self.view_sequence_newwin,font=('SystemButtonText',global_font_size))
@@ -4059,6 +4061,7 @@ class GUI(Frame):
             #self.Seq_props = [gne,tte,nee,epe,gle,tle,ttle]
 
             self.insert_entry(self.Seq_props[0],self.sms.POI.name)
+            self.Seq_props[0].config(state='normal')
 
 
             tags = ''
@@ -4229,8 +4232,10 @@ class GUI(Frame):
       
             
             if len(raw[0].splitlines()[0])< 50:
+                print(raw[0].splitlines())
                 if raw[0].splitlines()[0] != '':
                     name = raw[0].splitlines()[0]
+                    print(name)
                     self.sequence_name = name
 
             raw = ''.join(raw)
@@ -4358,7 +4363,8 @@ class GUI(Frame):
         if len(self.sms.pois) != 0:
             #self.Seq_props = [gne,tte,nee,epe,gle,tle,ttle]
 
-            self.insert_entry(self.Seq_props[0],self.sms.POI.name)
+            self.insert_entry(self.Seq_props[0],self.seq_name)
+            self.Seq_props[0].config(state = 'normal')
 
 
             tags = ''
@@ -4471,15 +4477,19 @@ class GUI(Frame):
             self.insert_entry(self.Seq_props[1],tags)
 
             self.plot_sequence(self.ax,self.sms.POI.gene_length,(self.sms.POI.total_length - self.sms.POI.gene_length)
-                , self.sms.POI.total_length ,ep_pos2,tags,self.sms.POI.name)
+                , self.sms.POI.total_length ,ep_pos2,tags,self.seq_name)
 
             self.vis_canvas.draw()
             self.update_idletasks()
 
 
 
-
-
+    def rename_seq(self,event):
+        self.seq_name =self.seq_name_entry.get()
+      
+        self.sms.POI.name = self.seq_name_entry.get()
+        
+        self.insert_entry(self.seqdisp,self.seq_name)
 
     def insert_entry(self,entry,text):
         '''simpler command for readonly entries
@@ -7358,28 +7368,30 @@ class GUI(Frame):
                 traj = i_vec[i]
         
               
+          
                 maxint = max(maxint,int((np.max(traj)+5)))
-                ax.axis([0,int(traj.shape[1]) ,0,np.max(traj)+5] )
+                ax.axis([0,int(i_vec.shape[1]) ,0,np.max(traj)+5] )
                 
                 
                 
-                ticks = np.linspace(0,int(traj.shape[1]) ,6).astype(int)
+                ticks = np.linspace(0,int(i_vec.shape[1]) ,6).astype(int)
                 yticks = np.linspace(0,maxint,4).astype(int)
                 ax.set_xticks(ticks)
                 ax.set_yticks(yticks)
 
                 colors = [self.main_color,'#2294e6']
-                for j in range(0,traj.shape[0]):
-                    
-                    
-                    ax.plot(traj[j],alpha=.1,color='gray')
-                    
-                ax.plot(np.mean(traj,axis=0),color=colors[i],linewidth=3)
-    
-                ax.plot(np.mean(traj,axis=0) - np.std(traj,axis=0  ), color=colors[i],linewidth=1)
-                ax.plot(np.mean(traj,axis=0) + np.std(traj,axis=0  ), color=colors[i],linewidth=1)
-                ax.set_xlabel('time (sec)')
-                ax.set_ylabel('Intensity (ump)')
+                              
+            for j in range(0,i_vec.shape[0]):
+                
+                
+                ax.plot(i_vec[j],alpha=.1,color='gray')
+                
+            ax.plot(np.mean(i_vec,axis=0),color=colors[0],linewidth=3)
+
+            ax.plot(np.mean(i_vec,axis=0) - np.std(traj,axis=0  ), color=colors[0],linewidth=1)
+            ax.plot(np.mean(i_vec,axis=0) + np.std(traj,axis=0  ), color=colors[0],linewidth=1)
+            ax.set_xlabel('time (sec)')
+            ax.set_ylabel('Intensity (ump)')
          
             
         else:
@@ -8722,7 +8734,7 @@ class GUI(Frame):
             self.insert_entry(self.ss_gs_inputs[0],self.gb_rec.id)
         except:
             pass
-
+        
         self.insert_entry(self.ss_gs_inputs[1],self.seq_name)
         if self.ss_gs_inputs[2].get() == '':
             self.ss_gs_inputs[2].insert(tk.END,'1000')
