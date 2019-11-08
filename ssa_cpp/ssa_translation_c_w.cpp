@@ -16,13 +16,57 @@ using Eigen::VectorXi;
 void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_result, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result, double* col_t, int* col_x, int colNp )
 {
     // Declare the variables
+	
+	/*
+	Inputs explaination: 
+	
+	kelong - a double 1xGeneLength vector of each codon at postition rate
+	t_array - a time array of when to record the SSA_result
+	Nt - the size of the t_array int
+	kbind - ki the rate of initation
+	kcompl - ktermination the rate of unbinding / release
+	SSA_result - the result of the ssa, preallocated from python (N time points x 200 ribosomes x N trajectories)
+	
+	N - number trajectories
+	FRAP - true false to do frap at inhibit time
+	
+	Inhibitor - True false to inhibit k_in at inhibit time
+	inhibit_time - time of inhibition
+	
+	
+	seed - RNG seed passed from python to ensure it doesnt use the same seeds for groups of trajectories - preallocated by python random vector
+	rib_times - an array to be filled with the times of a Nribs to watch how long they take to go through the simulation
+	nribs - the number of ribosomes to watch, this is to get around a dynamic array; basically the code will just watch "X" amount of ribosomes and record their data
+	        instead of trying to do a dynamic array
+	ribtimesize - the size of the ribosome watching array
+	
+	so to do the frap the simulation just returns the section that underwent frap, then the python wrapper will do the logic to bleach that section, as it gets complex 
+	with ribosomes that were partially bleached
+	
+	fNt - the number of frap times, basically we need to record the section of the simulation that undergoes frap to manually "bleach it later" as the logic is complex
+	frap_result - the area of the ssa result that undergoes frap 
+	
+	cNt - the size of the collision recording array 
+	col_result - records collisions
+	
+	colNp - number of collisions to record as well - vectorized
+	col_x - posistions of collisions
+	col_t - time of said collision
+	
+	
+	
+	
+	*/
+	
+	
+	
     int R = 9; // ribosome exclusion.
     int N_rib = 200; // maximum number of ribosomes. 
 	srand(seed);
     int it = 0;
 	int number_ribs = 0;
 	int fit = 0;
-	std::cout << fNt << std::endl;
+	
 	
     // int N = 10; // gene length
     //bool Inhibitor = 0;
@@ -72,7 +116,7 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 	
 	
 	
-	Eigen::Map<Eigen::VectorXd> T_array(SSA_ribtimes,ribtimesize);
+	Eigen::Map<Eigen::VectorXd> T_array(SSA_ribtimes,ribtimesize);  // this map function will fill the python allocated array
 	Eigen::Map<Eigen::VectorXi> col_array(col_result,cNt);
 	
 	
