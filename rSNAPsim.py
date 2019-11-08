@@ -1189,11 +1189,13 @@ class rSNAPsim():
             '''
             
             pv,probePosition = self.get_probvec()
+            
         
 
         if nt_seq == None:
           nt_seq = self.POI.nt_seq
         genelength = int(len(nt_seq)/3)
+        
 
         if all_k == None:
 
@@ -1399,7 +1401,7 @@ class rSNAPsim():
         for i in range(len(solutions)):
             for j in range(len(solutions[0][0][startindex:])):
                 rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
-            
+               
                 no_ribosomes[i, rib_pos.astype(int)] += 1
         no_ribosomes = no_ribosomes[:, 1:]
 
@@ -1874,7 +1876,9 @@ class rSNAPsim():
         solutions = []
         
         pv = ssa_obj.probe
-        genelength = len(pv)
+    
+        genelength = len(pv[0])-1
+        
 
 
 
@@ -2028,7 +2032,7 @@ class rSNAPsim():
         for i in range(len(solutions)):
             for j in range(len(solutions[0][0][startindex:])):
                 rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
-            
+               
                 no_ribosomes[i, rib_pos.astype(int)] += 1
         no_ribosomes = no_ribosomes[:, 1:]
 
@@ -2055,7 +2059,7 @@ class rSNAPsim():
         
                     traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
         
-                    I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
+                    I[i, :] = np.sum(pv[0][traj], axis=1)[startindex:].T
             else:
                 for j in range(pv.shape[0]):
                     for i in range(n_traj):
@@ -2115,7 +2119,7 @@ class rSNAPsim():
         new_ssa_obj.no_ribosomes = np.vstack(( ssa_obj.no_ribosomes , no_ribosomes))
         new_ssa_obj.n_traj = n_traj+ssa_obj.n_traj
         new_ssa_obj.k = all_k
-        new_ssa_obj.no_rib_per_mrna = float(n_traj)/(n_traj+ssa_obj.n_traj) * no_ribosomes_per_mrna  + float(ssa_obj.n_traj)/(n_traj+ssa_obj.n_traj) * ssa_obj.no_ribosomes_per_mrna
+        new_ssa_obj.no_rib_per_mrna = float(n_traj)/(n_traj+ssa_obj.n_traj) * no_ribosomes_per_mrna  + float(ssa_obj.n_traj)/(n_traj+ssa_obj.n_traj) * ssa_obj.no_rib_per_mrna
         new_ssa_obj.rib_density = ribosome_density
         new_ssa_obj.rib_means = ribosome_means
         
@@ -2144,7 +2148,10 @@ class rSNAPsim():
         
         
         try:
-            ssa_obj.ribtimes = all_ribtimes[np.where(all_ribtimes > 0)]
+            new_ssa_obj.ribtimes = np.hstack((ssa_obj.ribtimes, all_ribtimes[np.where(all_ribtimes > 0)]))
+            
+            
+            
         except:
             pass
 
@@ -2263,7 +2270,16 @@ class rSNAPsim():
             fragarray = np.zeros((len(fragmented_trajectories), maxlen))
             for i in range(len(fragmented_trajectories)):
                 fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
-            
+                
+                
+        fraglen_size = max(fragarray.shape[1],ssa_obj.fragments.shape[1])
+        
+        if fragarray.shape[1] != fraglen_size:
+            fragarray =  np.hstack((fragarray, np.zeros((fragarray.shape[0],fraglen_size-fragarray.shape[1]))) )
+        if ssa_obj.fragments.shape[1] != fraglen_size:
+            ssa_obj.fragments =  np.hstack((ssa_obj.fragments, np.zeros((ssa_obj.fragments.shape[0],fraglen_size-ssa_obj.fragments.shape[1]))) )            
+
+        
         new_ssa_obj.fragments = np.vstack((ssa_obj.fragments,fragarray))
         new_ssa_obj.fragtimes = ssa_obj.fragtimes+fragtimes
         new_ssa_obj.frag_per_traj = fragmentspertraj
@@ -2300,8 +2316,8 @@ class rSNAPsim():
         new_ssa_obj.dwelltime = dwelltime
         
         new_ssa_obj.ke_sim = float(n_traj)/(n_traj+ssa_obj.n_traj) * ke_sim  + float(ssa_obj.n_traj)/(n_traj+ssa_obj.n_traj) * ssa_obj.ke_sim
-        new_ssa_obj.ke_true = float(genelength)/np.mean(new_ssa_obj.ribtimes)
-        new_ssa_obj.probe = probe
+        new_ssa_obj.ke_true = float(genelength)/np.mean(   new_ssa_obj.ribtimes   )
+        new_ssa_obj.probe = ssa_obj.probe
         
         
         
@@ -2405,7 +2421,7 @@ class rSNAPsim():
 #            ssa_obj.dwelltime = dwelltime
 #            ssa_obj.ke_sim = ke_sim
 
-        return ssa_obj
+        return new_ssa_obj
 
 
 
