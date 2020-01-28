@@ -29,7 +29,7 @@ all_coltimes = np.zeros((n_trajectories,400),dtype=np.int32)
 nribs = np.array([0],dtype=np.int32)
 all_ribs = np.zeros((n_trajectories,1))
 seeds = np.random.randint(0,0x7FFFFFF,n_trajectories)
-
+x0 = np.zeros((N_rib),dtype=np.int32)
 
 
 all_col_points = []
@@ -43,7 +43,7 @@ for i in range(n_trajectories):
     colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
     colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
     
-    ssa_translation.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs)
+    ssa_translation.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0)
     
     
     

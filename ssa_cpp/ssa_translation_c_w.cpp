@@ -13,7 +13,7 @@ using Eigen::MatrixXi;
 using Eigen::VectorXd;
 using Eigen::VectorXi;
 
-void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_result, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result, double* col_t, int* col_x, int colNp )
+void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_result, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result, double* col_t, int* col_x, int colNp, int* x0)
 {
     // Declare the variables
 	
@@ -95,8 +95,14 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 	//std::cout << time(NULL) << std::endl;
     // print a test random number
     // Define the state vector
-    MatrixXi X(1,N_rib);
+    MatrixXi X(1,N_rib);	
+	
+	
     X.setZero(1,N_rib);
+	for(int i=0; i <= N_rib; i++)	{
+		X(0,i) = x0[i];
+	}
+	
 	
 	MatrixXi col(1,N_rib);
 	col.setZero(1,N_rib);

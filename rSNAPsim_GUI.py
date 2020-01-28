@@ -6158,6 +6158,7 @@ class GUI(Frame):
     
             updatetime = time.time()
             all_col_points = []
+            x0 = np.zeros((N_rib),dtype=np.int32)
             for i in range(n_traj):
     
                 stime = time.time()
@@ -6171,7 +6172,7 @@ class GUI(Frame):
                 colpointsx = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.int32)
                 colpointst = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.float64)
                                 
-                ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+                ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0)
                 endcolrec = np.where(colpointsx == 0)[0][0]
                 
                 colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
@@ -8017,8 +8018,7 @@ class GUI(Frame):
         ax.set_yticks(yticks)
         ax.set_xlabel('time (sec)')
         
-        print(len(maxt))
-        print(len(mean_acc))
+
         ax.errorbar( maxt, mean_acc,yerr = error_acc,color=color,lw=2,capsize=5,ls='',marker='o')
 
         ax.plot([0,t[0][-1]],[0,0],color='r',alpha=.5)

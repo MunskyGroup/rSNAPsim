@@ -1284,6 +1284,7 @@ class rSNAPsim():
             all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
             all_nribs = np.zeros((n_traj,1))
             all_col_points = []
+            x0 = np.zeros((N_rib),dtype=np.int32)
             for i in range(n_traj):
                 result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
                 ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
@@ -1294,7 +1295,7 @@ class rSNAPsim():
                 
                 nribs = np.array([0],dtype=np.int32)
                 
-                ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+                ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0)
                 #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
                 all_results[i, :] = result
                 all_frapresults[i,:] = frapresult
@@ -1672,9 +1673,11 @@ class rSNAPsim():
         ssa_obj.probe = probePosition
         
         
-        
-        ssa_obj.autocovariance_dict  = acov
-        ssa_obj.autocovariance_norm_dict = nacov
+        try:
+            ssa_obj.autocovariance_dict  = acov
+            ssa_obj.autocovariance_norm_dict = nacov
+        except:
+            pass
 
         return ssa_obj
 
@@ -2676,6 +2679,30 @@ class rSNAPsim():
                 if acf[i] > acf[i-1]:
                     acf[i] = acf[i-1]
         return acf
+    
+#    
+#    def get_cc(self, data1,data2, trunc=False):
+#        '''
+#        Get crosscorrelation function fft version
+#        
+#        data1, data2 are 1xN vectors of signals to correlate
+#      
+#        '''
+#        N = len(data1)
+#        fvi_1 = np.fft.fft(data1, n=2*N)
+#        fvi_2 = np.fft.fft(data2, n=2*N)
+#        
+#        ccf = fvi_1*np.conjugate(fvi_2)
+#        ccf = np.fft.ifft(ccf)
+#        ccf = np.real(ccf)/float(N)
+#        #ccf = np.hstack((ccf[::-1][:-1],ccf))
+#        
+#        if trunc:
+#            ccf[ccf < 0]=0
+#            for i in range(1, len(ccf)):
+#                if ccf[i] > ccf[i-1]:
+#                    ccf[i] = ccf[i-1]
+#        return ccf
 
 
     def elongation_animation(self, ti=0, tf=1000, tstep=1000, cell_radius=50, imagesize=5, dpi=90, filename='simulated_cell', ssa_obj=None, fcolor='#00FF00' ,rnacolor='#FF0000', xkcd=False):
@@ -3772,12 +3799,52 @@ class rSNAPsim():
         crosscorr_vec = np.zeros((iv1.shape[0],slen))
         
         for i in range(iv1.shape[0]):
-            crosscorr_vec[i,:] = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full')
+            crosscorr_vec[i,:] = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full')/len(iv1)
 
-        normalized_autocorr = crosscorr_vec.T/ crosscorr_vec[:,0]
+        normalized_autocorr = crosscorr_vec.T/ crosscorr_vec[:,len(iv1[i])-1]
         mean_autocorr = np.mean(normalized_autocorr, axis=1)
 
         return crosscorr_vec, mean_autocorr
+    
+    
+    
+    def normalize_cc(self, correlation,mode='max'):
+        '''
+        normalize cc via either center or maximum. 
+        '''
+        
+        if mode.lower() in ['max','maximum']:
+            norm_cor = correlation/np.max(correlation,1)
+            
+        if mode.lower() in ['center','middle']:
+            centerpoint = int((correlation.shape[1]+1)/2)-1
+            norm_cor = correlation/(correlation[:,centerpoint])
+            
+        return norm_cor 
+        
+        
+        
+    
+    def get_g0(self,correlation, mode = 'interp'):
+        '''
+        
+        '''
+        if mode.lower() in ['interp','inter','extrapolate','interpolate']:
+            X = [1,2,3,4]
+            V = correlation[:,X]
+            G0 = np.interp(0,X,V)      
+            
+        if mode.lower() in ['g1','1']:
+            G0 = correlation[:,1]
+            
+        if mode.lower() in ['g0','0']:
+            G0 = correlation[:,0]
+            
+            
+        return G0
+        
+        
+    
     
     
     def get_all_autocovariances(self,intensity_vec,time_vec,geneLength,shotnoise=True):
