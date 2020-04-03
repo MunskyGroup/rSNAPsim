@@ -754,7 +754,36 @@ class rSNAPsim():
         return ui
         
 
+    def get_k_3_frame(self,nt_seq,k_elong_mean):
+        
+        kelongs = []
+        
+        for n in range(3):
+            if n !=0:
+                codons = nt_seq[n:-(3-n)]
+            else:
+                codons = nt_seq
+            genelength = int(len(codons)/3)
+            seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
+            k_elongation = np.zeros((1, genelength))
+            tRNA_copynumber = np.zeros((1, genelength))
 
+     
+            for i in range(len(seperated_codons)):
+                tRNA_copynumber[0, i] = self.strGeneCopy[seperated_codons[i]]
+    
+            mean_tRNA_copynumber = np.mean(list(self.strGeneCopy.values()))
+    
+            k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
+        
+            k_elongation.flatten().tolist()[:-1]
+        
+            kelongs = kelongs + k_elongation.flatten().tolist()[:-1]
+        
+        return kelongs
+        
+        
+        
 
     def get_k(self, nt_seq, k_init, k_elong_mean):
         '''
@@ -3844,8 +3873,59 @@ class rSNAPsim():
         return G0
         
         
+
+
+
+
+   
+    def generate_additional_ks(self,k_enters,k_pauses,k_jumps,k_stops,L):
     
+        max_enter = 0
+        max_pause = 0
+        max_stop = 0
+        max_jump = 0
+        
+        if k_enters != []:
+            k_enters[:,0] = k_enters[:,0]+L*k_enters[:,1]
+            k_enters[:,1] = k_enters[:,2]    
+            k_enters = k_enters[:,0:2]
+            max_enter = np.max( k_enters[:,0])
     
+        if k_pauses != []:
+            k_pauses[:,0] = k_pauses[:,0]+ L*k_pauses[:,1]
+            k_pauses[:,1] = k_pauses[:,2]
+            k_pauses = k_pauses[:,0:2]
+            max_pause = np.max( k_pauses[:,0])
+    
+        if k_stops != []:
+            k_stops[:,0] = k_stops[:,0]+L*k_stops[:,1]
+            k_stops[:,1] = k_stops[:,2]    
+            k_stops = k_stops[:,0:2]
+            max_stop = np.max( k_stops[:,0])
+        
+        if k_jumps != []:
+            k_jumps[:,0] = k_jumps[:,0]+ L*k_jumps[:,1]
+            
+            k_jumps[:,1] = k_jumps[:,2]+ L*k_jumps[:,3]
+            k_jumps[:,2] = k_jumps[:,4]
+            k_jumps = k_jumps[:,0:3]
+            
+            max_jump = max([np.max( k_jumps[:,0]),np.max( k_jumps[:,1])])
+            
+        max_loc = max(max_jump,max_stop,max_pause,max_enter)
+        
+        if max_loc <=L: 
+            frames_used = 0
+        if max_loc > L:
+            frames_used = 1
+        if max_loc > 2*L :
+            frames_used = 1
+        
+        return k_enters, k_pauses, k_stops, k_jumps, frames_used
+        
+    
+        
+        
     
     def get_all_autocovariances(self,intensity_vec,time_vec,geneLength,shotnoise=True):
         '''

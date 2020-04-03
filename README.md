@@ -1,6 +1,6 @@
 Python 2.7 or 3.5+ Version of the Single Molecule Translation Simulator (MatLab) by Dr. Luis Aguilera 
 
-[PAPER LINK HERE]
+[Computational Design and Interpretation of Single-RNA Translation Experiments](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6816579/)
 
 Translated by Will Raymond - 2018/2019
 
@@ -38,6 +38,7 @@ Dependencies:
 #### Pip install
 
 upon release the current release will be added to PyPI for pip installation
+
 ##### General
 
 open up a Terminal or Command Prompt and run 
@@ -47,6 +48,17 @@ open up a Terminal or Command Prompt and run
 
 Open up the Anaconda Prompt (anaconda console) and run 
 ```conda pip install rSNAPsim ```
+
+##### Compilation of the C++ 
+
+* Download the latest stable [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) release
+* Place the eigen-version into the ssa_cpp folder and rename it to "eigen"
+* open a command prompt/terminal or anaconda prompt and cd to this directory
+* run "python setup.py build_ext --inplace"
+
+ if it says Cannot open include file: 'eigen/Eigen/Dense': and exit status 2 you have eigen in the wrong directory
+
+ 
 
 -------------------------------------
 
