@@ -43,7 +43,7 @@ for i in range(n_trajectories):
     colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
     colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
     
-    ssa_translation.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0)
+    ssa_translation.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9)
     
     
     
