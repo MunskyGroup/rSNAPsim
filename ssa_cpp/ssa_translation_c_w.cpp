@@ -13,7 +13,7 @@ using Eigen::MatrixXi;
 using Eigen::VectorXd;
 using Eigen::VectorXi;
 
-void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_result, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result, double* col_t, int* col_x, int colNp, int* x0, int r_footprint)
+void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_result, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result, double* col_t, int* col_x, int colNp, int* x0, int r_footprint, int rib_max)
 {
     // Declare the variables
 	
@@ -61,7 +61,10 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 	
 	
     int R = r_footprint; // ribosome exclusion.
-    int N_rib = 200; // maximum number of ribosomes. 
+    int N_rib = rib_max; // maximum number of ribosomes. 
+	//std::cout << "-------nrib=" << N_rib << "-------" << std::endl;
+	
+	
 	srand(seed);
     int it = 0;
 	int number_ribs = 0;

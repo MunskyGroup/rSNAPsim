@@ -12,7 +12,7 @@ kelong = kelong[1:-1]
 t_array = np.array([0,100,500],dtype=np.float64)
 t0 = 15
 t_array = np.linspace(0,1000,1000,dtype=np.float64)
-N_rib = 200
+N_rib = 100
 result = np.zeros((len(t_array)*N_rib),dtype=np.int32  )
 #kelong = np.array([3.1,3.2,3.3,3.4,3.5,3.1,3.2,3.3,3.4,3.5],dtype=np.float64)
 n_trajectories = 10
@@ -32,6 +32,12 @@ seeds = np.random.randint(0,0x7FFFFFF,n_trajectories)
 x0 = np.zeros((N_rib),dtype=np.int32)
 
 
+print(x0.shape)
+print(all_results.shape)
+print(all_frapresults.shape)
+print(all_ribtimes.shape)
+print(all_coltimes.shape)
+
 all_col_points = []
 for i in range(n_trajectories):
     result = np.zeros((len(t_array)*N_rib),dtype=np.int32)    
@@ -43,11 +49,13 @@ for i in range(n_trajectories):
     colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
     colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
     
-    ssa_translation.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9)
+    ssa_translation.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9,N_rib)
     
     
-    
+
     all_results[i,:] = result
+    print(all_results.shape)
+    print(result.shape)
     all_frapresults[i,:] = frapresult
     all_coltimes[i,:] = coltimes
     all_ribtimes[i,:] = ribtimes

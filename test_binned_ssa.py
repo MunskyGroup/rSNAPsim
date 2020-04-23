@@ -11,7 +11,10 @@ import time
 import numpy as np
 
 r = rss.rSNAPsim()
-k_bin,k_lens = r.get_binned_k(np.ones(110),50)
+k_bin,k_lens = r.get_binned_k(np.ones(110)*2,50)
+
+
+
 r.open_seq_file('gene_files/HUMINSR.gb')
 r.run_default()
 pv,pl = r.get_probvec()

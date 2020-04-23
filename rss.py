@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Apr 13 12:02:41 2020
+
+@author: willi
+"""
+
 # -*- coding: utf-8 -*--
 """
 Created on Tue Oct 23 09:42:24 2018
@@ -7,7 +14,7 @@ Created on Tue Oct 23 09:42:24 2018
 
 import re #import regex
 
-
+import FileParser
 
 import os
 path_to_cpp = ''
@@ -65,8 +72,6 @@ except:
     pass
 
 
-
-import translation_models as models
 
 
 class rSNAPsim():
@@ -211,225 +216,16 @@ class rSNAPsim():
     """
 
     def __init__(self):
-        self.gene_sequence_str = ''
+        #self.gene_sequence_str = lambda: self.sequence_str()
         
-
-        self.tag_dict = {'T_SunTag':'EELLSKNYHLENEVARLKK',
-                         'T_Flag':'DYKDDDDK',
-                         'T_Hemagglutinin':'YPYDVPDYA'}
-        
-        self.tag_colors = {'T_SunTag':'green',
-                         'T_Flag':'blue',
-                         'T_Hemagglutinin':'blue'}
-        
-        self.tag_full = {'T_Flag':('ATGGACTACAAGGACGACGACGACAAAGGTGAC'
-                                   'TACAAAGATGATGACGATAAAGGCGACTATA'
-                                   'AGGACGATGACGACAAGGGCGGAAACTCACTGA'
-                                   'TCAAGGAAAACATGCGGATGAAGGTGGTGAT'
-                                   'GGAGGGCTCCGTGAATGGTCACCAGTTCAAGTG'
-                                   'CACCGGAGAGGGAGAGGGAAACCCGTACATG'
-                                   'GGAACTCAGACCATGCGCATTAAGGTCATCGAA'
-                                   'GGAGGTCCGCTGCCGTTCGCTTTCGATATCC'
-                                   'TGGCCACTTCGTTCGGAGGAGGGTCGCGCACGTTC'
-                                   'ATCAAGTACCCGAAGGGAATCCCGGACTT'
-                                   'CTTTAAGCAGTCATTCCCGGAAGGATTCACTTGGG'
-                                   'AACGGGTGACCCGGTATGAAGATGGAGGT'
-                                   'GTGGTGACTGTCATGCAAGATACTTCGCTGGAGGATGGG'
-                                   'TGCCTCGTGTACCACGTCCAAGTCC'
-                                   'GCGGAGTGAATTTCCCGTCCAACGGACCAGTGATGCAG'
-                                   'AAAAAGACGAAGGGTTGGGAACCTAA'
-                                   'TACTGAAATGATGTACCCCGCAGACGGAGGGCTGAGGG'
-                                   'GCTACACCCACATGGCGCTGAAGGTC'
-                                   'GACGGAGGAGATTACAAGGATGACGACGATAAGCAACAA'
-                                   'GATTACAAAGACGATGATGACAAGG'
-                                   'GCCAGCAGGGCGACTACAAGGACGACGACGACAAGCAG'
-                                   'CAGGACTACAAAGATGACGATGATAA'
-                                   'AGGAGGAGGACATCTGTCCTGTTCGTTCGTGACCACCT'
-                                   'ACAGATCAAAGAAAACCGTGGGAAAC'
-                                   'ATCAAGATGCCGGGCATTCATGCCGTCGACCACCGCCT'
-                                   'GGAGCGGCTCGAAGAATCAGACAATG'
-                                   'AGATGTTCGTCGTGCAAAGAGAACATGCCGTGGCCAAGTT'
-                                   'CGCGGGACTGGGAGGCGGTGGAGG'
-                                   'CGATTACAAAGACGATGATGACAAGGGTGACTATAAAGA'
-                                   'CGACGATGACAAAGGGGATTACAAG'
-                                   'GATGATGATGATAAGGGAGGCGGTGGATCAGGTGGAG'
-                                   'GAGGTTCACTGCAG')}
-
-        self.aa_keys = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F',
-                       'P', 'S', 'T', 'W', 'Y', 'V', '*']
-
-        self.codon_types = dict(zip(self.aa_keys, np.ones((1, 21)).flatten().astype(int).tolist()))
-
-        self.aa_table = {
-            'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
-            'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T',
-            'AAC':'N', 'AAT':'N', 'AAA':'K', 'AAG':'K',
-            'AGC':'S', 'AGT':'S', 'AGA':'R', 'AGG':'R',
-            'CTA':'L', 'CTC':'L', 'CTG':'L', 'CTT':'L',
-            'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCT':'P',
-            'CAC':'H', 'CAT':'H', 'CAA':'Q', 'CAG':'Q',
-            'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGT':'R',
-            'GTA':'V', 'GTC':'V', 'GTG':'V', 'GTT':'V',
-            'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCT':'A',
-            'GAC':'D', 'GAT':'D', 'GAA':'E', 'GAG':'E',
-            'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGT':'G',
-            'TCA':'S', 'TCC':'S', 'TCG':'S', 'TCT':'S',
-            'TTC':'F', 'TTT':'F', 'TTA':'L', 'TTG':'L',
-            'TAC':'Y', 'TAT':'Y', 'TAA':'*', 'TAG':'*',
-            'TGC':'C', 'TGT':'C', 'TGA':'*', 'TGG':'W',
-            
-            'AUA':'I', 'AUC':'I', 'AUU':'I', 'AUG':'M',
-            'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACU':'T',
-            'AAC':'N', 'AAU':'N', 'AAA':'K', 'AAG':'K',
-            'AGC':'S', 'AGU':'S', 'AGA':'R', 'AGG':'R',
-            'CUA':'L', 'CUC':'L', 'CUG':'L', 'CUU':'L',
-            'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCU':'P',
-            'CAC':'H', 'CAU':'H', 'CAA':'Q', 'CAG':'Q',
-            'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGU':'R',
-            'GUA':'V', 'GUC':'V', 'GUG':'V', 'GUU':'V',
-            'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCU':'A',
-            'GAC':'D', 'GAU':'D', 'GAA':'E', 'GAG':'E',
-            'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGU':'G',
-            'UCA':'S', 'UCC':'S', 'UCG':'S', 'UCU':'S',
-            'UUC':'F', 'UUU':'F', 'UUA':'L', 'UUG':'L',
-            'UAC':'Y', 'UAU':'Y', 'UAA':'*', 'UAG':'*',
-            'UGC':'C', 'UGU':'C', 'UGA':'*', 'UGG':'W',}
-
-        self.aa_table_r = {'A':['GCA', 'GCC', 'GCG', 'GCT','GCU'],
-                          'R':['CGA', 'CGC', 'CGG', 'CGT','AGG','AGA','CGU'],
-                          'N':['AAC', 'AAT','AAU'],
-                          'D':['GAC', 'GAT','GAU'],
-                          'C':['TGC', 'TGT','UGC','UGU'],
-                          'Q':['CAA', 'CAG'],
-                          'E':['GAA', 'GAG'],
-                          'G':['GGT', 'GGC', 'GGA', 'GGC','GGU'],
-                          'H':['CAC', 'CAT','CAU'],
-                          'I':['ATT', 'ATC', 'ATA','AUU','AUC','AUA'],
-                          'L':['CTA', 'CTC', 'CTG', 'CTT', 'TTA', 'TTG','CUA', 'CUC', 'CUG', 'CUU', 'UUA', 'UUG'],
-                          'K':['AAA', 'AAG'],
-                          'M':['ATG','AUG'],
-                          'F':['TTC', 'TTT','UUC','UUU'],
-                          'P':['CCT', 'CCC', 'CCG', 'CCA','CCU'],
-                          'S':['TCA', 'TCC', 'TCG', 'TCT','AGC','AGT','UCA','UCC','UCG'],
-                          'T':['ACA', 'ACC', 'ACG', 'ACT','ACU'],
-                          'W':['TGG','UGG'],
-                          'Y':['TAT', 'TAC','UAC','UAU'],
-                          'V':['GTA', 'GTC', 'GTT','GTG','GUG','GUU','GUC','GUA'],
-                          '*':['TGA', 'TAG', 'TAA','UGA','UAG','UAA']
-                         }
-
-
-        self.strGeneCopy = {'TTT': 17.6, 'TCT': 15.2, 'TAT': 12.2, 'TGT': 10.6, 'TTC': 20.3,
-                            'TCC': 17.7, 'TAC': 15.3, 'TGC': 12.6, 'TTA': 7.7, 'TCA': 12.2,
-                            'TAA': 1.0, 'TGA': 1.6, 'TTG': 12.9, 'TCG':  4.4, 'TAG': 0.8,
-                            'TGG': 13.2, 'CTT': 13.2, 'CCT': 17.5, 'CAT': 10.9, 'CGT': 4.5,
-                            'CTC': 19.6, 'CCC': 19.8, 'CAC': 15.1, 'CGC': 10.4, 'CTA':  7.2,
-                            'CCA': 16.9, 'CAA': 12.3, 'CGA':  6.2, 'CTG': 39.6, 'CCG':  6.9,
-                            'CAG': 34.2, 'CGG': 11.4, 'ATT': 16.0, 'ACT': 13.1, 'AAT': 17.0,
-                            'AGT': 12.1, 'ATC': 20.8, 'ACC': 18.9, 'AAC': 19.1, 'AGC': 19.5,
-                            'ATA':  7.5, 'ACA': 15.1, 'AAA': 24.4, 'AGA': 12.2, 'ATG': 22.0,
-                            'ACG': 6.1, 'AAG': 31.9, 'AGG': 12.0, 'GTT': 11.0, 'GCT': 18.4,
-                            'GAT': 21.8, 'GGT': 10.8, 'GTC': 14.5, 'GCC': 27.7, 'GAC': 25.1,
-                            'GGC': 22.2, 'GTA':  7.1, 'GCA': 15.8, 'GAA': 29.0, 'GGA': 16.5,
-                            'GTG': 28.1, 'GCG': 7.4, 'GAG': 39.6, 'GGG': 16.5}
-
-        
-        # add the U codons
-        for key in list(self.strGeneCopy.keys()):
-            if 'T' in key:
-                val = self.strGeneCopy[key]
-                newkey = key.replace('T','U')
-                self.strGeneCopy[newkey] = val
-
-
-
-        self.strGeneCopy_fast = {'GCT': 27.7, 'GCC': 27.7, 'GCA': 27.7, 'GCG': 27.7,  #A
-                                 'CGT': 12.2, 'CGC': 12.2, 'CGA': 12.2, 'CGG': 12.2,
-                                 'AGA': 12.2, 'AGG': 12.2,   # R
-                                 'AAT': 19.1, 'AAC': 19.1,   #N
-                                 'GAT': 25.1, 'GAC': 25.1,   # D
-                                 'TGT': 12.6, 'TGC': 12.6,  # C
-                                 'CAA': 34.2, 'CAG': 34.2,  # Q
-                                 'GAA': 39.6, 'GAG': 39.6,  #E
-                                 'GGT': 22.2, 'GGC': 22.2, 'GGA': 22.2, 'GGG': 22.2,  # G
-                                 'CAT': 15.1, 'CAC': 15.1,  # H
-                                 'ATT': 20.8, 'ATC': 20.8, 'ATA': 20.8,  # I
-                                 'TTA': 39.6, 'TTG': 39.6, 'CTT': 39.6, 'CTC': 39.6,
-                                 'CTA': 39.6, 'CTG': 39.6, # L
-                                 'AAA': 31.9, 'AAG': 31.9,  # K
-                                 'ATG': 22.0,   #M
-                                 'TTT': 20.3, 'TTC': 20.3,    # F
-                                 'CCT': 19.8, 'CCC': 19.8, 'CCA': 19.8, 'CCG': 19.8,  # P
-                                 'TCT': 19.5, 'TCC': 19.5, 'TCA': 19.5, 'TCG': 19.5,
-                                 'AGT': 19.5, 'AGC': 19.5,  # S
-                                 'ACT': 18.9, 'ACC': 18.9, 'ACA': 18.9, 'ACG': 18.9, # T
-                                 'TGG': 13.2,   #W
-                                 'TAT': 15.3, 'TAC': 15.3,  # Y
-                                 'GTT': 28.1, 'GTC': 28.1, 'GTA':28.1, 'GTG': 28.1,  # V
-                                 'TAA': 1.6, 'TAG': 1.6, 'TGA':1.6 #STOP
-                                }
-
-
-        for key in list(self.strGeneCopy_fast.keys()):
-            if 'T' in key:
-                val = self.strGeneCopy_fast[key]
-                newkey = key.replace('T','U')
-                self.strGeneCopy_fast[newkey] = val
-
-        self.strGeneCopy_slow = {'GCT': 7.4, 'GCC': 7.4, 'GCA': 7.4, 'GCG': 7.4,  #A
-                                 'CGT': 4.5, 'CGC': 4.5, 'CGA': 4.5, 'CGG': 4.5,
-                                 'AGA':4.5, 'AGG':4.5,   #R
-                                 'AAT': 17.0, 'AAC':17.0,  #%N
-                                 'GAT': 21.8, 'GAC': 21.8,  #D
-                                 'TGT': 10.6, 'TGC':10.6,  #C
-                                 'CAA': 12.3, 'CAG': 12.3,  #Q
-                                 'GAA': 29.0, 'GAG': 29.0,  #E
-                                 'GGT': 10.8, 'GGC': 10.8, 'GGA': 10.8, 'GGG': 10.8,  #G
-                                 'CAT': 10.9, 'CAC':10.9,  #H
-                                 'ATT': 7.5, 'ATC': 7.5, 'ATA': 7.5, #I
-                                 'TTA': 7.2, 'TTG':7.2, 'CTT': 7.2, 'CTC': 7.2,
-                                 'CTA': 7.2, 'CTG': 7.2, #L
-                                 'AAA': 24.4, 'AAG': 24.4, #K
-                                 'ATG': 22.0, #M
-                                 'TTT': 17.6, 'TTC': 17.6, #F
-                                 'CCT': 6.9, 'CCC': 6.9, 'CCA': 6.9, 'CCG': 6.9, #P
-                                 'TCT': 4.4, 'TCC': 4.4, 'TCA': 4.4, 'TCG': 4.4,
-                                 'AGT': 4.4, 'AGC': 4.4, #S
-                                 'ACT': 6.1, 'ACC': 6.1, 'ACA': 6.1, 'ACG': 6.1,#T
-                                 'TGG': 13.2, #W
-                                 'TAT': 12.2, 'TAC': 12.2, #Y
-                                 'GTT': 7.1, 'GTC':7.1, 'GTA': 7.1, 'GTG': 7.1, # V
-                                 'TAA': 0.8, 'TAG': 0.8, 'TGA': 0.8 #STOP CODON}
-                                }
-        
-        for key in list(self.strGeneCopy_slow.keys()):
-            if 'T' in key:
-                val = self.strGeneCopy_slow[key]
-                newkey = key.replace('T','U')
-                self.strGeneCopy_slow[newkey] = val
-
-
-        self.fast_codons_value = [27.7, 12.2, 19.1, 25.1, 12.6, 34.2, 39.6, 22.2, 15.1,
-                                  20.8, 39.6, 31.9, 22, 20.3, 19.8, 19.5,
-                                  18.9, 13.2, 15.3, 28.1, 1.6]
-
-
-        self.slow_codons_value = [7.4, 4.5, 17, 21.8, 10.6, 12.3, 29, 10.8, 10.9, 7.5, 7.2,
-                                  24.4, 22, 17.6, 6.9, 4.4, 6.1, 13.2, 12.2, 7.1, .8]
-
-        fullcodonkeys = ['GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT',
-                     'ATT', 'TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
-                     'ACT', 'TGG', 'TAT', 'GTT', 'TAA',
-                     'GCU', 'CGU', 'AAU', 'GAU', 'UGU', 'CAA', 'GAA', 'GGU', 'CAU',
-                     'AUU', 'UUA', 'AAA', 'AUG', 'UUU', 'CCU', 'TCU',
-                     'ACU', 'UGG', 'UAU', 'GUU', 'UAA',                     ]
-
-        codonkeys = ['GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT',
-                     'ATT', 'TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
-                     'ACT', 'TGG', 'TAT', 'GTT', 'TAA']
-        self.sensitivity_fast_slow = []
-        for i in range(len(codonkeys)):
-            self.sensitivity_fast_slow.append(self.strGeneCopy_fast[codonkeys[i]] / self.strGeneCopy_slow[codonkeys[i]])
+        self.codon_dicts = CodonDictionaries()
+    
+    @property
+    def gene_sequence_str(self):
+        return self.sequence_str
+    @gene_sequence_str.setter
+    def gene_sequence_str(self,value):
+        self.sequence_str = value
 
 
     def __update_sensitivity(self):
@@ -470,149 +266,6 @@ class rSNAPsim():
         self.sensitivity_fast_slow = []
         for i in range(len(codonkeys)):
             self.sensitivity_fast_slow.append(self.strGeneCopy_fast[codonkeys[i]] / self.strGeneCopy_slow[codonkeys[i]])
-
-
-    def load_tags(self):
-        f= open("custom_tags.txt","r")
-         
-        raw = f.readlines()
-        previous_tags = []
-    
-        for line in raw:
-            if line != '\n':
-                previous_tags.append(line)
-                
-        for line in previous_tags:
-          
-            custom_tag = line.strip('\n').split('---')
-   
-            if custom_tag[0] not in self.tag_dict.keys():
-                self.tag_dict[custom_tag[0]] = custom_tag[2]
-              
-                self.tag_full[custom_tag[0]] = custom_tag[1]
-        f.close()
-                
-
-    def add_tag(self,nt_seq,name):
-        '''
-        add a custom tag sequence
-        '''
-
-        f= open("custom_tags.txt","r")
-         
-        raw = f.readlines()
-        previous_tags = []
-    
-        for line in raw:
-            if line != '\n':
-                previous_tags.append(line)
-            
-        if not set(nt_seq.lower()).issubset(  set(['a','t','c','g','u'])):
-            print('invalid NT sequence')
-            f.close()
-            return
-        
-        aa_seq = self.nt2aa(nt_seq)
-        newtag =name+'---'+ nt_seq.lower() + '---'+ aa_seq.upper()+'\n'  
-        
-        if newtag not in previous_tags:
-            previous_tags.append(newtag)
-        f.close()
-        
-        f= open("custom_tags.txt","w+")
-        
-        for item in previous_tags:
-            f.write('%s' % item)
-            
-        f.close()
-
-    def nt2aa(self, nt_seq):
-        '''
-        Translates nucleotides sequences to amino acid sequences
-
-        *args*
-
-            **nt_seq**, nucleotide sequence as a string
-
-        *returns*
-
-            **aa_seq**, amino acid sequence as string
-        '''
-
-        aa = ''
-        for i in range(0, len(nt_seq), 3):
-            aa += self.aa_table[nt_seq[i:i+3]]
-        return aa
-
-
-    def get_orfs(self, nt_seq='', min_codons=80):
-
-        '''
-        Returns open reading frames of the nucleotide sequence given
-
-        orfs = {'1':[proteins],
-                '2':[proteins],
-                '3':[proteins]}
-
-        *keyword args*
-
-            **nt_seq**, nucleotide sequence as a string. If left blank uses
-            the self.sequence_str
-
-            **min_codons**, minimum amount of codons to be considered
-            a protein in the open reading frame
-        '''
-
-        if nt_seq == '':
-            nt_seq = self.sequence_str
-
-        allstarts = np.array([m.start() for m in re.finditer('(?=A[TU]G((?:.{3})+?)[TU](?:AG|AA|GA))', nt_seq)])
-        
- 
-        #allsegments = re.findall('(?=A[TU]G((?:.{3})+?)[TU](?:AG|AA|GA))',self.sequence_str)
-        allstops = np.array([m.start() for m in re.finditer('(?=[TU](?:AG|AA|GA))', nt_seq)])
-        start_frames = allstarts%3
-        stop_frames = allstops%3
-        min_len = min_codons*3
-        orf1_starts = allstarts[np.where(start_frames == 0)]
-        orf2_starts = allstarts[np.where(start_frames == 1)]
-        orf3_starts = allstarts[np.where(start_frames == 2)]
-
-        orf1_stops = allstops[np.where(stop_frames == 0)]
-        orf2_stops = allstops[np.where(stop_frames == 1)]
-        orf3_stops = allstops[np.where(stop_frames == 2)]
-
-        self.starts = [orf1_starts, orf2_starts, orf3_starts]
-        self.stops = [orf1_stops, orf2_stops, orf3_stops]
-        self.orfs = {'1':[], '2':[], '3':[]}
-
-
-        self.orfs = {'1':[], '2':[], '3':[]}
-        laststop = 0
-        for start in orf1_starts:
-            nextstop = orf1_stops[np.where(orf1_stops > start)[0][0]]
-            if (nextstop - start) > min_len:
-                if nextstop != laststop:
-                    self.orfs['1'].append((start, nextstop))
-
-                    laststop = nextstop
-
-        laststop = 0
-        for start in orf2_starts:
-            nextstop = orf2_stops[np.where(orf2_stops > start)[0][0]]
-            if (nextstop - start) > min_len:
-                if nextstop != laststop:
-                    self.orfs['2'].append((start, nextstop))
-                    laststop = nextstop
-
-        laststop = 0
-        for start in orf3_starts:
-            nextstop = orf3_stops[np.where(orf3_stops > start)[0][0]]
-
-            if (nextstop - start) > min_len:
-                if nextstop != laststop:
-                    self.orfs['3'].append((start, nextstop))
-                    laststop = nextstop
 
 
 
@@ -749,75 +402,16 @@ class rSNAPsim():
         '''
         return the ratio of average gene copy number / sequence codon copy number
         '''
-        mean_u = np.mean(self.strGeneCopy.values()) 
+        mean_u = np.mean(self.codon_dict.strGeneCopy.values()) 
         ui = []
         for i in range(0, len(nt_seq), 3):
-            ui.append(mean_u/ self.strGeneCopy[nt_seq[i:i+3]])
+            ui.append(mean_u/ self.codon_dict.strGeneCopy[nt_seq[i:i+3]])
         return ui
         
 
-    def get_k_3_frame(self,nt_seq,k_elong_mean):
-        
-        kelongs = []
-        
-        for n in range(3):
-            if n !=0:
-                codons = nt_seq[n:-(3-n)]
-            else:
-                codons = nt_seq
-            genelength = int(len(codons)/3)
-            seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
-            k_elongation = np.zeros((1, genelength))
-            tRNA_copynumber = np.zeros((1, genelength))
 
-     
-            for i in range(len(seperated_codons)):
-                tRNA_copynumber[0, i] = self.strGeneCopy[seperated_codons[i]]
-    
-            mean_tRNA_copynumber = np.mean(list(self.strGeneCopy.values()))
-    
-            k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
-        
-            k_elongation.flatten().tolist()[:-1]
-        
-            kelongs = kelongs + k_elongation.flatten().tolist()[:-1]
-        
-        return kelongs
         
         
-        
-
-    def get_k(self, nt_seq, k_init, k_elong_mean):
-        '''
-        returns all propensities for a given nucleotide sequence
-
-        *args*
-
-            **nt_seq**,  nucleotide sequence as a string
-
-            **k_initiation**, initiation rate of ribosome binding
-
-            **k_elong_mean**, average rate of elgonation experimentally found
-
-
-        '''
-        codons = nt_seq
-        genelength = int(len(codons)/3)
-        seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
-        k_elongation = np.zeros((1, genelength))
-        tRNA_copynumber = np.zeros((1, genelength))
-
-     
-        for i in range(len(seperated_codons)):
-            tRNA_copynumber[0, i] = self.strGeneCopy[seperated_codons[i]]
-
-        mean_tRNA_copynumber = np.mean(list(self.strGeneCopy.values()))
-
-        k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
-        all_k = [k_init] + k_elongation.flatten().tolist()[:-1] + [10]
-
-        return all_k
-
 
 
     def get_temporal_proteins(self):
@@ -889,83 +483,7 @@ class rSNAPsim():
             self.pois_seq = pois_nt
 
 
-    def analyze_poi(self, protein, sequence, epitope_loc = 'front'):
-        '''
-        Analyzes the protein of intrest and stores it in __.POI
-
-        *args*
-
-            **protein**,  amino acid sequence as a string
-
-            **sequence**, nucleotide sequence that goes with the protein
-            
-            **epitope_loc**, consider the epitope location as the front, middle or back:
-                
-                DDYDDK: front: 0, middle: 3, back: 6 for epitope location
-
-
-        '''
-
-        self.POI = poi()
-        self.POI.nt_seq = sequence
-        self.POI.aa_seq = protein
-        self.POI.name = self.sequence_name
-        self.POI.total_length = len(protein)
-
-        '''
-        for key in self.tagged_proteins:
-            if protein in self.tagged_proteins[key]:
-                self.POI.tag_types.append(key)
-        '''
-        self.POI.tag_types = []
-        for tag in self.tag_dict.keys():
-            if self.tag_dict[tag] in protein:
-                self.POI.tag_types.append(tag)
-
-                #''.join(sms.poi[0].split('DYKDDDDK')
-
-        self.POI.tag_epitopes = {a:[] for a in self.POI.tag_types}
-        gs = protein
-
-
-        for i in range(len(self.POI.tag_types)):
-            
-            try:
-                nt_tag = self.tag_full[self.POI.tag_types[i]]
-                aa_tag = self.nt2aa(nt_tag)
-            except:
-                epi = self.tag_dict[self.POI.tag_types[i]]
-                firstep = self.POI.aa_seq.find(epi) 
-                lastep = len(self.POI.aa_seq) - self.POI.aa_seq[::-1].find(epi[::-1])                
-                aa_tag = self.POI.aa_seq[firstep:lastep]
-                nt_tag = self.POI.nt_seq[3*firstep:3*lastep]
-                
-            if epitope_loc == 'front':
-                offset = 0
-            if epitope_loc == 'middle':
-                offset = int(len(self.tag_dict[self.POI.tag_types[i]])/2)
-            if epitope_loc == 'back':
-                offset = len(self.tag_dict[self.POI.tag_types[i]])
-                
-            self.POI.tag_epitopes[self.POI.tag_types[i]] = [m.start()+1+offset for m in re.finditer(self.tag_dict[self.POI.tag_types[i]], self.POI.aa_seq)]
-
-            gs = gs.replace(aa_tag, '')
-
-
-
-
-
-        self.POI.gene_seq = gs
-        self.POI.gene_length = len(gs)
-        codons = []
-        for i in range(0, len(sequence), 3):
-            codons.append(sequence[i:i+3])
-        self.POI.codons = codons
-
-        self.POI.codon_sensitivity, self.POI.CAI, self.POI.CAI_codons = self.codon_usage(self.POI.nt_seq)
-
-
-    def open_seq_file(self, seqfile):
+    def open_seq_file(self, seqfile,min_codons=80):
         
         '''
         Reads a sequence file, either a .txt file or a .gb genbank file
@@ -973,180 +491,20 @@ class rSNAPsim():
         *args*
 
             **seqfile**, sequence file either in txt, gb, gbk format
-
-
-        '''
-        seq = seqfile
-        self.sequence_name = ''
-        
-        if '.dna' in seq:
-
-            self.sequence_name = seq[:-4]
-            try:
-                seq_record = snapgene_file_to_seqrecord(seq)
-            except:
-                print('To read .dna files please install snapegenereader: pip install snapgene_reader - https://github.com/IsaacLuo/SnapGeneFileReader' )
-            
-            self.sequence_str = seq_record.seq.tostring()
-            
-                    
-        
-        
-        if '.txt' in seq:
-            with open(seq) as f:
-                raw = f.readlines()
-
-
-
-            raw = ''.join(raw)
-           
-
-            
-            
-            onlychar = re.split(r'[^A-Za-z]', raw)
-            validt = ['A', 'G', 'T', 'C']
-            validu = ['A', 'G', 'U', 'C']
-            namelen = 0
-            self.sequence_str = ''
-       
-            for i in range(len(onlychar)):
-                section = onlychar[i]
-                if set(section.upper()) == set(validt):
-                    self.sequence_str += section.upper()
-                    
-                
-                elif set(section.upper()) == set(validu):
-                    self.sequence_str += section.upper()                    
-                else:
-                    if len(section)>namelen:
-                        self.sequence_name = section
-                        namelen = len(section)
-                    
-
-        if '.gb' in seq:
-            gb_record = SeqIO.read(open(seq, "r"), "genbank")
-            self.sequence_str = str(gb_record.seq)
-            self.sequence_name = gb_record.name
-            self.gb_obj = gb_record
-
-        if self.sequence_name == '':
-            self.sequence_name = seqfile.replace('.txt','')
-            self.sequence_name = seqfile.replace('.gb','')
-            
-
-
-
-    def codon_usage(self, nt_seq):
-        '''
-        Analyzes codon useage from the nucleotide sequence
-
-        *args*
-
-            **nt_seq**,  nucleotide sequence as a string
-
-        *returns*
-
-            **codon_sensitivity**, a list of codon sensitivity for the nucleotide sequence
-
-            **cai**, cai value
-
-        '''
-        codon_usage = np.zeros((1, 21))
-        gene_len = len(nt_seq)/3
-        aa_seq = self.nt2aa(nt_seq)
-
-        for i in range(len(self.aa_keys)-1):
-
-            codon_usage[0, i] = len(re.findall(self.aa_keys[i], aa_seq))
-        codon_usage[0, 20] = len(re.findall('\*', aa_seq))
-        codon_norm = codon_usage/gene_len
-        codon_sensitivity = np.round(codon_norm*self.sensitivity_fast_slow, 2)
-
-        cai_codons = []
-        for i in range(0, len(nt_seq), 3):
-            cai_codons.append(self.strGeneCopy[nt_seq[i:i+3]] / self.strGeneCopy_fast[nt_seq[i:i+3]])
-
-        cai = self.geomean(cai_codons)
-
-        return codon_sensitivity, cai, cai_codons
-
-
-    def get_probvec(self): 
-        '''
-        returns the probe vectors (epitope positions by codon position) associated with the tagged sequence stored in POI
-
-        *returns*
-
-            **probe_vec**, cumlative probe intensity vector by codon position. Ex: [0,0,0,0,1,1,1,1,2,2,2,3,3,3 etc]
-
-            **probe_loc**, epitope posistion as a binary vector, 1 for epitope pos, 0 for everything else
         '''
 
-        probePositions = []
+        fp = FileParser.FileParser()
+        self.sequence_name = fp.get_name(seqfile)
+        self.sequence_description = fp.get_description(seqfile)
+        self.sequence_str= fp.get_sequence(seqfile).upper()
         
-        keylist = list(self.POI.tag_epitopes.keys())
+        smm = SequenceManipMethods(self.sequence_str)
         
-        for n in range(len(keylist)):
-            probePosition = []
-            key = keylist[n]
+        self.orfs = smm.get_orfs(self.sequence_str,min_codons=min_codons)
+        protein_strs,self.proteins, self.tagged_proteins  = smm.get_proteins(self.orfs,self.sequence_str)
+        
+        
             
-            probePosition = probePosition + self.POI.tag_epitopes[key]
-            
-            if probePosition != []:
-                probePosition = np.unique(probePosition).tolist()
-                probePositions.append(probePosition)
-                
-        
-        
-
-        genelength = self.POI.total_length
-
-        pvfull = np.zeros((1, genelength+1)).astype(int).flatten()
-        
-        if len(probePositions) > 1:
-            k = 0
-            for n in range(len(keylist)):
-                pv = np.zeros((1, genelength+1)).astype(int).flatten()
-                key = keylist[n]
-                probePosition = probePositions[k] 
-                k+=1
-                if len(self.POI.tag_epitopes[key]) != 0:
-                    for i in range(len(probePosition)):
-                        pv[probePosition[i]:] = i+1
-                    if n > 0:
-                        pvfull = np.vstack((pvfull,pv))
-                    else:
-                        pvfull = pv
-        else:
-            probePosition = probePositions[0]
-            for n in range(len(keylist)):
-                pv = np.zeros((1, genelength+1)).astype(int).flatten()
-                key = keylist[n]
-                if len(self.POI.tag_epitopes[key]) != 0:
-                    for i in range(len(probePosition)):
-                        pv[probePosition[i]:] = i+1
-                    if n > 0:
-                        pvfull = np.vstack((pvfull,pv))
-                    else:
-                        pvfull = pv
-        numtags = 0
-        for key in keylist:
-            if len(self.POI.tag_epitopes[key]) != 0:
-                numtags += 1
-
-        ploc = np.zeros((numtags, self.POI.total_length+1)).astype(int)
-
-        numind = 0
-        for n in range(len(keylist)):
-            key = keylist[n]
-            if len(self.POI.tag_epitopes[key]) != 0:
-                ploc[numind][self.POI.tag_epitopes[key]] = 1
-
-                numind += 1
-
-        return pvfull, ploc
-
-
 
 
     def simple_model(self, poi, tag, ki,ke):
@@ -1174,95 +532,9 @@ class rSNAPsim():
 
 
 
-    def get_binned_k_emphasize_probes(self,k,bins,pl):
-        '''
-        evenly bins elongation rates as best it can.
-        
-        
-        '''
-        
-        probe_region_start = np.where(pl > 0)[0]
-        probe_region_end = np.where(pl > 0)[-1]
-        
-        binsize = int(np.floor(len(k)/bins))
-        binned_ks = []
-        
-        k_binned = np.zeros(bins)
-        k_lens = np.ones(bins)*binsize
-        
-        to_redistribute = len(k)%bins
-
-        k_lens[-to_redistribute:] = binsize+1
-        
-        inds = np.hstack(([0.], np.cumsum(k_lens))).astype(int)     
-
-        
-        for i in range(0,bins):
-            binned_ks = binned_ks +   [k[inds[i]:inds[i+1]].tolist(),]  
-         
-        for i in range(0,bins):            
-            k_binned[i] = np.mean(binned_ks[i])/len(binned_ks[i])
-
-        return k_binned,k_lens
 
     
-    
-    def get_binned_k(self,k,bins):
-        '''
-        evenly bins elongation rates as best it can.
-        
-        '''
-        binsize = int(np.floor(len(k)/bins))
-        binned_ks = []
-        
-        k_binned = np.zeros(bins)
-        k_lens = np.ones(bins)*binsize
-        
-        to_redistribute = len(k)%bins
 
-        k_lens[-to_redistribute:] = binsize+1
-        
-        inds = np.hstack(([0.], np.cumsum(k_lens))).astype(int)     
-
-        
-        for i in range(0,bins):
-            binned_ks = binned_ks +   [k[inds[i]:inds[i+1]].tolist(),]  
-         
-        for i in range(0,bins):            
-            k_binned[i] = 1/np.mean(1/np.array(binned_ks[i]))
-
-        return k_binned,k_lens
-            
-            
-            
-    def get_binned_probe_vec(self,probe_loc,bins):
-        '''
-        bin the probe vector as even as possible
-        '''
-        probe_loc = np.atleast_2d(probe_loc)
-        binsize = int(np.floor(probe_loc.shape[1]/bins))        
-        probeloc_binned = np.zeros((np.atleast_2d(probe_loc).shape[0],bins))
-        probe_lens = np.ones((np.atleast_2d(probe_loc).shape[0],bins))*binsize
-        
-        
-        
-        to_redistribute = len(probe_loc)%bins
-        
-        np.atleast_2d(probe_loc).shape[0]
-
-        probe_lens[-to_redistribute:] = binsize+1       
-        inds = np.hstack(([0.], np.cumsum(probe_lens,axis=1)[0,:])).astype(int)  
-        
-        for i in range(0,bins):
-
-            probeloc_binned[:,i] = np.sum(probe_loc[:,inds[i]:inds[i+1]],axis=1)
-            
-        probevec_binned = np.cumsum(probeloc_binned,axis=1)
-        return probevec_binned.astype(int), probeloc_binned.astype(int)
-               
-            
-        
-        
         
             
     
@@ -1310,7 +582,7 @@ class rSNAPsim():
 
 
 
-    def ssa_solver(self, nt_seq=None, all_k=None, k_elong_mean=10, k_initiation=.03, probePosition=[], n_traj=100, tf=1000, start_time=0, tstep=1000, time_inhibit=0, evaluating_frap=False, evaluating_inhibitor=False,force_python = False,N_rib=200):
+    def ssa_solver(self, nt_seq=None, all_k=None, k_elong_mean=10, k_initiation=.03, probePosition=[], n_traj=100, tf=1000, start_time=0, tstep=1000, time_inhibit=0, evaluating_frap=False, evaluating_inhibitor=False,force_python = False):
         '''
         Solve stochastic simulation algorithms (SSA) for the translation simulation.
 
@@ -1343,8 +615,7 @@ class rSNAPsim():
             **ssa_obj**, a ssa() class containing the raw ribosome posistions simulated and statistics such as intensity vectors from the SSA trajectory group
 
         '''
-    
-        
+
         if len(probePosition) == 0:
             '''
             try:
@@ -1388,51 +659,17 @@ class rSNAPsim():
             probePosition = np.array([probePosition]).astype(int)
             
         footprint = 9
-        
-        ssa_obj = self.__solve_ssa(genelength,  all_k,pv,probePosition,n_traj, tf, start_time, tstep, time_inhibit, evaluating_frap, evaluating_inhibitor,force_python, footprint, N_rib)
-        
+        ssa_obj = self.__solve_ssa(genelength,  all_k,pv,probePosition,n_traj, tf, start_time, tstep, time_inhibit, evaluating_frap, evaluating_inhibitor,force_python, footprint)
         return ssa_obj       
 
 
 
 
-    def build_ODE(self,k,t,kbind, pl):
-
-        m = models.TranslateCorrs()
-        m.N = len(k)
-        m.tf = t[-1]
-        m.ptimes = len(t)
-        m.ke = k
-        #m.ke = 13.567*np.ones(kelong[1:].shape[0])
-       # m.ke[0] = 0.0
-        #m.kb = kelong[0] 
-        m.kb = kbind 
-        m.fi = 1
-        m.ti = t[0]
-        
-        print(m.__dict__)
-    
-        # Solve correlations
-        print("*****SOLVING MOMENT EQUATIONS*****")
-        m.binary = pl
-        start = time.time()
-        m.csolve()
-        solve_time = time.time()-start
-        print("Time to solve: %f" %solve_time)
-        print("Done.")
-        mean_I = m.map_to_fluorescence3(m.mu_ss)
-        var_I = m.map_to_fluorescence(m.var_ss)   
-        print(mean_I)
-        print(var_I)
-        
-        return m.tvec,np.ravel((m.intensity)/var_I), m.soln,m
-    
-
             
             
-    def __solve_ssa(self,genelength,all_k,pv,probePosition,n_traj, tf, start_time, tstep, time_inhibit, evaluating_frap, evaluating_inhibitor,force_python,footprint,N_rib):
-        
-       
+    def __solve_ssa(self,genelength,all_k,pv,probePosition,n_traj, tf, start_time, tstep, time_inhibit, evaluating_frap, evaluating_inhibitor,force_python,footprint):
+     
+
         non_consider_time = start_time
       
         '''
@@ -1480,138 +717,131 @@ class rSNAPsim():
         
         st = time.time() 
         
-        #try:
-        if force_python == True:
-            st[0]
-            
-        rib_vec = []
-   
-        
-        solutions = []            
-        solutionssave = []
-        #N_rib = 200
-        all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
-        all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
-        result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
-        nribs = np.array([0],dtype=np.int32)
-        k = np.array(all_k)
-        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
-        all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
-        all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
-        all_nribs = np.zeros((n_traj,1))
-        all_col_points = []
-        x0 = np.zeros((N_rib),dtype=np.int32)
-
-        for i in range(n_traj):
-           
+        try:
+            if force_python == True:
+                st[0]
+                
+            rib_vec = []
+    
+            solutions = []            
+            solutionssave = []
+            N_rib = 200
+            all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
+            all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
             result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
-            ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
-            frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
-            coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
-            colpointsx = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.int32)
-            colpointst = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.float64)
-            
             nribs = np.array([0],dtype=np.int32)
-            
-            ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint, N_rib)
-            
-            #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-            
-
-            all_results[i, :] = result
-            
-            all_frapresults[i,:] = frapresult
-            all_ribtimes[i,:] = ribtimes
-            all_collisions[i,:] = coltimes
-            all_nribs[i,:] = nribs
-            
-            endcolrec = np.where(colpointsx == 0)[0][0]
-            
-            colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
-            all_col_points.append(colpoints.T)
-            
-            
-
-        for i in range(n_traj):
-            soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
-            validind = np.where(np.sum(soln,axis=1)!=0)[0]
-            if np.max(validind) != N_rib-1:
-                validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
-        
-            so = soln[(validind,)]
-            
-            solutionssave.append(so)
-            solutions.append(soln)
-        
-        collisions = np.array([[]])
-        watched_ribs = []
-        for i in range(n_traj):
-            totalrib = all_nribs[i]
-        
-            if totalrib > all_collisions.shape[1]:
-                collisions = np.append(collisions, all_collisions[i][:])
-                watched_ribs.append(int(all_collisions.shape[1]))
-        
-            else:
+            k = np.array(all_k)
+            seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+            all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
+            all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
+            all_nribs = np.zeros((n_traj,1))
+            all_col_points = []
+            x0 = np.zeros((N_rib),dtype=np.int32)
+            for i in range(n_traj):
+                result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+                ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+                frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
+                coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+                colpointsx = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+                colpointst = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+                
+                nribs = np.array([0],dtype=np.int32)
                
-                collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
-                watched_ribs.append(int(totalrib[0]))
-        
-        sttime = time.time() - st
+                ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint)
+                #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+                all_results[i, :] = result
+                all_frapresults[i,:] = frapresult
+                all_ribtimes[i,:] = ribtimes
+                all_collisions[i,:] = coltimes
+                all_nribs[i,:] = nribs
+                
+                endcolrec = np.where(colpointsx == 0)[0][0]
+                
+                colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+                all_col_points.append(colpoints.T)
+                
+                
+    
+            for i in range(n_traj):
+                soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
+                validind = np.where(np.sum(soln,axis=1)!=0)[0]
+                if np.max(validind) != N_rib-1:
+                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+            
+                so = soln[(validind,)]
+                
+                solutionssave.append(so)
+                solutions.append(soln)
+            
+            collisions = np.array([[]])
+            watched_ribs = []
+            for i in range(n_traj):
+                totalrib = all_nribs[i]
+            
+                if totalrib > all_collisions.shape[1]:
+                    collisions = np.append(collisions, all_collisions[i][:])
+                    watched_ribs.append(int(all_collisions.shape[1]))
+            
+                else:
+                   
+                    collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+                    watched_ribs.append(int(totalrib[0]))
+            
+            sttime = time.time() - st
 
-#        except:
-#            
-#            print('C++ library failed, Using Python Implementation')
-#            rib_vec = []
-#    
-#            solutions = []            
-#            solutionssave = []
-#            N_rib = 200
-#            collisions = np.array([[]])
-#            all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
-#            all_col_points = []
-#            watched_ribs = []
-#            for i in range(n_traj):
-#                
-#                soln,all_ribtimes,Ncol,col_points = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
-#                #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
-#                
-#                collisions = np.append(collisions,Ncol)
-#                watched_ribs.append(int(len(collisions)))
-#                validind = np.where(np.sum(soln,axis=1)!=0)[0]
-#                all_col_points.append(np.array(col_points))
-#                if np.max(validind) != N_rib-1:
-#                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
-#                
-#                so = soln[(validind,)]
-#               
-#                solutionssave.append(so)
-#
-#                solutions.append(soln)
-#            
-#                result = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
-#                all_results[i, :] = result
-#            
-#            sttime = time.time() - st
-#
-#
-#                #rb = sparse.lil_matrix((len(time_vec_fixed),genelength),dtype=int)
-#                #for j in range(soln.shape[1]):
-#
-#                    #if len(np.where(soln[:,j]!=0)[0]) !=0:
-#                    #print(np.where(soln[:,j]!=0)[0])
-#
-#
-#                    #rb[j,np.where(soln[:,j]!=0)[0]] = 1
-#
-#
-#                        #for value in soln[:,j][np.where(soln[:,j]!=0)[0]].astype(int):
-#
-#                            #rb[j, value-1] = 1
-#
-#                #rib_vec.append(rb)
-#
-#        
+        except:
+            
+            print('C++ library failed, Using Python Implementation')
+            rib_vec = []
+    
+            solutions = []            
+            solutionssave = []
+            N_rib = 200
+            collisions = np.array([[]])
+            all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
+            all_col_points = []
+            watched_ribs = []
+            for i in range(n_traj):
+                
+                soln,all_ribtimes,Ncol,col_points = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
+                #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
+                
+                collisions = np.append(collisions,Ncol)
+                watched_ribs.append(int(len(collisions)))
+                validind = np.where(np.sum(soln,axis=1)!=0)[0]
+                all_col_points.append(np.array(col_points))
+                if np.max(validind) != N_rib-1:
+                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+                
+                so = soln[(validind,)]
+               
+                solutionssave.append(so)
+
+                solutions.append(soln)
+            
+                result = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
+                all_results[i, :] = result
+            
+            sttime = time.time() - st
+
+
+                #rb = sparse.lil_matrix((len(time_vec_fixed),genelength),dtype=int)
+                #for j in range(soln.shape[1]):
+
+                    #if len(np.where(soln[:,j]!=0)[0]) !=0:
+                    #print(np.where(soln[:,j]!=0)[0])
+
+
+                    #rb[j,np.where(soln[:,j]!=0)[0]] = 1
+
+
+                        #for value in soln[:,j][np.where(soln[:,j]!=0)[0]].astype(int):
+
+                            #rb[j, value-1] = 1
+
+                #rib_vec.append(rb)
+
+        
 
 
 
@@ -2696,13 +1926,6 @@ class rSNAPsim():
 
 
 
-    def geomean(self, iterable):
-        '''geometric mean used for codon sensitivity calculations
-        '''
-        a = np.array(iterable)
-        return a.prod()**(1.0/len(a))
-
-
     def SSA(self, k, t_array, inhibit_time=0, FRAP=False, Inhibitor=False):
         '''
         mRNA Translation simulation python implementation
@@ -2906,647 +2129,6 @@ class rSNAPsim():
                     acf[i] = acf[i-1]
         return acf
     
-#    
-#    def get_cc(self, data1,data2, trunc=False):
-#        '''
-#        Get crosscorrelation function fft version
-#        
-#        data1, data2 are 1xN vectors of signals to correlate
-#      
-#        '''
-#        N = len(data1)
-#        fvi_1 = np.fft.fft(data1, n=2*N)
-#        fvi_2 = np.fft.fft(data2, n=2*N)
-#        
-#        ccf = fvi_1*np.conjugate(fvi_2)
-#        ccf = np.fft.ifft(ccf)
-#        ccf = np.real(ccf)/float(N)
-#        #ccf = np.hstack((ccf[::-1][:-1],ccf))
-#        
-#        if trunc:
-#            ccf[ccf < 0]=0
-#            for i in range(1, len(ccf)):
-#                if ccf[i] > ccf[i-1]:
-#                    ccf[i] = ccf[i-1]
-#        return ccf
-
-
-    def elongation_animation(self, ti=0, tf=1000, tstep=1000, cell_radius=50, imagesize=5, dpi=90, filename='simulated_cell', ssa_obj=None, fcolor='#00FF00' ,rnacolor='#FF0000', xkcd=False):
-        '''
-        function that creates a mrna translation animation
-        '''
-
-        custom_cmap = ['#69dd42', '#e5361b', '#db11c7']
-        def rpts(x, y, angle):
-            nx = np.cos(angle)*x - np.sin(angle)*y
-            ny = np.sin(angle)*x + np.cos(angle)*y
-            return nx, ny
-
-
-        def update_line(num, xpos, ypos, line):  #function for the FuncAnimation
-            if num != 0:
-                ax.get_lines()[-1].remove()
-
-                for child in ax.get_children():  #remove the previous patch collection (green spots)
-
-                    if isinstance(child, PatchCollection):
-                        child.remove()
-
-
-            patches = []
-            gp = []
-            ep = []
-            radi = np.ones(xpos[:, inds[num]].shape)*4 #create a max radius of 3 for intensity vecs
-            ypos = np.ones(xpos[:, inds[num]].shape)*(ytop+3)
-            x = xpos[:, inds[num]]
-            x[np.where(x == 0)] = x[np.where(x == 0)] - 300
-
-            for x1, y1, r in zip(xpos[:, inds[num]], ypos, radi):   #make circle objects of radius based on ivec
-                circle = mpatches.Circle((x1, y1), r, facecolor='#FF0000', edgecolor='k')
-                patches.append(circle)
-
-            pcolor = custom_cmap[0]
-
-            for i in range(len(x.flatten())):
-
-                if x[i] > 0:
-                    xpts = np.linspace(0, int(x[i])-1, int(x[i]))
-                    ypts = 5*np.sin(1/10*np.linspace(0, int(x[i])-1, int(x[i])))
-                    xpts, ypts = rpts(ypts, xpts, 1)
-                    ypts = ypts+ytop+3
-                    xpts = xpts+x[i]
-                    radi = np.ones(xpts.shape)*1
-                    k = 0
-                    ypts = np.fliplr(np.atleast_2d(ypts))
-                    ypts = ypts.flatten()
-                    xpts = np.fliplr(np.atleast_2d(xpts))
-                    xpts = xpts.flatten()
-
-                    for x2, y2, r2 in zip(xpts, ypts, radi):
-                        probloc = False
-                        j = 0
-                        for key in epitopes.keys():
-                            if k in epitopes[key]:
-                                probloc = True
-                                pcolor = custom_cmap[j]
-                                j += 1
-                        rx = np.random.rand()*2
-                        ry = np.random.rand()*2
-                        if probloc == False:
-
-                            circle = mpatches.Circle((x2+rx, y2+ry), r2, facecolor='#0000FF', edgecolor='#FFFFFF', lw=2, ls='solid')
-                            gp.append(circle)
-                        else:
-                            circle = mpatches.Circle((x2+rx, y2+ry), r2*3, facecolor='#00FF00', edgecolor='#000000', lw=2, ls='solid')
-                            ep.append(circle)
-
-                        k += 1
-
-
-                #fig.gca().add_artist(circle)
-            '''
-            xs = np.flip(np.sort(xpos[:,inds[num]][0].flatten()),axis=0)
-            for i in range(max_ribs):
-                line.set_data(xpos[:,inds[num]],ypos[inds[num]])
-                line.set_linewidth(0)
-                line.set_marker('o')
-                line.set_markersize(3)
-            '''
-            p = PatchCollection(patches, facecolors=('#FF0000',), zorder=5)  #create a patch collection to add to axis
-
-            m = PatchCollection(gp, facecolors=('#0000FF',), lw=2, zorder=3)  #create a patch collection to add to axis
-            e = PatchCollection(ep, facecolors=(pcolor,), zorder=4)
-
-
-
-            n = num
-
-            ax.plot(np.linspace(0, tag_length, len(ssa_obj.time_vec_fixed[ssa_obj.start_time:]))[:n], 3*ssa_obj.intensity_vec.flatten()[:n]+total_length, color=pcolor)
-
-            fldot = mpatches.Ellipse((total_length-30, total_length+40), width=ssa_obj.intensity_vec.flatten()[n], height=ssa_obj.intensity_vec.flatten()[n]*1.0, color=pcolor)
-            f = [fldot]
-            fe = PatchCollection(f, facecolors=(pcolor,), zorder=4)
-            ax.add_collection(p)  #adds the circles to axis
-            ax.add_collection(m)  #adds the circles to axis
-            ax.add_collection(e)
-            ax.add_collection(fe)
-            plt.xlabel(str(inds[num]))  #update time label
-            return line,
-
-        if ssa_obj == None:
-            ssa_obj = self.ssa_solver(n_traj=1, tf=tf, tstep=tstep)
-        if xkcd == True:
-            plt.xkcd()
-
-
-
-        fig1 = plt.figure(figsize=(imagesize+5, imagesize), dpi=dpi)  #make figure
-        fig1.tight_layout()
-
-        ax = fig1.add_subplot('111')
-        ax.set_aspect(1)
-
-        tag_length = self.POI.tag_length
-        total_length = self.POI.total_length
-
-        epitopes = self.POI.tag_epitopes
-
-        tag_length = total_length - self.POI.gene_length
-
-
-        ax.cla()
-        ybot = 90
-        ytop = 110
-        ax.plot([0, total_length], [ybot, ybot], color='white', zorder=3)
-        ax.plot([0, total_length], [ytop, ytop], color='white', zorder=3)
-        ax.plot([0, 0], [ybot, ytop], color='white', zorder=3)
-        ax.plot([total_length, total_length], [ybot, ytop], color='white', zorder=3)
-        ax.axis([-10, total_length+10, 80, total_length+np.max(ssa_obj.intensity_vec)*3+20])
-        ax.plot([tag_length, tag_length], [ybot, ytop], color='white', linewidth=1, zorder=3)
-        k = 0
-        for key in epitopes.keys():
-            for i in range(len(epitopes[key])):
-                ax.plot([epitopes[key][i], epitopes[key][i]], [ybot, ytop], color=custom_cmap[k], linewidth=2, zorder=3)
-            rect = mpatches.Rectangle(xy=(tag_length, ybot), width=total_length-tag_length, height=ytop-ybot, color='#0000FF')
-            #ax.fill_between([tag_length,tag_length,total_length,total_length],[ybot,ytop,ytop,ybot],color='#00FF00')
-            ax.add_patch(rect)
-            k += 1
-
-        ticks = np.linspace(0, total_length, 10).astype(int)
-        ax.set_xticks(ticks)
-        ax.set_xlabel('Codon Position')
-        ax.get_yaxis().set_visible(False)
-        ax.set_facecolor('k')
-        filename = 'elong.gif'
-
-        Writer = animation.writers['pillow']
-
-        print('making movie...')
-        max_ribs = np.max(np.nonzero(ssa_obj.solutions[0])[0])
-
-        l, = plt.plot([], [], 'r-')
-        t = ssa_obj.time_vec_fixed[ssa_obj.start_time:]
-        inds = np.linspace(0, len(t)-1, len(t)).astype(int)
-        xpos = np.zeros((max_ribs, len(ssa_obj.time_vec_fixed[ssa_obj.start_time:])))
-
-        ypos = np.ones((1, len(ssa_obj.time_vec_fixed[ssa_obj.start_time:]))).flatten()
-
-        xpos[:, :] = ssa_obj.solutions[0][:max_ribs, ssa_obj.start_time:len(ssa_obj.time_vec_fixed)]
-
-        writer = Writer(fps=30, metadata=dict(artist='Me'), bitrate=1800)
-        line_ani = animation.FuncAnimation(fig1, update_line, len(ssa_obj.time_vec_fixed[ssa_obj.start_time:]), fargs=(xpos, ypos, l),
-                                           interval=50, blit=True)
-
-        line_ani.save((filename), writer=writer)  #save the animation
-
-
-
-
-    def simulate_cell(self, diffusion_constant, kon, koff, kRNA, kdecay, ti=0, tf=1000, tstep=1000, cell_radius=50, imagesize=5, dpi=90, filename='simulated_cell', ssa_obj=None, fcolor='#00FF00', rnacolor='#FF0000'):
-        '''
-        [DNA] ==kRNA==> [RNA] <==koff== [RNA*] ==translation simulation==> [Protein]===> null
-                        // ||             /\
-                        || `'=====kon====='`
-                        ||
-                        \/
-                        null
-
-        '''
-        print('simulating RNA creation....')
-        t = np.linspace(ti, tf, tstep)
-
-
-        dna_s = np.array([[ 0,  0],
-                          [ 1, -1]])
-
-        dna_w1 = np.array([[kRNA, 0],
-                           [0, 0]],dtype=float)
-
-
-        dna_w0 = np.array([[0], [0]])
-
-
-        dna_si = GenericSSA(type='linear' )
-        dna_si.W1 = dna_w1
-        dna_si.W0 = dna_w0
-        dna_si.S = dna_s
-
-        dna_si.ti = t[0]
-        dna_si.tf = t[-1]
-        dna_si.n = 1
-        xi = np.zeros((2, 1))
-        xi[0] = 1
-        dna_si.xi = xi
-        dna_si.ptimes = len(t)
-
-        dna_si.time_variant = False
-        dna_si._solve(1)
-        rna_creation_data = dna_si.data
-
-
-
-
-        stoich = np.array([[  0,    0,  1],
-                           [  -1,  1, -1],
-                           [  1, -1, 0]])
-
-        propensity = np.array([[0, kon, 0],
-                              [0, 0,koff],
-                              [0,kdecay, 0]], dtype=float)
-
-        w0 = np.array([[0],[0],[0]])
-
-        solver_instance = GenericSSA(type='linear' )
-        solver_instance.W1 = propensity
-        solver_instance.W0 = w0
-        solver_instance.S = stoich
-
-        solver_instance.ti = t[0]
-        solver_instance.tf = t[-1]
-        solver_instance.n = 1
-        xi = np.zeros((3,1))
-        xi[1] = 1
-        solver_instance.xi = xi
-        solver_instance.ptimes = len(t)
-
-        solver_instance.time_variant = False
-
-
-
-
-        print('simulating RNA activation....')
-
-
-
-        R = cell_radius
-        squarelen = float(R/np.sqrt(2))
-
-        n_RNA_t = np.zeros((len(t),int(np.max(rna_creation_data[1]))))
-
-        nRNA = 0
-        nparticles = (int(np.max(rna_creation_data[1])))
-        for i in range(len(t)):
-
-            while nRNA != rna_creation_data[1][i]:
-                data = solver_instance._solve(1)
-
-
-                rnaonoff = data[2] + 1 - data[0]
-
-
-
-                n_RNA_t[i:, nRNA] = rnaonoff[:-i].flatten()
-                nRNA += 1
-
-
-        rna_particles = n_RNA_t.T
-        rna_exist = np.where(rna_particles >0,1,0)
-        rnaex = data
-
-
-
-        print('simulating RNA motion....')
-        rna_locations = np.empty((nparticles, len(t), 2))
-
-        dt = t[-1]/len(t)
-
-        delta = diffusion_constant
-
-
-
-        def linecirc(m, b, xc, yc, r):
-
-            if np.isinf(m) == False:
-                a = 1+m**2
-                e = 2*(m*(b-yc)-xc)
-                c = yc**2+xc**2 + b**2-2*yc*b-r**2
-                x = np.roots([a, e, c])
-
-                if np.isreal(x).all() == False:
-                    x = [np.nan, np.nan]
-                    y = [np.nan, np.nan]
-                else:
-                    y = [b + m*x[0], b+m*x[1]]
-
-            elif abs(xc-b) > r:
-                x = [np.nan, np.nan]
-            else:
-                x = [b, b]
-                step = np.sqrt(r**2-(b-xc)**2)
-                y = [yc + step, yc-step]
-
-            return [x[0], y[0]], [x[1], y[1]]
-
-
-        def dist(x1, y1, x2, y2):
-            return np.sqrt((x1-x2)**2+(y1-y2)**2)
-
-
-        for i in range(nparticles):
-            x = np.empty((2,len(t) - np.where(rna_exist[i] != 0 )[0][0]  ))
-            centers = np.zeros(x.shape)
-            x[:,0] = np.random.random()*squarelen
-            x0 = [  ((R+squarelen/4) - (R-squarelen/4))*np.random.random() + (R-squarelen/4),((R+squarelen/4) - (R-squarelen/4))*np.random.random() + (R-squarelen/4) ]
-
-
-            x0 = x0 - np.array([R, R])
-            x[:,0] =x0
-            r = norm.rvs(size=np.array(x0).shape + (len(t) - np.where(rna_exist[i] !=0 )[0][0],), scale=delta*np.sqrt(dt))
-
-
-
-            out = np.empty(r.shape)
-
-            np.cumsum(r, axis=-1, out=out)
-            out += np.expand_dims(np.array(x0), axis=-1)
-
-            #out = np.array([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36],
-                            #[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36]])
-
-            centers = np.zeros(out.shape)
-            dists = np.zeros((x.shape[1], 1)).flatten()
-
-            incirc = np.hypot(out.T[:, 0]-centers.T[:, 0], out.T[:, 1]-centers.T[:, 1])
-            dists[np.where(out[0] != 0)] = incirc[np.where(out[0] != 0)]
-
-            while len(np.where(dists>R)[0]) != 0:   #trajectory left the cell
-                out = out.T
-                left_cell = np.where(dists > R)[0][0]
-
-
-
-                pts = [[out[left_cell][0], out[left_cell][1]], [out[left_cell-1][0], out[left_cell-1][1]]]
-
-                p = np.polyfit([out[left_cell][0], out[left_cell-1][0]], [out[left_cell][1], out[left_cell-1][1]], 1)
-                m = p[0]
-                b = p[1]
-
-                intercepts = linecirc(m, b, 0, 0, R)
-                if dist(*tuple(intercepts[0])+tuple(pts[0])) > dist(*tuple(intercepts[1])+tuple(pts[0])):
-                    inter = np.array(intercepts[1])
-                else:
-                    inter = np.array(intercepts[0])
-
-                a = out[left_cell] - inter
-
-
-                out[left_cell-1:] = out[left_cell-1:] - 2*(np.dot(inter, a)/np.linalg.norm(inter)**2)*inter
-
-
-
-
-                dists = np.zeros((x.shape[1], 1)).flatten()
-                out = out.T
-                incirc = np.hypot(out.T[:, 0]-centers.T[:, 0], out.T[:, 1]-centers.T[:, 1])
-                dists[np.where(out[0] != 0)] = incirc[np.where(out[0] != 0)]
-
-
-
-            data = ((out.T).T*rna_exist[i][np.where(rna_exist[i] != 0)[0][0]:].T).T
-            data[np.where(rna_exist[i] != 0)[0][-1]- np.where(rna_exist[i] != 0)[0][0]+1 :] = -R
-
-
-            rna_locations[i, np.where(rna_exist[i] != 0)[0][0]:, :] =  data
-            rna_locations[i, :np.where(rna_exist[i] != 0)[0][0], :] =  -R
-
-
-        print(nparticles)
-        rna_loc_compressed = rna_locations[np.where(np.sum(np.sum(rna_locations+R, axis=1), axis=1) > 0)]
-
-        if ssa_obj == None:
-            print('no ssa data given')
-            print('simulating translation....')
-            print(int(rna_loc_compressed.shape[0]))
-            ssa_obj = self.ssa_solver(n_traj=int(rna_loc_compressed.shape[0]),tf=tf,tstep=tstep)
-
-            ivec = ssa_obj.intensity_vec/np.max(ssa_obj.intensity_vec)
-            ivec = ivec.T  #get the intensity vec for the "fluorescence"
-
-
-        else:
-            print('Translation data given')
-            print('Given ' + str(ssa_obj.n_traj) + ' Needed '+str(int(rna_loc_compressed.shape[0])) )
-            if ssa_obj.n_traj  < int(rna_loc_compressed.shape[0]):
-                print('simulating ' + str(int(rna_loc_compressed.shape[0]) - ssa_obj.n_traj) + ' additional trajectories....')
-                ssa_obj = self.ssa_solver_append(ssa_obj, n=int(rna_loc_compressed.shape[0]) - ssa_obj.n_traj)
-                ivec = ssa_obj.intensity_vec/np.max(ssa_obj.intensity_vec)
-                ivec = ivec.T  #get the intensity vec for the "fluorescence"
-
-            else:
-                ivec = ssa_obj.intensity_vec[0:int(rna_loc_compressed.shape[0])]/np.max(ssa_obj.intensity_vec[0:int(rna_loc_compressed.shape[0])])
-                ivec = ivec[0:int(rna_loc_compressed.shape[0])].T  #get the intensity vec for the "fluorescence"
-
-
-
-
-
-
-
-        print('making movie...')
-        #simulate brownian motion
-        def update_line(num, xpos,ypos, line):  #function for the FuncAnimation
-            if num !=0:
-
-                for child in ax.get_children():  #remove the previous patch collection (green spots)
-
-                    if isinstance(child, PatchCollection):
-                        child.remove()
-                    if isinstance(child, mpatches.Ellipse):
-                        child.remove()
-
-            patches = []
-            radi = 3*ivec[inds[num]]   #create a max radius of 3 for intensity vecs
-
-
-            for x1, y1, r in zip(xpos[inds[num]],ypos[inds[num]], radi):   #make circle objects of radius based on ivec
-                circle = mpatches.Circle((x1, y1), r, color=fcolor)
-                patches.append(circle)
-                #fig.gca().add_artist(circle)
-
-            line.set_data(xpos[inds[num]], ypos[inds[num]])
-            line.set_linewidth(0)
-            line.set_marker('o')
-            line.set_markersize(3)
-            line.set_color(rnacolor)
-            line.set
-            p = PatchCollection(patches, zorder=3, facecolors=(fcolor,))  #create a patch collection to add to axis
-            ax.add_collection(p)  #adds the circles to axis
-
-
-            p = mpatches.Circle((0,0), radius=R, color='black')  #add the black circle
-            ax.add_patch(p)
-
-
-            whitep = mpatches.Ellipse((-R, -R), width=7, height=7, color='white', zorder=5)  #add the black circle
-            ax.add_patch(whitep)
-
-            plt.xlabel(str(inds[num]))  #update time label
-
-
-            return line,
-        xpos = rna_loc_compressed.T[0]
-        ypos = rna_loc_compressed.T[1]
-
-
-        filetype='.mov'
-
-        if filetype == '.gif':
-
-            Writer = animation.writers['pillow']
-        if filetype == '.html':
-            Writer = animation.writers['html']
-        if filetype == '.gif':
-
-            Writer = animation.writers['FFMpeg']
-
-        writer = Writer(fps=30, metadata=dict(artist='Me'), bitrate=1800)
-
-        fig1 = plt.figure(figsize=(imagesize, imagesize),dpi=dpi)  #make figure
-        fig1.tight_layout()
-
-        ax= fig1.add_subplot('111')
-        plt.yticks([])
-        plt.xticks([])
-        p = mpatches.Circle((0, 0), radius=R, color='black')  #add the black circle
-        ax.add_patch(p)
-        plt.gca().set_aspect('equal', adjustable='box')
-
-        l, = plt.plot([], [], 'r-')
-        plt.xlim(-R-10, R+10)
-        plt.ylim(-R-10, R+10)
-        plt.xlabel('0')
-        plt.title('Simulated Cell')
-
-        inds = np.linspace(0, len(t)-1, len(t)).astype(int)
-        #creates the animation
-        line_ani = animation.FuncAnimation(fig1, update_line, tstep, fargs=(xpos,ypos, l),
-                                           interval=50, blit=True)
-
-        line_ani.save((filename + filetype), writer=writer)  #save the animation
-
-
-
-        #return solver_instance,n_RNA_t,rna_creation_data,data,rna_locations
-        return rna_locations, rna_loc_compressed, rna_particles, rna_creation_data, rna_exist, rnaonoff, rnaex
-
-
-    def get_simulated_mov(self, ssa_obj, filename, filetype):
-        '''
-        Create a gif or html file of the simulated circlular cell from any sms ssa object
-
-        '''
-
-        R = 50   #set up the random circle and points
-        num = ssa_obj.n_traj
-        r1 = np.zeros((1, num)).flatten()
-        theta1 = np.zeros((1, num)).flatten()
-        x1 = np.zeros((1, num)).flatten()
-        y1 = np.zeros((1, num)).flatten()
-
-
-        r2 = np.zeros((1, num)).flatten()
-        theta2 = np.zeros((1, num)).flatten()
-        x2 = np.zeros((1, num)).flatten()
-        y2 = np.zeros((1, num)).flatten()
-
-        for n in range(0, num):  #for  all trajectories make initial points
-            r1[n] = R*np.sqrt(np.random.random(1))
-            r2[n] = R*np.sqrt(np.random.random(1))
-            theta1[n] = 2*np.pi*np.random.random(1)
-            theta2[n] = 2*np.pi*np.random.random(1)
-            x1[n] = np.cos(theta1[n])*r1[n]
-            x2[n] = np.cos(theta2[n])*r2[n]
-            y1[n] = np.sin(theta1[n])*r1[n]
-            y2[n] = np.sin(theta1[n])*r2[n]
-
-        movement = .7
-        xpos = np.zeros((len(ssa_obj.time_vec_fixed[ssa_obj.start_time:]), num))
-        ypos = np.zeros((len(ssa_obj.time_vec_fixed[ssa_obj.start_time:]), num))
-
-        #over time perterub the simulated ribosome posistions and save to xpos , ypos
-        for j in range(len(ssa_obj.time_vec_fixed[ssa_obj.start_time:])):
-            if j == 0:
-                xpos[0] = x1
-                ypos[0] = y1
-            else:
-                for i in range(0,num):
-                    xpos[j, i] = xpos[j-1,i]-movement + 2*movement*np.random.random(1)
-                    if xpos[j, i] > 52:
-                        xpos[j, i] = 51
-                    if xpos[j, i] < -52:
-                        xpos[j, i] = -51
-                    ypos[j, i] = ypos[j-1,i]-movement + 2*movement*np.random.random(1)
-                    if ypos[j, i] > 52:
-                        ypos[j, i] = 51
-                    if ypos[j, i] < -52:
-                        ypos[j, i] = -51
-
-        ivec = ssa_obj.intensity_vec/np.max(ssa_obj.intensity_vec)
-        ivec = ivec.T  #get the intensity vec for the "fluorescence"
-        k = 0
-        def update_line(num, xpos, ypos, line):  #function for the FuncAnimation
-            if num !=0:
-                for child in ax.get_children():  #remove the previous patch collection (green spots)
-
-                    if isinstance(child, PatchCollection):
-                        child.remove()
-
-            patches = []
-            radi = 3*ivec[inds[num]]   #create a max radius of 3 for intensity vecs
-
-
-            for x1, y1, r in zip(xpos[inds[num]],ypos[inds[num]], radi):   #make circle objects of radius based on ivec
-                circle = mpatches.Circle((x1, y1), r, color='#00FF00')
-                patches.append(circle)
-                #fig.gca().add_artist(circle)
-
-            line.set_data(xpos[inds[num]],ypos[inds[num]])
-            line.set_linewidth(0)
-            line.set_marker('o')
-            line.set_markersize(.5)
-            p = PatchCollection(patches, zorder=2, facecolors=('#00FF00',))  #create a patch collection to add to axis
-
-
-
-
-
-            ax.add_collection(p)  #adds the circles to axis
-            plt.xlabel(str(inds[num]))  #update time label
-
-
-
-
-
-            return line,
-        if filetype == '.gif':
-
-            Writer = animation.writers['pillow']
-        if filetype == '.html':
-            Writer = animation.writers['html']
-        writer = Writer(fps=30, metadata=dict(artist='Me'), bitrate=1800)
-
-        fig1 = plt.figure()  #make figure
-        fig1.tight_layout()
-
-        ax= fig1.add_subplot('111')
-        plt.yticks([])
-        plt.xticks([])
-        p = mpatches.Circle((0, 0), radius=65, color='black')  #add the black circle
-        ax.add_patch(p)
-        plt.gca().set_aspect('equal', adjustable='box')
-
-        l, = plt.plot([], [], 'r-')
-        plt.xlim(-70, 70)
-        plt.ylim(-70, 70)
-        plt.xlabel('0')
-        plt.title('Simulated Cell')
-        inds = np.linspace(0, xpos.shape[0]-1, 120).astype(int)
-        #creates the animation
-        line_ani = animation.FuncAnimation(fig1, update_line, 120, fargs=(xpos,ypos, l),
-                                           interval=50, blit=True)
-
-        line_ani.save((filename + filetype), writer=writer)  #save the animation
-
 
     def analyze_seq_file(self, filename):
         '''
@@ -3569,10 +2151,15 @@ class rSNAPsim():
         self.POI.probe_loc = probe_loc
 
     def run_default(self):
-
-        self.get_orfs(self.sequence_str, min_codons=80)
-        self.get_temporal_proteins()
-        self.analyze_poi(self.pois[0], self.pois_seq[0])
+        '''
+        this is now depreceated but I am keeping it to not break codes
+        '''
+        return
+#        self.open_seq_file()
+#        
+#        self.get_orfs(self.sequence_str, min_codons=80)
+#        self.get_temporal_proteins()
+#        self.analyze_poi(self.pois[0], self.pois_seq[0])
 
 
 
@@ -4322,11 +2909,905 @@ class rSNAPsim():
 
 
 
-class translational_solvers():
+
+
+class SequenceManipMethods():
+    '''
+    class that handles anything dealing with sequences
+    '''
+    def __init__(self,sequence):
+        self.sequence = sequence
+        self.codon_dicts = CodonDictionaries()
+        pass    
+    
+    
+    def nt2aa(self,nt_seq):
+        '''
+        Translates nucleotides sequences to amino acid sequences
+
+        *args*
+
+            **nt_seq**, nucleotide sequence as a string
+
+        *returns*
+
+            **aa_seq**, amino acid sequence as string
+        '''
+
+        aa = ''
+        nt_seq = nt_seq.upper()
+        for i in range(0, len(nt_seq), 3):
+            aa += self.codon_dicts.aa_table[nt_seq[i:i+3]]
+        return aa    
+
+    def get_orfs(self, nt_seq='', min_codons=80):
+
+        '''
+        Returns open reading frames of the nucleotide sequence given
+
+        orfs = {'1':[proteins],
+                '2':[proteins],
+                '3':[proteins]}
+
+        *keyword args*
+
+            **nt_seq**, nucleotide sequence as a string. If left blank uses
+            the self.sequence_str
+
+            **min_codons**, minimum amount of codons to be considered
+            a protein in the open reading frame
+        '''
+
+        if nt_seq == '':
+            nt_seq = self.sequence.upper()
+        nt_seq = nt_seq.upper()
+        allstarts = np.array([m.start() for m in re.finditer('(?=A[TU]G((?:.{3})+?)[TU](?:AG|AA|GA))', nt_seq)])
+        
+ 
+        #allsegments = re.findall('(?=A[TU]G((?:.{3})+?)[TU](?:AG|AA|GA))',self.sequence_str)
+        allstops = np.array([m.start() for m in re.finditer('(?=[TU](?:AG|AA|GA))', nt_seq)])
+        start_frames = allstarts%3
+        stop_frames = allstops%3
+        min_len = min_codons*3
+        orf1_starts = allstarts[np.where(start_frames == 0)]
+        orf2_starts = allstarts[np.where(start_frames == 1)]
+        orf3_starts = allstarts[np.where(start_frames == 2)]
+
+        orf1_stops = allstops[np.where(stop_frames == 0)]
+        orf2_stops = allstops[np.where(stop_frames == 1)]
+        orf3_stops = allstops[np.where(stop_frames == 2)]
+
+        #self.starts = [orf1_starts, orf2_starts, orf3_starts]
+        #self.stops = [orf1_stops, orf2_stops, orf3_stops]
+        orfs = {'1':[], '2':[], '3':[]}
+
+
+        orfs = {'1':[], '2':[], '3':[]}
+        laststop = 0
+        for start in orf1_starts:
+            nextstop = orf1_stops[np.where(orf1_stops > start)[0][0]]
+            if (nextstop - start) > min_len:
+                if nextstop != laststop:
+                    orfs['1'].append((start, nextstop))
+
+                    laststop = nextstop
+
+        laststop = 0
+        for start in orf2_starts:
+            nextstop = orf2_stops[np.where(orf2_stops > start)[0][0]]
+            if (nextstop - start) > min_len:
+                if nextstop != laststop:
+                    orfs['2'].append((start, nextstop))
+                    laststop = nextstop
+
+        laststop = 0
+        for start in orf3_starts:
+            nextstop = orf3_stops[np.where(orf3_stops > start)[0][0]]
+
+            if (nextstop - start) > min_len:
+                if nextstop != laststop:
+                    orfs['3'].append((start, nextstop))
+                    laststop = nextstop
+                    
+        
+                    
+        return orfs
+    
+    def codon_usage(self, nt_seq):
+        '''
+        Analyzes codon useage from the nucleotide sequence
+
+        *args*
+
+            **nt_seq**,  nucleotide sequence as a string
+
+        *returns*
+
+            **codon_sensitivity**, a list of codon sensitivity for the nucleotide sequence
+
+            **cai**, cai value
+
+        '''
+
+
+        codon_usage = np.zeros((1, 21))
+        gene_len = len(nt_seq)/3
+        aa_seq = self.nt2aa(nt_seq)
+
+        for i in range(len(self.codon_dicts.aa_keys)-1):
+
+            codon_usage[0, i] = len(re.findall(self.codon_dicts.aa_keys[i], aa_seq))
+        codon_usage[0, 20] = len(re.findall('\*', aa_seq))
+        codon_norm = codon_usage/gene_len
+        codon_sensitivity = np.round(codon_norm*self.codon_dicts.sensitivity_fast_slow, 2)
+
+        cai_codons = []
+        for i in range(0, len(nt_seq), 3):
+            cai_codons.append(self.codon_dicts.strGeneCopy[nt_seq[i:i+3]] / self.codon_dicts.strGeneCopy_fast[nt_seq[i:i+3]])
+
+        cai = self.geomean(cai_codons)
+
+        return codon_sensitivity, cai, cai_codons
+    
+    
+    
+    def get_proteins(self,orfs,seq):
+    
+        cd = self.codon_dicts
+        proteins_strs = {'1':[], '2':[], '3':[]}
+        protein_objs = {'1':[], '2':[], '3':[]}
+        proteins_w_tags = {'1':[], '2':[], '3':[]}
+        
+        
+        tagged_proteins = {a:[] for a in cd.tag_dict.keys()}
+        tagged_protein_seq = {a:[] for a in cd.tag_dict.keys()}
+
+        for i in range(len(orfs)):
+            for j in range(len(orfs[str(i+1)])):
+                
+                protein = poi()
+                
+                pro = self.nt2aa(seq[orfs[str(i+1)][j][0]:orfs[str(i+1)][j][1]+3])
+                nt_seq = seq[orfs[str(i+1)][j][0]:orfs[str(i+1)][j][1]+3]
+                
+                protein.aa_seq = pro
+                protein.nt_seq = nt_seq
+                
+                proteins_strs[str(i+1)].append(pro)
+                
+                protein.gene_length =  len(pro) #length of the gene
+                protein.tag_length = 0   #length of the tags
+                protein.total_length = len(pro)  #total length of the full amino acid sequence
+                protein.source_seq = seq
+                protein.orf = i
+                protein.loc = (orfs[str(i+1)][j][0],orfs[str(i+1)][j][1]+3)      
+                protein.tags = []
+                
+                protein_objs[str(i+1)].append(protein)
+                
+                
+                
+                
+        for i in range(len(orfs)):  
+            for pr in protein_objs[str(i+1)]:
+                
+                tag_detected = False
+                
+                for tag in cd.tag_dict.keys():
+                   
+                    if cd.tag_dict[tag] in pr.aa_seq:
+                        tag_detected = True
+                        
+                        
+                if tag_detected:
+                    self.analyze_protein_w_tags(pr)
+                    pr.tag_added = False
+                    proteins_w_tags[str(i+1)].append(protein)
+                else:
+                    self.add_tag_to_protein(pr)
+                    pr.tag_added = True
+                
+
+                        
+        return proteins_strs, protein_objs, proteins_w_tags
+        
+    def add_tag_to_protein(self,POI,tag_type='T_Flag'):
+        cd = self.codon_dicts
+        
+        POI.nt_seq = cd.tag_full[tag_type] + POI.nt_seq
+        POI.aa_seq = self.nt2aa(POI.nt_seq)
+        self.analyze_protein_w_tags(POI)
+    
+    def analyze_protein_w_tags(self,POI,epitope_loc='front'):
+        cd = self.codon_dicts
+        nt_seq = POI.nt_seq
+        aa_seq = POI.aa_seq
+        #self.POI.name = self.sequence_name
+        total_length = len(POI.aa_seq)
+
+        '''
+        for key in self.tagged_proteins:
+            if protein in self.tagged_proteins[key]:
+                self.POI.tag_types.append(key)
+        '''
+        POI.tag_types = []
+        for tag in cd.tag_dict.keys():
+            if cd.tag_dict[tag] in aa_seq:
+                POI.tag_types.append(tag)
+
+                #''.join(sms.poi[0].split('DYKDDDDK')
+
+        POI.tag_epitopes = {a:[] for a in POI.tag_types}
+        gs = POI.aa_seq
+
+
+        for i in range(len(POI.tag_types)):
+            
+            try:
+                nt_tag = cd.tag_full[POI.tag_types[i]]
+                aa_tag = self.nt2aa(nt_tag)
+            except:
+                epi = cd.tag_dict[POI.tag_types[i]]
+                firstep = POI.aa_seq.find(epi) 
+                lastep = len(POI.aa_seq) - POI.aa_seq[::-1].find(epi[::-1])                
+                aa_tag = POI.aa_seq[firstep:lastep]
+                nt_tag = POI.nt_seq[3*firstep:3*lastep]
+                
+            if epitope_loc == 'front':
+                offset = 0
+            if epitope_loc == 'middle':
+                offset = int(len(cd.tag_dict[POI.tag_types[i]])/2)
+            if epitope_loc == 'back':
+                offset = len(cd.tag_dict[POI.tag_types[i]])
+                
+            POI.tag_epitopes[POI.tag_types[i]] = [m.start()+1+offset for m in re.finditer(cd.tag_dict[POI.tag_types[i]], POI.aa_seq)]
+
+            gs = gs.replace(aa_tag, '')
+
+        POI.gene_seq = gs
+        POI.gene_length = len(gs)
+        POI.total_length = total_length
+        codons = []
+        for i in range(0, len(nt_seq), 3):
+            codons.append(nt_seq[i:i+3])
+        POI.codons = codons
+
+        POI.codon_sensitivity, POI.CAI, POI.CAI_codons = self.codon_usage(POI.nt_seq)   
+        POI.ki = .03
+        POI.ke = 10
+        POI.kt = 10
+        
+        
+        
+        
+        #return POI
+    
+    
+    
+    
+#                   
+#        tags = 0
+#        for key in tagged_proteins.keys():
+#            tags += len(tagged_proteins[key])
+#
+#    
+#        self.pois = []
+#        self.pois_seq = []
+#        for tag in self.tag_dict.keys():
+#            for i in range(len(self.tagged_proteins[tag])):
+#                if self.tagged_proteins[tag][i] not in self.pois:
+#                    self.pois.append(self.tagged_proteins[tag][i])
+#                    self.pois_seq.append(self.tagged_protein_seq[tag][i])
+#
+#        if len(self.pois) == 0:
+#
+#            POIs = []
+#            pois_s = []
+#            pois_nt = []
+#            for i in range(len(self.gb_obj.features)):
+#
+#                try:
+#
+#                    self.gb_obj.features[i].qualifiers['translation']
+#
+#                    if tags == 0:
+#
+#                        POIs.append(self.gb_obj.features[i])
+#                        pois_s.append(self.nt2aa(self.tag_full['T_Flag']) + self.gb_obj.features[i].qualifiers['translation'][0])
+#                        pois_nt.append(self.tag_full['T_Flag'] + str(self.gb_obj.seq)[int(self.gb_obj.features[i].location.start):int(self.gb_obj.features[i].location.end)])
+#                    else:
+#
+#                        POIs.append(self.gb_obj.features[i])
+#                        pois_s.append(self.gb_obj.features[i].qualifiers['translation'][0])
+#                        pois_nt.append(str(self.gb_obj.seq)[int(self.gb_obj.features[i].location.start):int(self.gb_obj.features[i].location.end)])
+#
+#                except:
+#                    pass
+#
+#
+#            self.pois = pois_s
+#            self.pois_seq = pois_nt    
+    
+    
+    
+    
+    
+
+    @staticmethod
+    def geomean(iterable):
+        '''geometric mean used for codon sensitivity calculations
+        '''
+        a = np.array(iterable)
+        return a.prod()**(1.0/len(a))    
+
+
+class PropensityFactory():
+    '''
+    factory class for the k's
+    '''
+    def __init__(self):
+        self.codon_dicts = CodonDictionaries()
+        pass    
+    
+
+    def get_k(self, nt_seq, k_init, k_elong_mean,k_end):
+        '''
+        returns all propensities for a given nucleotide sequence
+
+        *args*
+
+            **nt_seq**,  nucleotide sequence as a string
+
+            **k_initiation**, initiation rate of ribosome binding
+
+            **k_elong_mean**, average rate of elgonation experimentally found
+
+
+        '''
+        codons = nt_seq.upper()
+        
+        genelength = int(len(codons)/3)
+        seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
+        k_elongation = np.zeros((1, genelength))
+        tRNA_copynumber = np.zeros((1, genelength))
+
+     
+        for i in range(len(seperated_codons)):
+            tRNA_copynumber[0, i] = self.codon_dicts.strGeneCopy[seperated_codons[i]]
+
+        mean_tRNA_copynumber = np.mean(list(self.codon_dicts.strGeneCopy.values()))
+
+        k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
+        all_k = [k_init] + k_elongation.flatten().tolist()[:-1] + [k_end]
+        
+        
+
+        return all_k
+    
+    
+    def get_k_3_frame(self,nt_seq,k_elong_mean):
+        
+        kelongs = []
+        
+        for n in range(3):
+            if n !=0:
+                codons = nt_seq[n:-(3-n)]
+            else:
+                codons = nt_seq
+            genelength = int(len(codons)/3)
+            seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
+            k_elongation = np.zeros((1, genelength))
+            tRNA_copynumber = np.zeros((1, genelength))
+
+     
+            for i in range(len(seperated_codons)):
+                tRNA_copynumber[0, i] = self.codon_dicts.strGeneCopy[seperated_codons[i]]
+    
+            mean_tRNA_copynumber = np.mean(list(self.codon_dicts.strGeneCopy.values()))
+    
+            k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
+        
+            k_elongation.flatten().tolist()[:-1]
+        
+            kelongs = kelongs + k_elongation.flatten().tolist()[:-1]
+        
+        return kelongs
+        
+    
+    @staticmethod
+    def get_binned_k(k,bins):
+        '''
+        evenly bins elongation rates as best it can.
+        
+        '''
+        binsize = int(np.floor(len(k)/bins))
+        binned_ks = []
+        
+        k_binned = np.zeros(bins)
+        k_lens = np.ones(bins)*binsize
+        
+        to_redistribute = len(k)%bins
+
+        k_lens[-to_redistribute:] = binsize+1
+        
+        inds = np.hstack(([0.], np.cumsum(k_lens))).astype(int)     
+
+        
+        for i in range(0,bins):
+            binned_ks = binned_ks +   [k[inds[i]:inds[i+1]].tolist(),]  
+         
+        for i in range(0,bins):            
+            k_binned[i] = np.mean(binned_ks[i])/len(binned_ks[i])
+
+        return k_binned,k_lens
+    
+    @staticmethod
+    def get_binned_k_emphasize_probes(k,bins,pl):
+        '''
+        evenly bins elongation rates as best it can.
+        
+        
+        '''
+        
+        probe_region_start = np.where(pl > 0)[0]
+        probe_region_end = np.where(pl > 0)[-1]
+        
+        binsize = int(np.floor(len(k)/bins))
+        binned_ks = []
+        
+        k_binned = np.zeros(bins)
+        k_lens = np.ones(bins)*binsize
+        
+        to_redistribute = len(k)%bins
+
+        k_lens[-to_redistribute:] = binsize+1
+        
+        inds = np.hstack(([0.], np.cumsum(k_lens))).astype(int)     
+
+        
+        for i in range(0,bins):
+            binned_ks = binned_ks +   [k[inds[i]:inds[i+1]].tolist(),]  
+         
+        for i in range(0,bins):            
+            k_binned[i] = np.mean(binned_ks[i])/len(binned_ks[i])
+
+        return k_binned,k_lens
+
+
+
+
+    
+class ProbeVectorFactory():
+    def __init__(self):
+        pass        
+    
+    
+    @staticmethod
+    def intellegent_bin(arr,nbins, pl):
+        binsize = int(np.floor(arr.shape[1]/nbins))       
+        
+        
+        #get evenly spaced bins first
+        arr_binned = np.zeros((np.atleast_2d(arr).shape[0],nbins))
+        bins = np.ones((np.atleast_2d(probe_loc).shape[0],nbins))*binsize        
+        to_redistribute = len(bins)%bins        
+        np.atleast_2d(bins).shape[0]
+
+        bins[-to_redistribute:] = binsize+1       
+        inds = np.hstack(([0.], np.cumsum(bins,axis=1)[0,:])).astype(int)          
+        
+        for i in range(0,10):
+            x=1
+        
+        
+        return 1
+    
+    @staticmethod
+    def get_binned_probe_vec(probe_loc,bins):
+        '''
+        bin the probe vector as even as possible
+        '''
+        probe_loc = np.atleast_2d(probe_loc)
+        binsize = int(np.floor(probe_loc.shape[1]/bins))        
+        probeloc_binned = np.zeros((np.atleast_2d(probe_loc).shape[0],bins))
+        probe_lens = np.ones((np.atleast_2d(probe_loc).shape[0],bins))*binsize
+        
+        
+        
+        to_redistribute = len(probe_loc)%bins
+        
+        np.atleast_2d(probe_loc).shape[0]
+
+        probe_lens[-to_redistribute:] = binsize+1       
+        inds = np.hstack(([0.], np.cumsum(probe_lens,axis=1)[0,:])).astype(int)  
+        
+        for i in range(0,bins):
+
+            probeloc_binned[:,i] = np.sum(probe_loc[:,inds[i]:inds[i+1]],axis=1)
+            
+        probevec_binned = np.cumsum(probeloc_binned,axis=1)
+        return probevec_binned.astype(int), probeloc_binned.astype(int)
+               
+            
+    def get_probvec(self): 
+        '''
+        returns the probe vectors (epitope positions by codon position) associated with the tagged sequence stored in POI
+
+        *returns*
+
+            **probe_vec**, cumlative probe intensity vector by codon position. Ex: [0,0,0,0,1,1,1,1,2,2,2,3,3,3 etc]
+
+            **probe_loc**, epitope posistion as a binary vector, 1 for epitope pos, 0 for everything else
+        '''
+
+        probePositions = []
+        
+        keylist = list(self.POI.tag_epitopes.keys())
+        
+        for n in range(len(keylist)):
+            probePosition = []
+            key = keylist[n]
+            
+            probePosition = probePosition + self.POI.tag_epitopes[key]
+            
+            if probePosition != []:
+                probePosition = np.unique(probePosition).tolist()
+                probePositions.append(probePosition)
+                
+        
+        
+
+        genelength = self.POI.total_length
+
+        pvfull = np.zeros((1, genelength+1)).astype(int).flatten()
+        
+        if len(probePositions) > 1:
+            k = 0
+            for n in range(len(keylist)):
+                pv = np.zeros((1, genelength+1)).astype(int).flatten()
+                key = keylist[n]
+                probePosition = probePositions[k] 
+                k+=1
+                if len(self.POI.tag_epitopes[key]) != 0:
+                    for i in range(len(probePosition)):
+                        pv[probePosition[i]:] = i+1
+                    if n > 0:
+                        pvfull = np.vstack((pvfull,pv))
+                    else:
+                        pvfull = pv
+        else:
+            probePosition = probePositions[0]
+            for n in range(len(keylist)):
+                pv = np.zeros((1, genelength+1)).astype(int).flatten()
+                key = keylist[n]
+                if len(self.POI.tag_epitopes[key]) != 0:
+                    for i in range(len(probePosition)):
+                        pv[probePosition[i]:] = i+1
+                    if n > 0:
+                        pvfull = np.vstack((pvfull,pv))
+                    else:
+                        pvfull = pv
+        numtags = 0
+        for key in keylist:
+            if len(self.POI.tag_epitopes[key]) != 0:
+                numtags += 1
+
+        ploc = np.zeros((numtags, self.POI.total_length+1)).astype(int)
+
+        numind = 0
+        for n in range(len(keylist)):
+            key = keylist[n]
+            if len(self.POI.tag_epitopes[key]) != 0:
+                ploc[numind][self.POI.tag_epitopes[key]] = 1
+
+                numind += 1
+
+        return pvfull, ploc
+        
+            
+    
+class CodonDictionaries():
+    
+    def __init__(self):
+        self.tag_dict = {'T_SunTag':'EELLSKNYHLENEVARLKK',
+                         'T_Flag':'DYKDDDDK',
+                         'T_Hemagglutinin':'YPYDVPDYA'}
+        
+        self.tag_colors = {'T_SunTag':'green',
+                         'T_Flag':'blue',
+                         'T_Hemagglutinin':'blue'}
+        
+        self.tag_full = {'T_Flag':('ATGGACTACAAGGACGACGACGACAAAGGTGAC'
+                                   'TACAAAGATGATGACGATAAAGGCGACTATA'
+                                   'AGGACGATGACGACAAGGGCGGAAACTCACTGA'
+                                   'TCAAGGAAAACATGCGGATGAAGGTGGTGAT'
+                                   'GGAGGGCTCCGTGAATGGTCACCAGTTCAAGTG'
+                                   'CACCGGAGAGGGAGAGGGAAACCCGTACATG'
+                                   'GGAACTCAGACCATGCGCATTAAGGTCATCGAA'
+                                   'GGAGGTCCGCTGCCGTTCGCTTTCGATATCC'
+                                   'TGGCCACTTCGTTCGGAGGAGGGTCGCGCACGTTC'
+                                   'ATCAAGTACCCGAAGGGAATCCCGGACTT'
+                                   'CTTTAAGCAGTCATTCCCGGAAGGATTCACTTGGG'
+                                   'AACGGGTGACCCGGTATGAAGATGGAGGT'
+                                   'GTGGTGACTGTCATGCAAGATACTTCGCTGGAGGATGGG'
+                                   'TGCCTCGTGTACCACGTCCAAGTCC'
+                                   'GCGGAGTGAATTTCCCGTCCAACGGACCAGTGATGCAG'
+                                   'AAAAAGACGAAGGGTTGGGAACCTAA'
+                                   'TACTGAAATGATGTACCCCGCAGACGGAGGGCTGAGGG'
+                                   'GCTACACCCACATGGCGCTGAAGGTC'
+                                   'GACGGAGGAGATTACAAGGATGACGACGATAAGCAACAA'
+                                   'GATTACAAAGACGATGATGACAAGG'
+                                   'GCCAGCAGGGCGACTACAAGGACGACGACGACAAGCAG'
+                                   'CAGGACTACAAAGATGACGATGATAA'
+                                   'AGGAGGAGGACATCTGTCCTGTTCGTTCGTGACCACCT'
+                                   'ACAGATCAAAGAAAACCGTGGGAAAC'
+                                   'ATCAAGATGCCGGGCATTCATGCCGTCGACCACCGCCT'
+                                   'GGAGCGGCTCGAAGAATCAGACAATG'
+                                   'AGATGTTCGTCGTGCAAAGAGAACATGCCGTGGCCAAGTT'
+                                   'CGCGGGACTGGGAGGCGGTGGAGG'
+                                   'CGATTACAAAGACGATGATGACAAGGGTGACTATAAAGA'
+                                   'CGACGATGACAAAGGGGATTACAAG'
+                                   'GATGATGATGATAAGGGAGGCGGTGGATCAGGTGGAG'
+                                   'GAGGTTCACTGCAG')}
+
+        self.aa_keys = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F',
+                       'P', 'S', 'T', 'W', 'Y', 'V', '*']
+
+        self.codon_types = dict(zip(self.aa_keys, np.ones((1, 21)).flatten().astype(int).tolist()))
+
+        self.aa_table = {
+            'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
+            'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T',
+            'AAC':'N', 'AAT':'N', 'AAA':'K', 'AAG':'K',
+            'AGC':'S', 'AGT':'S', 'AGA':'R', 'AGG':'R',
+            'CTA':'L', 'CTC':'L', 'CTG':'L', 'CTT':'L',
+            'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCT':'P',
+            'CAC':'H', 'CAT':'H', 'CAA':'Q', 'CAG':'Q',
+            'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGT':'R',
+            'GTA':'V', 'GTC':'V', 'GTG':'V', 'GTT':'V',
+            'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCT':'A',
+            'GAC':'D', 'GAT':'D', 'GAA':'E', 'GAG':'E',
+            'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGT':'G',
+            'TCA':'S', 'TCC':'S', 'TCG':'S', 'TCT':'S',
+            'TTC':'F', 'TTT':'F', 'TTA':'L', 'TTG':'L',
+            'TAC':'Y', 'TAT':'Y', 'TAA':'*', 'TAG':'*',
+            'TGC':'C', 'TGT':'C', 'TGA':'*', 'TGG':'W',
+            
+            'AUA':'I', 'AUC':'I', 'AUU':'I', 'AUG':'M',
+            'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACU':'T',
+            'AAC':'N', 'AAU':'N', 'AAA':'K', 'AAG':'K',
+            'AGC':'S', 'AGU':'S', 'AGA':'R', 'AGG':'R',
+            'CUA':'L', 'CUC':'L', 'CUG':'L', 'CUU':'L',
+            'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCU':'P',
+            'CAC':'H', 'CAU':'H', 'CAA':'Q', 'CAG':'Q',
+            'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGU':'R',
+            'GUA':'V', 'GUC':'V', 'GUG':'V', 'GUU':'V',
+            'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCU':'A',
+            'GAC':'D', 'GAU':'D', 'GAA':'E', 'GAG':'E',
+            'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGU':'G',
+            'UCA':'S', 'UCC':'S', 'UCG':'S', 'UCU':'S',
+            'UUC':'F', 'UUU':'F', 'UUA':'L', 'UUG':'L',
+            'UAC':'Y', 'UAU':'Y', 'UAA':'*', 'UAG':'*',
+            'UGC':'C', 'UGU':'C', 'UGA':'*', 'UGG':'W',}
+
+        self.aa_table_r = {'A':['GCA', 'GCC', 'GCG', 'GCT','GCU'],
+                          'R':['CGA', 'CGC', 'CGG', 'CGT','AGG','AGA','CGU'],
+                          'N':['AAC', 'AAT','AAU'],
+                          'D':['GAC', 'GAT','GAU'],
+                          'C':['TGC', 'TGT','UGC','UGU'],
+                          'Q':['CAA', 'CAG'],
+                          'E':['GAA', 'GAG'],
+                          'G':['GGT', 'GGC', 'GGA', 'GGC','GGU'],
+                          'H':['CAC', 'CAT','CAU'],
+                          'I':['ATT', 'ATC', 'ATA','AUU','AUC','AUA'],
+                          'L':['CTA', 'CTC', 'CTG', 'CTT', 'TTA', 'TTG','CUA', 'CUC', 'CUG', 'CUU', 'UUA', 'UUG'],
+                          'K':['AAA', 'AAG'],
+                          'M':['ATG','AUG'],
+                          'F':['TTC', 'TTT','UUC','UUU'],
+                          'P':['CCT', 'CCC', 'CCG', 'CCA','CCU'],
+                          'S':['TCA', 'TCC', 'TCG', 'TCT','AGC','AGT','UCA','UCC','UCG'],
+                          'T':['ACA', 'ACC', 'ACG', 'ACT','ACU'],
+                          'W':['TGG','UGG'],
+                          'Y':['TAT', 'TAC','UAC','UAU'],
+                          'V':['GTA', 'GTC', 'GTT','GTG','GUG','GUU','GUC','GUA'],
+                          '*':['TGA', 'TAG', 'TAA','UGA','UAG','UAA']
+                         }
+
+
+        self.strGeneCopy = {'TTT': 17.6, 'TCT': 15.2, 'TAT': 12.2, 'TGT': 10.6, 'TTC': 20.3,
+                            'TCC': 17.7, 'TAC': 15.3, 'TGC': 12.6, 'TTA': 7.7, 'TCA': 12.2,
+                            'TAA': 1.0, 'TGA': 1.6, 'TTG': 12.9, 'TCG':  4.4, 'TAG': 0.8,
+                            'TGG': 13.2, 'CTT': 13.2, 'CCT': 17.5, 'CAT': 10.9, 'CGT': 4.5,
+                            'CTC': 19.6, 'CCC': 19.8, 'CAC': 15.1, 'CGC': 10.4, 'CTA':  7.2,
+                            'CCA': 16.9, 'CAA': 12.3, 'CGA':  6.2, 'CTG': 39.6, 'CCG':  6.9,
+                            'CAG': 34.2, 'CGG': 11.4, 'ATT': 16.0, 'ACT': 13.1, 'AAT': 17.0,
+                            'AGT': 12.1, 'ATC': 20.8, 'ACC': 18.9, 'AAC': 19.1, 'AGC': 19.5,
+                            'ATA':  7.5, 'ACA': 15.1, 'AAA': 24.4, 'AGA': 12.2, 'ATG': 22.0,
+                            'ACG': 6.1, 'AAG': 31.9, 'AGG': 12.0, 'GTT': 11.0, 'GCT': 18.4,
+                            'GAT': 21.8, 'GGT': 10.8, 'GTC': 14.5, 'GCC': 27.7, 'GAC': 25.1,
+                            'GGC': 22.2, 'GTA':  7.1, 'GCA': 15.8, 'GAA': 29.0, 'GGA': 16.5,
+                            'GTG': 28.1, 'GCG': 7.4, 'GAG': 39.6, 'GGG': 16.5}
+
+        
+        # add the U codons
+        for key in list(self.strGeneCopy.keys()):
+            if 'T' in key:
+                val = self.strGeneCopy[key]
+                newkey = key.replace('T','U')
+                self.strGeneCopy[newkey] = val
+
+
+
+        self.strGeneCopy_fast = {'GCT': 27.7, 'GCC': 27.7, 'GCA': 27.7, 'GCG': 27.7,  #A
+                                 'CGT': 12.2, 'CGC': 12.2, 'CGA': 12.2, 'CGG': 12.2,
+                                 'AGA': 12.2, 'AGG': 12.2,   # R
+                                 'AAT': 19.1, 'AAC': 19.1,   #N
+                                 'GAT': 25.1, 'GAC': 25.1,   # D
+                                 'TGT': 12.6, 'TGC': 12.6,  # C
+                                 'CAA': 34.2, 'CAG': 34.2,  # Q
+                                 'GAA': 39.6, 'GAG': 39.6,  #E
+                                 'GGT': 22.2, 'GGC': 22.2, 'GGA': 22.2, 'GGG': 22.2,  # G
+                                 'CAT': 15.1, 'CAC': 15.1,  # H
+                                 'ATT': 20.8, 'ATC': 20.8, 'ATA': 20.8,  # I
+                                 'TTA': 39.6, 'TTG': 39.6, 'CTT': 39.6, 'CTC': 39.6,
+                                 'CTA': 39.6, 'CTG': 39.6, # L
+                                 'AAA': 31.9, 'AAG': 31.9,  # K
+                                 'ATG': 22.0,   #M
+                                 'TTT': 20.3, 'TTC': 20.3,    # F
+                                 'CCT': 19.8, 'CCC': 19.8, 'CCA': 19.8, 'CCG': 19.8,  # P
+                                 'TCT': 19.5, 'TCC': 19.5, 'TCA': 19.5, 'TCG': 19.5,
+                                 'AGT': 19.5, 'AGC': 19.5,  # S
+                                 'ACT': 18.9, 'ACC': 18.9, 'ACA': 18.9, 'ACG': 18.9, # T
+                                 'TGG': 13.2,   #W
+                                 'TAT': 15.3, 'TAC': 15.3,  # Y
+                                 'GTT': 28.1, 'GTC': 28.1, 'GTA':28.1, 'GTG': 28.1,  # V
+                                 'TAA': 1.6, 'TAG': 1.6, 'TGA':1.6 #STOP
+                                }
+
+
+        for key in list(self.strGeneCopy_fast.keys()):
+            if 'T' in key:
+                val = self.strGeneCopy_fast[key]
+                newkey = key.replace('T','U')
+                self.strGeneCopy_fast[newkey] = val
+
+        self.strGeneCopy_slow = {'GCT': 7.4, 'GCC': 7.4, 'GCA': 7.4, 'GCG': 7.4,  #A
+                                 'CGT': 4.5, 'CGC': 4.5, 'CGA': 4.5, 'CGG': 4.5,
+                                 'AGA':4.5, 'AGG':4.5,   #R
+                                 'AAT': 17.0, 'AAC':17.0,  #%N
+                                 'GAT': 21.8, 'GAC': 21.8,  #D
+                                 'TGT': 10.6, 'TGC':10.6,  #C
+                                 'CAA': 12.3, 'CAG': 12.3,  #Q
+                                 'GAA': 29.0, 'GAG': 29.0,  #E
+                                 'GGT': 10.8, 'GGC': 10.8, 'GGA': 10.8, 'GGG': 10.8,  #G
+                                 'CAT': 10.9, 'CAC':10.9,  #H
+                                 'ATT': 7.5, 'ATC': 7.5, 'ATA': 7.5, #I
+                                 'TTA': 7.2, 'TTG':7.2, 'CTT': 7.2, 'CTC': 7.2,
+                                 'CTA': 7.2, 'CTG': 7.2, #L
+                                 'AAA': 24.4, 'AAG': 24.4, #K
+                                 'ATG': 22.0, #M
+                                 'TTT': 17.6, 'TTC': 17.6, #F
+                                 'CCT': 6.9, 'CCC': 6.9, 'CCA': 6.9, 'CCG': 6.9, #P
+                                 'TCT': 4.4, 'TCC': 4.4, 'TCA': 4.4, 'TCG': 4.4,
+                                 'AGT': 4.4, 'AGC': 4.4, #S
+                                 'ACT': 6.1, 'ACC': 6.1, 'ACA': 6.1, 'ACG': 6.1,#T
+                                 'TGG': 13.2, #W
+                                 'TAT': 12.2, 'TAC': 12.2, #Y
+                                 'GTT': 7.1, 'GTC':7.1, 'GTA': 7.1, 'GTG': 7.1, # V
+                                 'TAA': 0.8, 'TAG': 0.8, 'TGA': 0.8 #STOP CODON}
+                                }
+        
+        for key in list(self.strGeneCopy_slow.keys()):
+            if 'T' in key:
+                val = self.strGeneCopy_slow[key]
+                newkey = key.replace('T','U')
+                self.strGeneCopy_slow[newkey] = val
+
+
+        self.fast_codons_value = [27.7, 12.2, 19.1, 25.1, 12.6, 34.2, 39.6, 22.2, 15.1,
+                                  20.8, 39.6, 31.9, 22, 20.3, 19.8, 19.5,
+                                  18.9, 13.2, 15.3, 28.1, 1.6]
+
+
+        self.slow_codons_value = [7.4, 4.5, 17, 21.8, 10.6, 12.3, 29, 10.8, 10.9, 7.5, 7.2,
+                                  24.4, 22, 17.6, 6.9, 4.4, 6.1, 13.2, 12.2, 7.1, .8]
+
+        fullcodonkeys = ['GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT',
+                     'ATT', 'TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
+                     'ACT', 'TGG', 'TAT', 'GTT', 'TAA',
+                     'GCU', 'CGU', 'AAU', 'GAU', 'UGU', 'CAA', 'GAA', 'GGU', 'CAU',
+                     'AUU', 'UUA', 'AAA', 'AUG', 'UUU', 'CCU', 'TCU',
+                     'ACU', 'UGG', 'UAU', 'GUU', 'UAA',                     ]
+
+        codonkeys = ['GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT',
+                     'ATT', 'TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
+                     'ACT', 'TGG', 'TAT', 'GTT', 'TAA']
+        self.sensitivity_fast_slow = []
+        for i in range(len(codonkeys)):
+            self.sensitivity_fast_slow.append(self.strGeneCopy_fast[codonkeys[i]] / self.strGeneCopy_slow[codonkeys[i]])
+
+        self.load_tags()
+
+
+
+    def load_tags(self):
+        try:
+            f= open("custom_tags.txt","r")
+        except:
+            return
+         
+        raw = f.readlines()
+        previous_tags = []
+    
+        for line in raw:
+            if line != '\n':
+                previous_tags.append(line)
+                
+        for line in previous_tags:
+          
+            custom_tag = line.strip('\n').split('---')
+   
+            if custom_tag[0] not in self.tag_dict.keys():
+                self.tag_dict[custom_tag[0]] = custom_tag[2]
+              
+                self.tag_full[custom_tag[0]] = custom_tag[1]
+        f.close()
+                
+
+    def add_tag(self,nt_seq,name):
+        '''
+        add a custom tag sequence
+        '''
+
+        f= open("custom_tags.txt","r")
+         
+        raw = f.readlines()
+        previous_tags = []
+    
+        for line in raw:
+            if line != '\n':
+                previous_tags.append(line)
+            
+        if not set(nt_seq.lower()).issubset(  set(['a','t','c','g','u'])):
+            print('invalid NT sequence')
+            f.close()
+            return
+
+        
+        aa_seq = ''
+        for i in range(0, len(nt_seq), 3):
+            aa_seq += self.aa_table[nt_seq[i:i+3]]
+        
+
+        newtag =name+'---'+ nt_seq.lower() + '---'+ aa_seq.upper()+'\n'  
+        
+        if newtag not in previous_tags:
+            previous_tags.append(newtag)
+        f.close()
+        
+        f= open("custom_tags.txt","w+")
+        
+        for item in previous_tags:
+            f.write('%s' % item)
+            
+        f.close()    
+    
+class TranslationSolvers():
     '''
     Container class for the solvers
     '''
-    def __init__(self):
+    def __init__(self, time=None,xi=None):
+        self.k = None
+        self.k_bind = None
+        self.k_term = None
+        self.multiframe = False
+        self.additional_rxns = {}
+        self.probe_locations = None
+        self.colors = 1
+        pass
+    
+    
+    def solve_ssa(self,bins=None):
         pass
     
     
@@ -4361,8 +3842,19 @@ class poi():
         self.name = ''         #name of the gene
         self.tag_types = []
         self.tag_epitopes = {}  #type of tags and epitope lists per tag
+        self.ki = .03
+        self.ke_mu = 10
+        self.kt = 10
 
-class ssa():
+        
+    @property    
+    def kelong(self):
+        return PropensityFactory().get_k(self.nt_seq,self.ki,self.ke_mu,self.kt)[1:-1]
+    @property
+    def all_k(self):
+        return PropensityFactory().get_k(self.nt_seq,self.ki,self.ke_mu,self.kt)   
+
+class SSA_Soln():
     '''
     SSA container class
 
@@ -4840,5 +4332,84 @@ class GenericSSA():
 
 
 
+
+################### OLD FUNCTIONS
+
+
+#    def analyze_poi(self, protein, sequence, epitope_loc = 'front'):
+#        '''
+#        Analyzes the protein of intrest and stores it in __.POI
+#
+#        *args*
+#
+#            **protein**,  amino acid sequence as a string
+#
+#            **sequence**, nucleotide sequence that goes with the protein
+#            
+#            **epitope_loc**, consider the epitope location as the front, middle or back:
+#                
+#                DDYDDK: front: 0, middle: 3, back: 6 for epitope location
+#
+#
+#        '''
+#
+#        self.POI = poi()
+#        self.POI.nt_seq = sequence
+#        self.POI.aa_seq = protein
+#        self.POI.name = self.sequence_name
+#        self.POI.total_length = len(protein)
+#
+#        '''
+#        for key in self.tagged_proteins:
+#            if protein in self.tagged_proteins[key]:
+#                self.POI.tag_types.append(key)
+#        '''
+#        self.POI.tag_types = []
+#        for tag in self.tag_dict.keys():
+#            if self.tag_dict[tag] in protein:
+#                self.POI.tag_types.append(tag)
+#
+#                #''.join(sms.poi[0].split('DYKDDDDK')
+#
+#        self.POI.tag_epitopes = {a:[] for a in self.POI.tag_types}
+#        gs = protein
+#
+#
+#        for i in range(len(self.POI.tag_types)):
+#            
+#            try:
+#                nt_tag = self.tag_full[self.POI.tag_types[i]]
+#                aa_tag = self.nt2aa(nt_tag)
+#            except:
+#                epi = self.tag_dict[self.POI.tag_types[i]]
+#                firstep = self.POI.aa_seq.find(epi) 
+#                lastep = len(self.POI.aa_seq) - self.POI.aa_seq[::-1].find(epi[::-1])                
+#                aa_tag = self.POI.aa_seq[firstep:lastep]
+#                nt_tag = self.POI.nt_seq[3*firstep:3*lastep]
+#                
+#            if epitope_loc == 'front':
+#                offset = 0
+#            if epitope_loc == 'middle':
+#                offset = int(len(self.tag_dict[self.POI.tag_types[i]])/2)
+#            if epitope_loc == 'back':
+#                offset = len(self.tag_dict[self.POI.tag_types[i]])
+#                
+#            self.POI.tag_epitopes[self.POI.tag_types[i]] = [m.start()+1+offset for m in re.finditer(self.tag_dict[self.POI.tag_types[i]], self.POI.aa_seq)]
+#
+#            gs = gs.replace(aa_tag, '')
+#
+#
+#
+#
+#
+#        self.POI.gene_seq = gs
+#        self.POI.gene_length = len(gs)
+#        codons = []
+#        for i in range(0, len(sequence), 3):
+#            codons.append(sequence[i:i+3])
+#        self.POI.codons = codons
+#
+#        self.POI.codon_sensitivity, self.POI.CAI, self.POI.CAI_codons = self.codon_usage(self.POI.nt_seq)
+#
 
 
