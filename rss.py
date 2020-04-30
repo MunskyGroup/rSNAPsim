@@ -32,6 +32,8 @@ if path_to_cpp != '':
         os.chdir(path_to_cpp)
         
         import ssa_translation
+        import ssa_translation_lowmem
+        import ssa_translation_lowmem_leaky
         os.chdir(cwd)
     except:
         os.chdir(cwd)
@@ -937,7 +939,7 @@ class rSNAPsim():
 
 
 
-        ssa_obj = ssa()
+        ssa_obj = SSA_soln()
         ssa_obj.no_ribosomes = no_ribosomes
         ssa_obj.n_traj = n_traj
         ssa_obj.k = all_k
@@ -1045,11 +1047,6 @@ class rSNAPsim():
                                 iterind = iterind + min(0,traj_ind[minusloc[n]])
                                 fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
                                 
-                                
-                                
-                  
-                
-                      
                             
                             fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
                             
@@ -1920,195 +1917,6 @@ class rSNAPsim():
 
             binnedData_1 = data
 
-
-
-
-
-
-
-    def SSA(self, k, t_array, inhibit_time=0, FRAP=False, Inhibitor=False):
-        '''
-        mRNA Translation simulation python implementation
-
-        given a propensity vector k, time array to record, and inhibitory conditions, run a single trajectory of translation simulation
-
-        The simulation is described here: [PUT LINK HERE TO PAPER]
-
-        *args*
-
-            **k**, propensity vector of size gene length + 2, [initiation rate,  Codon dependent rates,  completion rate / unbinding rate]
-            for reference the codon dependent rates are refering to the time rate of a ribosome to move on to the next codon
-
-            **t_array**, time points to record the ribosome posistions at
-
-        *keyword args*
-
-            **inhibit_time**, the time to start inhibition assays if FRAP or Inhibitor (harringtonine) == True
-
-            **FRAP**, True or false to apply Fluorescence Recovery After Photobleaching (FRAP) https://en.wikipedia.org/wiki/Fluorescence_recovery_after_photobleaching
-
-            **Inhibitor**, True or false to apply harringtonine at inhibit_time. Harringtonine acts as a protien translation initiation inhibitor
-
-        '''
-
-        #SSA params and propensities
-        R = 10 #exclusion volume (ribosome footprint), ribosomes cant be less than 10 codons apart because of their physical size
-        kelong = np.array([k[1:-1]]).T  #rates for ribosomes moving to the next codon, based on tRNA concentrations
-
-        N = len(kelong)  #Number of codons in the mRNA
-        kbind = k[0]   #rate for a ribosome to bind and start translation
-        kcompl = k[-1]     #rate for a ribosome at the end of the mRNA to unbind
-        X = np.array([0, 0], dtype=int)   #the updating ribosome posistion vector that is changed in the simulation
-
-
-        Ncol = np.zeros((1,0))
-        
-        #example X arrays and how its formatted:
-        # X = [423 30 10 0 ]  read from left to right theres a ribosome in position 423 30 and 10, with a 0 kept as a buffer for simulation
-
-        t = t_array[0]  #time point
-        Nt = len(t_array)  #number of time points to record over
-        tf = t_array[-1]  #final time point
-        N_rib = 200  #Maximum number of ribosomes on a single mRNA (hard limit for the simulation not a physical constant)
-        col = np.zeros((1,N_rib))
-        X_array = np.zeros((N_rib, Nt))  #recording array that records the ribosome posistions over time array points
-        NR = 0  #number of ribosomes bound
-        it = 1  #number of iterations
-        Sn_p = np.eye(max(NR+1, 2), dtype=int) #stoichiometry for the SSA
-        wn_p = np.zeros((X.shape[0], 1)) # propensities for the SSA
-        
-        T = np.array([0, 0], dtype=float)
-        ribtimes = np.array([[0,0]],dtype=float)
-        col_points = []
-        #wn_p = np.zeros((1,X.shape[0])).flatten()
-        wshape = len(wn_p)
-        Inhibit_condition = 1  #set up inhibitor flags
-        while t < tf:
-
-
-            if Inhibitor == True:
-                if t >= inhibit_time:
-
-                    Inhibit_condition = 0
-                else:
-
-                    Inhibit_condition = 1
-            else:
-                Inhibit_condition = 1
-            if FRAP == True :   #if the Photobleaching is happening, "remove" ribosomes
-                if t >= inhibit_time and t < inhibit_time + 20:
-                    #X = np.array([0, 0])
-                    a=1
-                    #T = np.array([0,0])
-
-
-
-            oldNR = NR
-
-            #other options for NR calc
-            #NR = len(np.where(X>0)[0])
-            #NR = len(np.where(X!=0)[0])
-            #NR = len(np.argwhere(X))
-            #NR = np.nonzero(X)[0].shape[0]
-            #NR = max(0,len(X)-1)
-            #NR = np.sum(X!=0)
-            #NR = np.where(X!=0)[0][-1]+1
-            #NR = np.flatnonzero(X).shape[0]
-
-            NR = len(np.flatnonzero(X)) #each iteration get the number of ribosomes on the mRNA
-
-
-
-            if X.shape[0] < NR+1:  #if the last reaction added a ribosome put a 0 on the end of X vec
-
-                X = np.append(X, [0])
-                T = np.append(T, [0])
-                T[-2] = t
-
-
-            X[-1] = 0
-            T[-1] = 0
-
-            X = X[0:max(NR, 1)+1]  #clear any additional 0's on the end
-            T = T[0:max(NR, 1)+1]
-
-            if oldNR != NR:     #if the number of ribosomes has changed reallocate the sizes of stoich and propensities
-                Sn_p = np.eye(max(NR+1, 2), dtype=int)
-                wn_p = np.zeros((X.shape[0], 1))
-
-                wshape = len(wn_p)
-                
-
-            Sn = Sn_p
-            wn = wn_p
-
-
-            #get indices of where X vecs are > 0 ie where the ribosome values are
-            inds = X > 0
-
-
-            wn[inds] = kelong[X[inds]-1]  #update propensities
-
-
-
-            if X[0] == N:  #if the ribosome in the 0 position is at the end of the mRNA set propensities to the reaction for completion
-
-                Sn[:, 0] = (np.append(X[1:], np.array([0]))-X[0:])
-                
-
-                wn[0] = kcompl
-
-
-            #if there are no ribosomes or when there is enough room for a new ribosome to bind add the propensity for binding
-            if NR == 0:
-
-                wn[NR] = kbind*Inhibit_condition
-                
-                
-                
-
-            if NR > 0 and X[NR-1] > R:
-                wn[NR] = kbind*Inhibit_condition
-
-            REST = np.less(X[1:]+10, X[0:-1])  #apply the footprint condition ie set any propensities where it violates the > 10 codons apart rule to 0
-
-
-            wn[1:] = (wn[1:].T*REST).T  #apply that logical^ to propensities
-
-            w0 = sum(wn.flat)  #get the sum of propensities
-            randnum = np.random.random_sample(2) #update time to point of next reaction (exponential waiting time distb)
-            t = (t-np.log(randnum[0])/w0)
-
-            while it < Nt and t > t_array[it]:  #record state if past timepoint
-                X_array[0:len(X), it] = X
-                it += 1
-
-            if t < tf:  #if still running simulation pick which reaction happened via random number and propensity sum
-                r2 = w0*randnum[1]
-                tmp = 0
-
-                for i in range(wshape):
-                    tmp = tmp + wn[i]
-                    if tmp >= r2:
-                        event = i
-                        break
-
-            X = (X + Sn[:, event].T)  #update X vector for new ribosome state
-            if np.sum(Sn[:,event]) < 0 :
-                
-                ribtimes = np.vstack((ribtimes,[T[0],t]))
-                T[:-1] = T[1:]
-                Ncol = np.append(Ncol,col[0][0] )
-                col = np.atleast_2d(np.append(col[:,1:],[0]))
-                
-            else:
-                if X[event-1] == X[event] + R:
-                    col[0][event] +=1
-                    col_points.append( (X[event],t) )
-                    
-                
-            
-        return X_array,ribtimes[1:,:],Ncol,col_points  #return the completed simulation
 
 
     def get_acc2(self, data, trunc=False):
@@ -3167,6 +2975,9 @@ class SequenceManipMethods():
         POI.gene_seq = gs
         POI.gene_length = len(gs)
         POI.total_length = total_length
+        POI.tag_seq = aa_tag 
+        POI.tag_length = len(aa_tag)
+        
         codons = []
         for i in range(0, len(nt_seq), 3):
             codons.append(nt_seq[i:i+3])
@@ -3178,61 +2989,6 @@ class SequenceManipMethods():
         POI.kt = 10
         
         
-        
-        
-        #return POI
-    
-    
-    
-    
-#                   
-#        tags = 0
-#        for key in tagged_proteins.keys():
-#            tags += len(tagged_proteins[key])
-#
-#    
-#        self.pois = []
-#        self.pois_seq = []
-#        for tag in self.tag_dict.keys():
-#            for i in range(len(self.tagged_proteins[tag])):
-#                if self.tagged_proteins[tag][i] not in self.pois:
-#                    self.pois.append(self.tagged_proteins[tag][i])
-#                    self.pois_seq.append(self.tagged_protein_seq[tag][i])
-#
-#        if len(self.pois) == 0:
-#
-#            POIs = []
-#            pois_s = []
-#            pois_nt = []
-#            for i in range(len(self.gb_obj.features)):
-#
-#                try:
-#
-#                    self.gb_obj.features[i].qualifiers['translation']
-#
-#                    if tags == 0:
-#
-#                        POIs.append(self.gb_obj.features[i])
-#                        pois_s.append(self.nt2aa(self.tag_full['T_Flag']) + self.gb_obj.features[i].qualifiers['translation'][0])
-#                        pois_nt.append(self.tag_full['T_Flag'] + str(self.gb_obj.seq)[int(self.gb_obj.features[i].location.start):int(self.gb_obj.features[i].location.end)])
-#                    else:
-#
-#                        POIs.append(self.gb_obj.features[i])
-#                        pois_s.append(self.gb_obj.features[i].qualifiers['translation'][0])
-#                        pois_nt.append(str(self.gb_obj.seq)[int(self.gb_obj.features[i].location.start):int(self.gb_obj.features[i].location.end)])
-#
-#                except:
-#                    pass
-#
-#
-#            self.pois = pois_s
-#            self.pois_seq = pois_nt    
-    
-    
-    
-    
-    
-
     @staticmethod
     def geomean(iterable):
         '''geometric mean used for codon sensitivity calculations
@@ -3804,13 +3560,597 @@ class TranslationSolvers():
         self.additional_rxns = {}
         self.probe_locations = None
         self.colors = 1
+        self.default_conditions = {'low_mem':True,
+                                   'perturb':[0,0,0],
+                                   'leaky_probes':False,
+                                   'bins':None,
+                                   'k_probe':0,
+                                   'footprint':9,
+                                   'burnin':500}
+        
+        self.protein = None
+        
+    
+    
+    def solve_ssa(self,k,t,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,k_probe=1):
+        
+        ssa_conditions = self.default_conditions
+        if k_probe != 1:
+            ssa_conditions['leaky_probes'] = True
+            leaky_probes = True
+        
+        ssa_conditions['perturb'] = perturb
+        ssa_conditions['leaky_probes'] = leaky_probes
+        ssa_conditions['low_mem'] = low_memory
+        
+        if leaky_probes == False:
+            if low_memory:
+                ssa_obj = self.__solve_ssa_lowmem(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
+            else:
+                ssa_obj = self.__solve_ssa(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
+        else:
+            if low_memory:
+                ssa_obj = self.__solve_ssa_lowmem_leaky(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+            else:
+                ssa_obj = self.__solve_ssa_leaky(k,t,x0,k_probe,n_traj,ssa_conditions = ssa_conditions)         
+       
+        
+        return ssa_obj
+    
+    
+    def solve_ode(self,k,t,x0,bins=None):
         pass
     
     
-    def solve_ssa(self,bins=None):
-        pass
+    def __solve_ssa(self,k,t,x0,n_traj,ssa_conditions=None):
+        
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+        
+        if ssa_conditions == None:
+            ssa_conditions = self.default_conditions
+        
+        x0 = self.__check_x0(x0)
+        rib_vec = []
+        solutions = []            
+        solutionssave = []       
+        N_rib = 200
+        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats(n_traj,k[0],t,N_rib)
+        footprint = ssa_conditions['footprint']
+        evf = ssa_conditions['perturb'][0]
+        evi = ssa_conditions['perturb'][1]
+        intime = ssa_conditions['perturb'][2]
+        non_consider_time = ssa_conditions['Burn in']
+        
+        st = time.time()
+        
+        for i in range(n_traj):
+            
+            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib)
+            nribs = np.array([0],dtype=np.int32)
+
+            ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint)
+            #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+            all_results[i, :] = result
+            all_frapresults[i,:] = frapresult
+            all_ribtimes[i,:] = ribtimes
+            all_collisions[i,:] = coltimes
+            all_nribs[i,:] = nribs
+            
+            endcolrec = np.where(colpointsx == 0)[0][0]
+            
+            colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+            all_col_points.append(colpoints.T)
+                
+    
+            for i in range(n_traj):
+                soln = all_results[i, :].reshape((N_rib, len(t)))
+                validind = np.where(np.sum(soln,axis=1)!=0)[0]
+                if np.max(validind) != N_rib-1:
+                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+            
+                so = soln[(validind,)]
+                
+                solutionssave.append(so)
+                solutions.append(soln)
+            
+            collisions = np.array([[]])
+            watched_ribs = []
+            for i in range(n_traj):
+                totalrib = all_nribs[i]
+            
+                if totalrib > all_collisions.shape[1]:
+                    collisions = np.append(collisions, all_collisions[i][:])
+                    watched_ribs.append(int(all_collisions.shape[1]))
+            
+                else:
+                   
+                    collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+                    watched_ribs.append(int(totalrib[0]))
+            
+            sttime = time.time() - st
+
+
+        no_ribosomes = np.zeros((n_traj, (len(k)+1)))
+        
+        startindex = np.where(t >= non_consider_time)[0][0]
+        
+        #all_results = all_results[:,startindex*N_rib:]
+
+        for i in range(len(solutions)):
+            for j in range(len(solutions[0][0][startindex:])):
+                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+               
+                no_ribosomes[i, rib_pos.astype(int)] += 1
+        no_ribosomes = no_ribosomes[:, 1:]
+
+        ribosome_means = np.mean(no_ribosomes, axis=0)
+        ribosome_density = ribosome_means/len(k)
+
+        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+        ssa_obj = SSA_soln()
+        ssa_obj.no_ribosomes = no_ribosomes
+        ssa_obj.n_traj = n_traj
+        ssa_obj.k = k
+        ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+        ssa_obj.rib_density = ribosome_density
+        ssa_obj.rib_means = ribosome_means
+        ssa_obj.rib_vec = rib_vec
+        #ssa_obj.intensity_vec = intensity_vec
+        ssa_obj.time_vec_fixed = t
+        ssa_obj.time = t
+        ssa_obj.time_rec = t[startindex:]
+        ssa_obj.start_time = non_consider_time
+        ssa_obj.watched_ribs = watched_ribs
+        try:
+            ssa_obj.col_points = all_col_points
+        except:
+            pass
+        
+        return ssa_obj
+    
+                
+    def __map_to_intensity(self): 
+        return 1           
+     
+    def __solve_ssa_leaky(self):
+        return 1
+     
+    def __solve_ssa_lowmem(self,k,t,x0,n_traj,ssa_conditions=None):
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+        k = np.array(k).astype(np.float64)
+        if ssa_conditions == None:
+            ssa_conditions = self.default_conditions
+        
+        x0 = self.__check_x0(x0)
+        
+        pl = self.protein.probe_vec.astype(int).flatten()
+        
+        rib_vec = []
+        solutions = []            
+        solutionssave = []       
+        N_rib = 1
+        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats(n_traj,k[0],t,N_rib)
+        footprint = ssa_conditions['footprint']
+        evf = ssa_conditions['perturb'][0]
+        evi = ssa_conditions['perturb'][1]
+        intime = ssa_conditions['perturb'][2]
+        non_consider_time = ssa_conditions['burnin']
+        
+        st = time.time()
+        
+        for i in range(n_traj):
+            
+            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib)
+            nribs = np.array([0],dtype=np.int32)
+
+            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint, pl)
+            #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+            all_results[i, :] = result
+            all_frapresults[i,:] = frapresult
+            all_ribtimes[i,:] = ribtimes
+            all_collisions[i,:] = coltimes
+            all_nribs[i,:] = nribs
+            
+            endcolrec = np.where(colpointsx == 0)[0][0]
+            
+            colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+            all_col_points.append(colpoints.T)
+                
+    
+            for i in range(n_traj):
+                soln = all_results[i, :].reshape((N_rib, len(t)))
+
+                so = soln
+                solutionssave.append(so)
+                solutions.append(soln)
+            
+            collisions = np.array([[]])
+            watched_ribs = []
+            for i in range(n_traj):
+                totalrib = all_nribs[i]
+            
+                if totalrib > all_collisions.shape[1]:
+                    collisions = np.append(collisions, all_collisions[i][:])
+                    watched_ribs.append(int(all_collisions.shape[1]))
+            
+                else:
+                   
+                    collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+                    watched_ribs.append(int(totalrib[0]))
+            
+            sttime = time.time() - st
+
+
+        no_ribosomes = np.zeros((n_traj, (len(k)+1)))
+        
+        startindex = np.where(t >= non_consider_time)[0][0]
+        
+        #all_results = all_results[:,startindex*N_rib:]
+
+#        for i in range(len(solutions)):
+#            for j in range(len(solutions[0][0][startindex:])):
+#                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+#                print(rib_pos)
+#               
+#                no_ribosomes[i, rib_pos.astype(int)] += 1
+#        no_ribosomes = no_ribosomes[:, 1:]
+#
+#        ribosome_means = np.mean(no_ribosomes, axis=0)
+#        ribosome_density = ribosome_means/len(k)
+#
+#        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+        ssa_obj = SSA_Soln()
+        ssa_obj.no_ribosomes = no_ribosomes
+        ssa_obj.n_traj = n_traj
+        ssa_obj.k = k
+        #ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+        #ssa_obj.rib_density = ribosome_density
+        #ssa_obj.rib_means = ribosome_means
+        ssa_obj.rib_vec = rib_vec
+        ssa_obj.intensity_vec = all_results.T
+        ssa_obj.I = all_results.T
+        ssa_obj.time_vec_fixed = t
+        ssa_obj.time = t
+        ssa_obj.time_rec = t[startindex:]
+        ssa_obj.start_time = non_consider_time
+        ssa_obj.watched_ribs = watched_ribs
+        try:
+            ssa_obj.col_points = all_col_points
+        except:
+            pass
+        
+        
+        ssa_obj.eval_time = sttime
+        
+        return ssa_obj
+            
+
+    def __solve_ssa_lowmem_leaky(self,k,t,x0,k_probe,n_traj,ssa_conditions=None):
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+        k = np.array(k).astype(np.float64)
+        if ssa_conditions == None:
+            ssa_conditions = self.default_conditions
+        
+        x0 = self.__check_x0(x0)
+        
+        pl = self.protein.probe_loc.astype(int).flatten()
+        pv = self.protein.probe_vec.astype(int).flatten()
+        
+        rib_vec = []
+        solutions = []            
+        solutionssave = []       
+        N_rib = 1
+        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats(n_traj,k[0],t,N_rib)
+        footprint = ssa_conditions['footprint']
+        evf = ssa_conditions['perturb'][0]
+        evi = ssa_conditions['perturb'][1]
+        intime = ssa_conditions['perturb'][2]
+        non_consider_time = ssa_conditions['burnin']
+        
+        st = time.time()
+        
+        for i in range(n_traj):
+            
+            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib)
+            nribs = np.array([0],dtype=np.int32)
+
+            ssa_translation_lowmem_leaky.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint, pv,k_probe,pl)
+            #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+            all_results[i, :] = result
+            all_frapresults[i,:] = frapresult
+            all_ribtimes[i,:] = ribtimes
+            all_collisions[i,:] = coltimes
+            all_nribs[i,:] = nribs
+            
+            endcolrec = np.where(colpointsx == 0)[0][0]
+            
+            colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+            all_col_points.append(colpoints.T)
+                
+    
+            for i in range(n_traj):
+                soln = all_results[i, :].reshape((N_rib, len(t)))
+
+                so = soln
+                solutionssave.append(so)
+                solutions.append(soln)
+            
+            collisions = np.array([[]])
+            watched_ribs = []
+            for i in range(n_traj):
+                totalrib = all_nribs[i]
+            
+                if totalrib > all_collisions.shape[1]:
+                    collisions = np.append(collisions, all_collisions[i][:])
+                    watched_ribs.append(int(all_collisions.shape[1]))
+            
+                else:
+                   
+                    collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+                    watched_ribs.append(int(totalrib[0]))
+            
+            sttime = time.time() - st
+
+
+        no_ribosomes = np.zeros((n_traj, (len(k)+1)))
+        
+        startindex = np.where(t >= non_consider_time)[0][0]
+        
+        #all_results = all_results[:,startindex*N_rib:]
+
+#        for i in range(len(solutions)):
+#            for j in range(len(solutions[0][0][startindex:])):
+#                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+#                print(rib_pos)
+#               
+#                no_ribosomes[i, rib_pos.astype(int)] += 1
+#        no_ribosomes = no_ribosomes[:, 1:]
+#
+#        ribosome_means = np.mean(no_ribosomes, axis=0)
+#        ribosome_density = ribosome_means/len(k)
+#
+#        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+        ssa_obj = SSA_Soln()
+        ssa_obj.no_ribosomes = no_ribosomes
+        ssa_obj.n_traj = n_traj
+        ssa_obj.k = k
+        #ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+        #ssa_obj.rib_density = ribosome_density
+        #ssa_obj.rib_means = ribosome_means
+        ssa_obj.rib_vec = rib_vec
+        ssa_obj.intensity_vec = all_results.T
+        ssa_obj.I = all_results.T
+        ssa_obj.time_vec_fixed = t
+        ssa_obj.time = t
+        ssa_obj.time_rec = t[startindex:]
+        ssa_obj.start_time = non_consider_time
+        ssa_obj.watched_ribs = watched_ribs
+        try:
+            ssa_obj.col_points = all_col_points
+        except:
+            pass
+        
+        
+        ssa_obj.eval_time = sttime
+        return ssa_obj       
     
     
+    @classmethod
+    def __get_ribosome_statistics(self,ssa_obj,result):
+        
+        
+        return ssa_obj
+    
+        
+    @classmethod
+    def __generate_vecs(cls,k,t,N_rib):
+        tf = t[-1]
+        ki = k[0]
+        guessed_no_ribosomes = int(1.3*ki*tf)
+        result = np.zeros((len(t)*N_rib), dtype=np.int32)
+        ribtimes = np.zeros((guessed_no_ribosomes),dtype=np.float64)
+        frapresult = np.zeros((len(t)*N_rib),dtype=np.int32)
+        coltimes = np.zeros((guessed_no_ribosomes),dtype=np.int32)
+        colpointsx = np.zeros(len(k[1:-1])*(guessed_no_ribosomes),dtype=np.int32)
+        colpointst = np.zeros(len(k[1:-1])*(guessed_no_ribosomes),dtype=np.float64)
+        return result,ribtimes,frapresult,coltimes,colpointsx,colpointst
+        
+    @classmethod
+    def __generate_mats(cls,ntraj, ki,t,N_rib):
+        tf = t[-1]
+        guessed_no_ribosomes = int(1.3*ki*tf)           
+        all_results = np.zeros((ntraj, N_rib*len(t)), dtype=np.int32)
+        all_ribtimes = np.zeros((ntraj,guessed_no_ribosomes),dtype=np.float64)
+        all_frapresults = np.zeros((ntraj,N_rib*len(t)),dtype=np.int32)
+        all_collisions = np.zeros((ntraj,guessed_no_ribosomes),dtype=np.int32)
+        all_nribs = np.zeros((ntraj,1))
+        all_col_points = []
+    
+        return all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points
+    
+    def __check_x0(self,x0):
+        if len(x0) == 0:
+            x0_clean = np.zeros((N_rib),dtype=np.int32)  
+        else:
+            if len(x0) >200:
+                raise ValueError('Unrecognized initial condition, make sure the length of x0 is <= 200')
+            
+            x0_clean = np.zeros((N_rib),dtype=np.int32)  
+            x0_clean[:len(x0)] = x0
+        return x0_clean
+        
+
+    def __ssa_python(self, k, t_array, inhibit_time=0, FRAP=False, Inhibitor=False):
+        '''
+        mRNA Translation simulation python implementation
+
+        given a propensity vector k, time array to record, and inhibitory conditions, run a single trajectory of translation simulation
+
+        The simulation is described here: [PUT LINK HERE TO PAPER]
+
+        *args*
+
+            **k**, propensity vector of size gene length + 2, [initiation rate,  Codon dependent rates,  completion rate / unbinding rate]
+            for reference the codon dependent rates are refering to the time rate of a ribosome to move on to the next codon
+
+            **t_array**, time points to record the ribosome posistions at
+
+        *keyword args*
+
+            **inhibit_time**, the time to start inhibition assays if FRAP or Inhibitor (harringtonine) == True
+
+            **FRAP**, True or false to apply Fluorescence Recovery After Photobleaching (FRAP) https://en.wikipedia.org/wiki/Fluorescence_recovery_after_photobleaching
+
+            **Inhibitor**, True or false to apply harringtonine at inhibit_time. Harringtonine acts as a protien translation initiation inhibitor
+
+        '''
+
+        #SSA params and propensities
+        R = 10 #exclusion volume (ribosome footprint), ribosomes cant be less than 10 codons apart because of their physical size
+        kelong = np.array([k[1:-1]]).T  #rates for ribosomes moving to the next codon, based on tRNA concentrations
+
+        N = len(kelong)  #Number of codons in the mRNA
+        kbind = k[0]   #rate for a ribosome to bind and start translation
+        kcompl = k[-1]     #rate for a ribosome at the end of the mRNA to unbind
+        X = np.array([0, 0], dtype=int)   #the updating ribosome posistion vector that is changed in the simulation
+
+
+        Ncol = np.zeros((1,0))
+        
+        #example X arrays and how its formatted:
+        # X = [423 30 10 0 ]  read from left to right theres a ribosome in position 423 30 and 10, with a 0 kept as a buffer for simulation
+
+        t = t_array[0]  #time point
+        Nt = len(t_array)  #number of time points to record over
+        tf = t_array[-1]  #final time point
+        N_rib = 200  #Maximum number of ribosomes on a single mRNA (hard limit for the simulation not a physical constant)
+        col = np.zeros((1,N_rib))
+        X_array = np.zeros((N_rib, Nt))  #recording array that records the ribosome posistions over time array points
+        NR = 0  #number of ribosomes bound
+        it = 1  #number of iterations
+        Sn_p = np.eye(max(NR+1, 2), dtype=int) #stoichiometry for the SSA
+        wn_p = np.zeros((X.shape[0], 1)) # propensities for the SSA
+        
+        T = np.array([0, 0], dtype=float)
+        ribtimes = np.array([[0,0]],dtype=float)
+        col_points = []
+        #wn_p = np.zeros((1,X.shape[0])).flatten()
+        wshape = len(wn_p)
+        Inhibit_condition = 1  #set up inhibitor flags
+        while t < tf:
+
+
+            if Inhibitor == True:
+                if t >= inhibit_time:
+
+                    Inhibit_condition = 0
+                else:
+
+                    Inhibit_condition = 1
+            else:
+                Inhibit_condition = 1
+            if FRAP == True :   #if the Photobleaching is happening, "remove" ribosomes
+                if t >= inhibit_time and t < inhibit_time + 20:
+                    #X = np.array([0, 0])
+                    a=1
+                    #T = np.array([0,0])
+                    
+            oldNR = NR
+            NR = len(np.flatnonzero(X)) #each iteration get the number of ribosomes on the mRNA
+            
+            if X.shape[0] < NR+1:  #if the last reaction added a ribosome put a 0 on the end of X vec
+
+                X = np.append(X, [0])
+                T = np.append(T, [0])
+                T[-2] = t
+
+
+            X[-1] = 0
+            T[-1] = 0
+
+            X = X[0:max(NR, 1)+1]  #clear any additional 0's on the end
+            T = T[0:max(NR, 1)+1]
+
+            if oldNR != NR:     #if the number of ribosomes has changed reallocate the sizes of stoich and propensities
+                Sn_p = np.eye(max(NR+1, 2), dtype=int)
+                wn_p = np.zeros((X.shape[0], 1))
+
+                wshape = len(wn_p)
+                
+
+            Sn = Sn_p
+            wn = wn_p
+
+
+            #get indices of where X vecs are > 0 ie where the ribosome values are
+            inds = X > 0
+
+
+            wn[inds] = kelong[X[inds]-1]  #update propensities
+
+
+
+            if X[0] == N:  #if the ribosome in the 0 position is at the end of the mRNA set propensities to the reaction for completion
+
+                Sn[:, 0] = (np.append(X[1:], np.array([0]))-X[0:])
+                
+
+                wn[0] = kcompl
+
+
+            #if there are no ribosomes or when there is enough room for a new ribosome to bind add the propensity for binding
+            if NR == 0:
+
+                wn[NR] = kbind*Inhibit_condition
+                
+                
+                
+
+            if NR > 0 and X[NR-1] > R:
+                wn[NR] = kbind*Inhibit_condition
+
+            REST = np.less(X[1:]+10, X[0:-1])  #apply the footprint condition ie set any propensities where it violates the > 10 codons apart rule to 0
+
+
+            wn[1:] = (wn[1:].T*REST).T  #apply that logical^ to propensities
+
+            w0 = sum(wn.flat)  #get the sum of propensities
+            randnum = np.random.random_sample(2) #update time to point of next reaction (exponential waiting time distb)
+            t = (t-np.log(randnum[0])/w0)
+
+            while it < Nt and t > t_array[it]:  #record state if past timepoint
+                X_array[0:len(X), it] = X
+                it += 1
+
+            if t < tf:  #if still running simulation pick which reaction happened via random number and propensity sum
+                r2 = w0*randnum[1]
+                tmp = 0
+
+                for i in range(wshape):
+                    tmp = tmp + wn[i]
+                    if tmp >= r2:
+                        event = i
+                        break
+
+            X = (X + Sn[:, event].T)  #update X vector for new ribosome state
+            if np.sum(Sn[:,event]) < 0 :
+                
+                ribtimes = np.vstack((ribtimes,[T[0],t]))
+                T[:-1] = T[1:]
+                Ncol = np.append(Ncol,col[0][0] )
+                col = np.atleast_2d(np.append(col[:,1:],[0]))
+                
+            else:
+                if X[event-1] == X[event] + R:
+                    col[0][event] +=1
+                    col_points.append( (X[event],t) )
+                    
+                
+            
+        return X_array,ribtimes[1:,:],Ncol,col_points  #return the completed simulation
 
 
 class suite():
@@ -3850,6 +4190,23 @@ class poi():
     @property    
     def kelong(self):
         return PropensityFactory().get_k(self.nt_seq,self.ki,self.ke_mu,self.kt)[1:-1]
+    
+    @property
+    def probe_vec(self):
+        pv = np.zeros( (len(list(self.tag_epitopes)), self.total_length))
+        for i in range(len(list(self.tag_epitopes))):
+            pv[i,[self.tag_epitopes[list(self.tag_epitopes.keys())[i]]]] = 1
+        pv = np.cumsum(pv,axis=1)
+        return pv
+    
+    @property
+    def probe_loc(self):
+        pv = np.zeros( (len(list(self.tag_epitopes)), self.total_length))
+        for i in range(len(list(self.tag_epitopes))):
+            pv[i,[self.tag_epitopes[list(self.tag_epitopes.keys())[i]]]] = 1      
+        return pv        
+
+    
     @property
     def all_k(self):
         return PropensityFactory().get_k(self.nt_seq,self.ki,self.ke_mu,self.kt)   
@@ -4331,85 +4688,5 @@ class GenericSSA():
         return [ item for item in all_members if not item.startswith("_")]
 
 
-
-
-################### OLD FUNCTIONS
-
-
-#    def analyze_poi(self, protein, sequence, epitope_loc = 'front'):
-#        '''
-#        Analyzes the protein of intrest and stores it in __.POI
-#
-#        *args*
-#
-#            **protein**,  amino acid sequence as a string
-#
-#            **sequence**, nucleotide sequence that goes with the protein
-#            
-#            **epitope_loc**, consider the epitope location as the front, middle or back:
-#                
-#                DDYDDK: front: 0, middle: 3, back: 6 for epitope location
-#
-#
-#        '''
-#
-#        self.POI = poi()
-#        self.POI.nt_seq = sequence
-#        self.POI.aa_seq = protein
-#        self.POI.name = self.sequence_name
-#        self.POI.total_length = len(protein)
-#
-#        '''
-#        for key in self.tagged_proteins:
-#            if protein in self.tagged_proteins[key]:
-#                self.POI.tag_types.append(key)
-#        '''
-#        self.POI.tag_types = []
-#        for tag in self.tag_dict.keys():
-#            if self.tag_dict[tag] in protein:
-#                self.POI.tag_types.append(tag)
-#
-#                #''.join(sms.poi[0].split('DYKDDDDK')
-#
-#        self.POI.tag_epitopes = {a:[] for a in self.POI.tag_types}
-#        gs = protein
-#
-#
-#        for i in range(len(self.POI.tag_types)):
-#            
-#            try:
-#                nt_tag = self.tag_full[self.POI.tag_types[i]]
-#                aa_tag = self.nt2aa(nt_tag)
-#            except:
-#                epi = self.tag_dict[self.POI.tag_types[i]]
-#                firstep = self.POI.aa_seq.find(epi) 
-#                lastep = len(self.POI.aa_seq) - self.POI.aa_seq[::-1].find(epi[::-1])                
-#                aa_tag = self.POI.aa_seq[firstep:lastep]
-#                nt_tag = self.POI.nt_seq[3*firstep:3*lastep]
-#                
-#            if epitope_loc == 'front':
-#                offset = 0
-#            if epitope_loc == 'middle':
-#                offset = int(len(self.tag_dict[self.POI.tag_types[i]])/2)
-#            if epitope_loc == 'back':
-#                offset = len(self.tag_dict[self.POI.tag_types[i]])
-#                
-#            self.POI.tag_epitopes[self.POI.tag_types[i]] = [m.start()+1+offset for m in re.finditer(self.tag_dict[self.POI.tag_types[i]], self.POI.aa_seq)]
-#
-#            gs = gs.replace(aa_tag, '')
-#
-#
-#
-#
-#
-#        self.POI.gene_seq = gs
-#        self.POI.gene_length = len(gs)
-#        codons = []
-#        for i in range(0, len(sequence), 3):
-#            codons.append(sequence[i:i+3])
-#        self.POI.codons = codons
-#
-#        self.POI.codon_sensitivity, self.POI.CAI, self.POI.CAI_codons = self.codon_usage(self.POI.nt_seq)
-#
 
 

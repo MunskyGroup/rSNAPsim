@@ -89,6 +89,104 @@ class TestFileParser(unittest.TestCase):
         self.assertEqual(seq,'MCHU - Calmodulin - Human, rabbit, bovine, rat, and chicken')
 
 
+
+class TestSequenceMethods(unittest.TestCase):
+    def setUp(self):
+        from rss import SequenceManipMethods
+        self.smm = SequenceManipMethods('')
+        self.test_str = 'AAUGAUCUAGUCGUGUGACUUACUGGGGAUCGGUCAGUGUCGUUGGGCAUG'
+
+        self.test_seq = 'AUGGACUACAAGGACGACGACGACAAAGGUGACUACAAAGAUGAUG'\
+        'ACGAUAAAGGCGACUAUAAGGACGAUGACGACAAGGGCGGAAACUCACUGAUCAAGGAAAACAUGCGGA'\
+        'UGAAGGUGGUGAUGGAGGGCUCCGUGAAUGGUCACCAGUUCAAGUGCACCGGAGAGGGAGAGGGAAACCC'\
+        'GUACAUGGGAACUCAGACCAUGCGCAUUAAGGUCAUCGAAGGAGGUCCGCUGCCGUUCGCUUUCGAUAUC'\
+        'CUGGCCACUUCGUUCGGAGGAGGGUCGCGCACGUUCAUCAAGUACCCGAAGGGAAUCCCGGACUUCUUUA'\
+        'AGCAGUCAUUCCCGGAAGGAUUCACUUGGGAACGGGUGACCCGGUAUGAAGAUGGAGGUGUGGUGACUGU'\
+        'CAUGCAAGAUACUUCGCUGGAGGAUGGGUGCCUCGUGUACCACGUCCAAGUCCGCGGAGUGAAUUUCCCGU'\
+        'CCAACGGACCAGUGAUGCAGAAAAAGACGAAGGGUUGGGAACCUAAUACUGAAAUGAUGUACCCCGCAGAC'\
+        'GGAGGGCUGAGGGGCUACACCCACAUGGCGCUGAAGGUCGACGGAGGAGAUUACAAGGAUGACGACGAUAA'\
+        'GCAACAAGAUUACAAAGACGAUGAUGACAAGGGCCAGCAGGGCGACUACAAGGACGACGACGACAAGCAGC'\
+        'AGGACUACAAAGAUGACGAUGAUAAAGGAGGAGGACAUCUGUCCUGUUCGUUCGUGACCACCUACAGAUCA'\
+        'AAGAAAACCGUGGGAAACAUCAAGAUGCCGGGCAUUCAUGCCGUCGACCACCGCCUGGAGCGGCUCGAAGA'\
+        'AUCAGACAAUGAGAUGUUCGUCGUGCAAAGAGAACAUGCCGUGGCCAAGUUCGCGGGACUGGGAGGCGGUG'\
+        'GAGGCGAUUACAAAGACGAUGAUGACAAGGGUGACUAUAAAGACGACGAUGACAAAGGGGAUUACAAGGAU'\
+        'GAUGAUGAUAAGGGAGGCGGUGGAUCAGGUGGAGGAGGUUCACUGCAGGAUGAUGAUAUCGCCGCGCUCGU'\
+        'CGUCGACAACGGCUCCGGCAUGUGCAAGGCCGGCUUCGCGGGCGACGAUGCCCCCCGGGCCGUCUUCCCCU'\
+        'CCAUCGUGGGGCGCCCCAGGCACCAGGGCGUGAUGGUGGGCAUGGGUCAGAAGGAUUCCUAUGUGGGCGAC'\
+        'GAGGCCCAGAGCAAGAGAGGCAUCCUCACCCUGAAGUACCCCAUCGAGCACGGCAUCGUCACCAACUGGGA'\
+        'CGACAUGGAGAAAAUCUGGCACCACACCUUCUACAAUGAGCUGCGUGUGGCUCCCGAGGAGCACCCCGUGC'\
+        'UGCUGACCGAGGCCCCCCUGAACCCCAAGGCCAACCGCGAGAAGAUGACCCAGAUCAUGUUUGAGACCUUC'\
+        'AACACCCCAGCCAUGUACGUUGCUAUCCAGGCUGUGCUAUCCCUGUACGCCUCUGGCCGUACCACUGGCAU'\
+        'CGUGAUGGACUCCGGUGACGGGGUCACCCACACUGUGCCCAUCUACGAGGGGUAUGCCCUCCCCCAUGCCA'\
+        'UCCUGCGUCUGGACCUGGCUGGCCGGGACCUGACUGACUACCUCAUGAAGAUCCUCACCGAGCGCGGCUAC'\
+        'AGCUUCACCACCACGGCCGAGCGGGAAAUCGUGCGUGACAUUAAGGAGAAGCUGUGCUACGUCGCCCUGGA'\
+        'CUUCGAGCAAGAGAUGGCCACGGCUGCUUCCAGCUCCUCCCUGGAGAAGAGCUACGAGCUGCCUGACGGCC'\
+        'AGGUCAUCACCAUUGGCAAUGAGCGGUUCCGCUGCCCUGAGGCACUCUUCCAGCCUUCCUUCCUGGGCAUG'\
+        'GAGUCCUGUGGCAUCCACGAAACUACCUUCAACUCCAUCAUGAAGUGUGACGUGGACAUCCGCAAAGACCU'\
+        'GUACGCCAACACAGUGCUGUCUGGCGGCACCACCAUGUACCCUGGCAUUGCCGACAGGAUGCAGAAGGAGA'\
+        'UCACUGCCCUGGCACCCAGCACAAUGAAGAUCAAGAUCAUUGCUCCUCCUGAGCGCAAGUACUCCGUGUGG'\
+        'AUCGGCGGCUCCAUCCUGGCCUCGCUGUCCACCUUCCAGCAGAUGUGGAUCAGCAAGCAGGAGUAUGACGA'\
+        'GUCCGGCCCCUCCAUCGUCCACCGCAAAUGCUUCUAG'
+
+    
+    def test_nt2aa(self):
+        seq = self.smm.nt2aa(self.test_str)
+        self.assertEqual(seq,'NDLVV*LTGDRSVSLGM'.upper())
+
+    def test_nt2aa_lower(self):
+        seq = self.smm.nt2aa(self.test_str.lower())
+        self.assertEqual(seq,'NDLVV*LTGDRSVSLGM'.upper())
+        
+    def test_get_orfs(self):
+        orfs = self.smm.get_orfs(self.test_seq)
+        self.assertEqual(orfs['1'][0],(0,2133) )
+        
+    def test_get_protein(self):
+        orfs = self.smm.get_orfs(self.test_seq)
+        proteins_strs, proteins, proteins_w_tags = self.smm.get_proteins(orfs,self.test_seq)
+        self.assertEqual(1,len(proteins['1']))
+        self.assertEqual(1,len(proteins['2']))
+        self.assertEqual(0,len(proteins['3']))
+        
+    def test_protein_obj_tagging(self):
+        orfs = self.smm.get_orfs(self.test_seq)
+        proteins_strs, proteins, proteins_w_tags = self.smm.get_proteins(orfs,self.test_seq)
+        
+        poi = proteins['1'][0]
+        poi2 = proteins['2'][0]
+
+        self.assertEqual(poi.tag_types[0],'T_Flag')
+        self.assertEqual([2, 11, 20, 196, 206, 218, 228, 300, 309, 318], poi.tag_epitopes['T_Flag'])
+    
+        
+        self.assertEqual(poi.tag_added,False)
+        self.assertEqual(poi2.tag_added,True)
+        
+    def test_protein_obj_lengths(self):
+        orfs = self.smm.get_orfs(self.test_seq)
+        proteins_strs, proteins, proteins_w_tags = self.smm.get_proteins(orfs,self.test_seq)
+        
+        poi = proteins['1'][0]
+        poi2 = proteins['2'][0]
+        
+        self.assertEqual(poi.tag_length, len(self.smm.nt2aa(self.test_seq)[:337] ) )
+        self.assertEqual(poi.gene_length, len(self.smm.nt2aa(self.test_seq)[337:] ) )
+        self.assertEqual(poi.total_length, len(self.smm.nt2aa(self.test_seq) ) )        
+        
+        
+    def test_protein_obj_seqs(self):
+        orfs = self.smm.get_orfs(self.test_seq)
+        proteins_strs, proteins, proteins_w_tags = self.smm.get_proteins(orfs,self.test_seq)
+        
+        poi = proteins['1'][0]
+        poi2 = proteins['2'][0]        
+                
+        self.assertEqual(poi.aa_seq, self.smm.nt2aa(self.test_seq) )     
+        self.assertEqual(poi.nt_seq, self.test_seq )  
+        self.assertEqual(poi.gene_seq, self.smm.nt2aa(self.test_seq)[337:] )
+        self.assertEqual(poi.tag_seq, self.smm.nt2aa(self.test_seq)[:337] )
+        
+
 if __name__ == '__main__':
     #unittest.main(exit=False)
     
@@ -111,9 +209,21 @@ if __name__ == '__main__':
     file_parser_suite.addTest(TestFileParser('test_get_desc_gb' ))
     file_parser_suite.addTest(TestFileParser('test_get_desc_txt' ))    
     
+    sequence_methods_suite = unittest.TestSuite()
+    sequence_methods_suite.addTest(TestSequenceMethods('test_nt2aa' ))
+    sequence_methods_suite.addTest(TestSequenceMethods('test_nt2aa_lower' ))
+    sequence_methods_suite.addTest(TestSequenceMethods('test_get_orfs' ))
+    sequence_methods_suite.addTest(TestSequenceMethods('test_get_protein' ))
+    sequence_methods_suite.addTest(TestSequenceMethods('test_protein_obj_tagging' ))
+    sequence_methods_suite.addTest(TestSequenceMethods('test_protein_obj_lengths' ))
+    sequence_methods_suite.addTest(TestSequenceMethods('test_protein_obj_seqs' ))
     
     
+    print('testing file parser...')
     runner.run(file_parser_suite)
+    
+    print('testing sequence manipulation methods...')
+    runner.run(sequence_methods_suite)
     
     
     
