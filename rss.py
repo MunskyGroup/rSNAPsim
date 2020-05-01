@@ -15,6 +15,7 @@ Created on Tue Oct 23 09:42:24 2018
 import re #import regex
 
 import FileParser
+import warnings
 
 import os
 path_to_cpp = ''
@@ -3004,7 +3005,20 @@ class PropensityFactory():
     def __init__(self):
         self.codon_dicts = CodonDictionaries()
         pass    
-    
+
+    def bin_k(self,k,inds):
+        try: 
+            k = k.tolist()
+        except:
+            pass
+        k_binned = np.zeros(len(inds)-1)
+        binned_ks = []
+        for i in range(0,len(inds)-1):
+            binned_ks = binned_ks +   [k[inds[i]:inds[i+1]],]  
+         
+        for i in range(0,len(inds)-1):            
+            k_binned[i] = 1/ np.sum( 1/np.array(binned_ks[i]))
+        return k_binned
 
     def get_k(self, nt_seq, k_init, k_elong_mean,k_end):
         '''
@@ -3036,8 +3050,6 @@ class PropensityFactory():
         k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
         all_k = [k_init] + k_elongation.flatten().tolist()[:-1] + [k_end]
         
-        
-
         return all_k
     
     
@@ -3097,170 +3109,172 @@ class PropensityFactory():
 
         return k_binned,k_lens
     
+    
     @staticmethod
-    def get_binned_k_emphasize_probes(k,bins,pl):
+    def intellegent_bin(pl,nbins ,min_bin = 1):
         '''
-        evenly bins elongation rates as best it can.
+        Function to do intellegent binning, focuses resolution on the areas
+        defined in the probe location vector
         
-        
+        Note if you pass it a minium bin that when min_bin*nbins > length of your sequence
+        this function will fail
         '''
         
-        probe_region_start = np.where(pl > 0)[0]
-        probe_region_end = np.where(pl > 0)[-1]
+        if min_bin*nbins > pl.shape[1]:
+            warnings.warn('Desired minimum binsize and desired number of bins is not possible with the length of the probe vector, returning best guess')
+
+        pl_inds = np.where(pl == 1)[1]
+       
+        if 0 not in pl_inds:
+            pl_inds = np.hstack((np.array([0]), pl_inds))
+        if len(pl) not in pl_inds:
+            pl_inds = np.hstack(( pl_inds,np.array(pl.shape[1]) ))
+     
+        used_bins = len(pl_inds)
+        k = len(pl_inds)-1
+        j = 0
+        to_add = []
+        while used_bins < nbins+1:
+            if j == k:
+                
+                j = 0
+
+                prev_pl_inds = pl_inds
+                pl_inds = np.hstack(( pl_inds,np.array(to_add)) )
+                pl_inds = np.sort(pl_inds)
+                if np.array_equal(prev_pl_inds,pl_inds):
+                    break
+                k =  len(pl_inds)-1
+                to_add = []
+
+            newbin = int( pl_inds[j]   +  (pl_inds[j+1]-pl_inds[j]  )/2)
+
+            if newbin not in pl_inds:
+                if not (np.abs(pl_inds - newbin) <= min_bin).any():
+                    to_add.append(newbin)
+                    used_bins+=1
+            j+=1    
+            
+        pl_inds = np.hstack(( pl_inds,np.array(to_add)) )
+        pl_inds = np.sort(pl_inds) 
         
-        binsize = int(np.floor(len(k)/bins))
-        binned_ks = []
+        return pl_inds
+
+    @staticmethod
+    def even_bin(length,nbins):
+        '''
+        evenly bins a length over a given amount of bins as best it can
         
-        k_binned = np.zeros(bins)
-        k_lens = np.ones(bins)*binsize
+        '''
+        binsize = int(np.floor(length/nbins))
         
-        to_redistribute = len(k)%bins
+        k_lens = np.ones(nbins)*binsize
+        
+        to_redistribute = length%nbins
 
         k_lens[-to_redistribute:] = binsize+1
         
         inds = np.hstack(([0.], np.cumsum(k_lens))).astype(int)     
-
         
-        for i in range(0,bins):
-            binned_ks = binned_ks +   [k[inds[i]:inds[i+1]].tolist(),]  
-         
-        for i in range(0,bins):            
-            k_binned[i] = np.mean(binned_ks[i])/len(binned_ks[i])
-
-        return k_binned,k_lens
-
-
-
-
+        return inds
     
 class ProbeVectorFactory():
     def __init__(self):
         pass        
     
-    
+    def get_probe_vec(self, tag_epitope_dict, length):
+        
+        pv = np.zeros( (len(list(tag_epitope_dict)), length))
+        for i in range(len(list(tag_epitope_dict))):
+            pv[i,[tag_epitope_dict[list(tag_epitope_dict.keys())[i]]]] = 1
+        pv = np.cumsum(pv,axis=1)        
+        return pv
+
+    def get_probe_loc(self, tag_epitope_dict, length):
+        
+        pv = np.zeros( (len(list(tag_epitope_dict)), length))
+        for i in range(len(list(tag_epitope_dict))):
+            pv[i,[tag_epitope_dict[list(tag_epitope_dict.keys())[i]]]] = 1
+        return pv
+
     @staticmethod
-    def intellegent_bin(arr,nbins, pl):
-        binsize = int(np.floor(arr.shape[1]/nbins))       
-        
-        
-        #get evenly spaced bins first
-        arr_binned = np.zeros((np.atleast_2d(arr).shape[0],nbins))
-        bins = np.ones((np.atleast_2d(probe_loc).shape[0],nbins))*binsize        
-        to_redistribute = len(bins)%bins        
-        np.atleast_2d(bins).shape[0]
+    def bin_probe_vecs(probe_loc,inds):
 
-        bins[-to_redistribute:] = binsize+1       
-        inds = np.hstack(([0.], np.cumsum(bins,axis=1)[0,:])).astype(int)          
-        
-        for i in range(0,10):
-            x=1
-        
-        
-        return 1
-    
-    @staticmethod
-    def get_binned_probe_vec(probe_loc,bins):
-        '''
-        bin the probe vector as even as possible
-        '''
-        probe_loc = np.atleast_2d(probe_loc)
-        binsize = int(np.floor(probe_loc.shape[1]/bins))        
-        probeloc_binned = np.zeros((np.atleast_2d(probe_loc).shape[0],bins))
-        probe_lens = np.ones((np.atleast_2d(probe_loc).shape[0],bins))*binsize
-        
-        
-        
-        to_redistribute = len(probe_loc)%bins
-        
-        np.atleast_2d(probe_loc).shape[0]
-
-        probe_lens[-to_redistribute:] = binsize+1       
-        inds = np.hstack(([0.], np.cumsum(probe_lens,axis=1)[0,:])).astype(int)  
-        
-        for i in range(0,bins):
-
+        probeloc_binned = np.zeros((probe_loc.shape[0],   len(inds)-1 ) )
+        for i in range(0,len(inds)-1):
             probeloc_binned[:,i] = np.sum(probe_loc[:,inds[i]:inds[i+1]],axis=1)
-            
         probevec_binned = np.cumsum(probeloc_binned,axis=1)
-        return probevec_binned.astype(int), probeloc_binned.astype(int)
-               
-            
-    def get_probvec(self): 
-        '''
-        returns the probe vectors (epitope positions by codon position) associated with the tagged sequence stored in POI
-
-        *returns*
-
-            **probe_vec**, cumlative probe intensity vector by codon position. Ex: [0,0,0,0,1,1,1,1,2,2,2,3,3,3 etc]
-
-            **probe_loc**, epitope posistion as a binary vector, 1 for epitope pos, 0 for everything else
-        '''
-
-        probePositions = []
         
-        keylist = list(self.POI.tag_epitopes.keys())
+        return probeloc_binned.astype(int),probevec_binned.astype(int)
         
-        for n in range(len(keylist)):
-            probePosition = []
-            key = keylist[n]
-            
-            probePosition = probePosition + self.POI.tag_epitopes[key]
-            
-            if probePosition != []:
-                probePosition = np.unique(probePosition).tolist()
-                probePositions.append(probePosition)
+    
+
+    @staticmethod
+    def intellegent_bin(pl,nbins ,min_bin = 1):
+        '''
+        Function to do intellegent binning, focuses resolution on the areas
+        defined in the probe location vector
+        
+        Note if you pass it a minium bin that when min_bin*nbins > length of your sequence
+        this function will fail
+        '''
+        
+        if min_bin*nbins > pl.shape[1]:
+            warnings.warn('Desired minimum binsize and desired number of bins is not possible with the length of the probe vector, returning best guess')
+
+        pl_inds = np.where(pl == 1)[1]
+        if 0 not in pl_inds:
+            pl_inds = np.hstack((np.array([0]), pl_inds))
+        if len(pl) not in pl_inds:
+            pl_inds = np.hstack(( pl_inds,np.array(pl.shape[1]) ))
+     
+        used_bins = len(pl_inds)
+        k = len(pl_inds)-1
+        j = 0
+        to_add = []
+        while used_bins < nbins+1:
+            if j == k:
                 
-        
-        
+                j = 0
 
-        genelength = self.POI.total_length
+                prev_pl_inds = pl_inds
+                pl_inds = np.hstack(( pl_inds,np.array(to_add)) )
+                pl_inds = np.sort(pl_inds)
+                if np.array_equal(prev_pl_inds,pl_inds):
+                    break
+                k =  pl.shape[1]-1
+                to_add = []
+                
+            newbin = int( pl_inds[j]   +  (pl_inds[j+1]-pl_inds[j]  )/2)
 
-        pvfull = np.zeros((1, genelength+1)).astype(int).flatten()
-        
-        if len(probePositions) > 1:
-            k = 0
-            for n in range(len(keylist)):
-                pv = np.zeros((1, genelength+1)).astype(int).flatten()
-                key = keylist[n]
-                probePosition = probePositions[k] 
-                k+=1
-                if len(self.POI.tag_epitopes[key]) != 0:
-                    for i in range(len(probePosition)):
-                        pv[probePosition[i]:] = i+1
-                    if n > 0:
-                        pvfull = np.vstack((pvfull,pv))
-                    else:
-                        pvfull = pv
-        else:
-            probePosition = probePositions[0]
-            for n in range(len(keylist)):
-                pv = np.zeros((1, genelength+1)).astype(int).flatten()
-                key = keylist[n]
-                if len(self.POI.tag_epitopes[key]) != 0:
-                    for i in range(len(probePosition)):
-                        pv[probePosition[i]:] = i+1
-                    if n > 0:
-                        pvfull = np.vstack((pvfull,pv))
-                    else:
-                        pvfull = pv
-        numtags = 0
-        for key in keylist:
-            if len(self.POI.tag_epitopes[key]) != 0:
-                numtags += 1
-
-        ploc = np.zeros((numtags, self.POI.total_length+1)).astype(int)
-
-        numind = 0
-        for n in range(len(keylist)):
-            key = keylist[n]
-            if len(self.POI.tag_epitopes[key]) != 0:
-                ploc[numind][self.POI.tag_epitopes[key]] = 1
-
-                numind += 1
-
-        return pvfull, ploc
-        
+            if newbin not in pl_inds:
+                if not (np.abs(pl_inds - newbin) <= min_bin).any():
+                    to_add.append(newbin)
+                    used_bins+=1
+            j+=1    
             
+        pl_inds = np.hstack(( pl_inds,np.array(to_add)) )
+        pl_inds = np.sort(pl_inds) 
+        
+        return pl_inds
+        
+    @staticmethod
+    def even_bin(length,nbins):
+        '''
+        evenly bins a length over a given amount of bins as best it can
+        
+        '''
+        binsize = int(np.floor(length/nbins))
+        
+        k_lens = np.ones(nbins)*binsize
+        
+        to_redistribute = length%nbins
+
+        k_lens[-to_redistribute:] = binsize+1
+        
+        inds = np.hstack(([0.], np.cumsum(k_lens))).astype(int)     
+        
+        return inds            
     
 class CodonDictionaries():
     
@@ -3973,12 +3987,12 @@ class TranslationSolvers():
     
     def __check_x0(self,x0):
         if len(x0) == 0:
-            x0_clean = np.zeros((N_rib),dtype=np.int32)  
+            x0_clean = np.zeros((200),dtype=np.int32)  
         else:
             if len(x0) >200:
                 raise ValueError('Unrecognized initial condition, make sure the length of x0 is <= 200')
             
-            x0_clean = np.zeros((N_rib),dtype=np.int32)  
+            x0_clean = np.zeros((200),dtype=np.int32)  
             x0_clean[:len(x0)] = x0
         return x0_clean
         
@@ -4210,6 +4224,19 @@ class poi():
     @property
     def all_k(self):
         return PropensityFactory().get_k(self.nt_seq,self.ki,self.ke_mu,self.kt)   
+    
+    
+    def get_binned_vectors(self,nbins,strategy='intellegent',min_binsize=3):
+        if strategy == 'intellegent':    
+            inds = PropensityFactory().intellegent_bin(self.probe_loc,nbins,min_bin=min_binsize)
+            
+        if strategy == 'even':
+            inds = PropensityFactory().even_bin(len(self.kelong),nbins)
+            
+        bin_k = PropensityFactory().bin_k(self.kelong,inds)  
+        probeloc_binned,probevec_binned = ProbeVectorFactory().bin_probe_vecs(self.probe_loc,inds)
+                
+        return inds,  probeloc_binned, probevec_binned,bin_k
 
 class SSA_Soln():
     '''
