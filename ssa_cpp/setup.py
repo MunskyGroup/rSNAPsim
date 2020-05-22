@@ -15,7 +15,7 @@ import os
 # Call cythonize in advance so a single module can be compiled from a single Cython
 # file along with other C++ files.
 import numpy as np
-sources = ['ssa_translation.pyx','ssa_translation_c_w.cpp','ssa_translation_lowmem.pyx','ssa_translation_c_w_lowmem.cpp','ssa_translation_lowmem_leaky.pyx','ssa_translation_c_w_lowmem_leaky.cpp']
+sources = ['ssa_translation.pyx','ssa_translation_c_w.cpp','ssa_translation_lowmem.pyx','ssa_translation_c_w_lowmem.cpp','ssa_translation_lowmem_leaky.pyx','ssa_translation_c_w_lowmem_leaky.cpp','ssa_translation_lowmem_nostats.pyx','ssa_translation_c_w_lowmem_nostats.cpp']
 cythonize('*.pyx', language='c++')
 
 
@@ -56,6 +56,14 @@ setup(name='SSA',
                 library_dirs = libs,
                 extra_compile_args= eca)
     ,Extension('ssa_translation_lowmem_leaky', 
+                sources, language='c++',
+                include_dirs = [sysconfig.get_paths()['include'],
+                                np.get_include(),
+                                '.',
+                                os.getcwd()],
+                library_dirs = libs,
+                extra_compile_args= eca)
+       ,Extension('ssa_translation_lowmem_nostats', 
                 sources, language='c++',
                 include_dirs = [sysconfig.get_paths()['include'],
                                 np.get_include(),

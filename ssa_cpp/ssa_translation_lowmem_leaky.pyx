@@ -22,7 +22,7 @@ def run_SSA(np.ndarray[int, ndim=1, mode="c"] intensity not None, np.ndarray[dou
     cdef int n_probes
     
     # subtract 2. 
-    N = len(kelong)-2
+    N = len(kelong)
     Nt = t_array.shape[0]
     ribtimesize = ribtimes.shape[0]
     coltimesize = coltimes.shape[0]

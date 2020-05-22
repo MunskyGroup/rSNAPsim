@@ -90,6 +90,57 @@ class TestFileParser(unittest.TestCase):
 
 
 
+class Test_SSA_Methods(unittest.TestCase):
+    def setUp(self):
+        from rss import SequenceManipMethods
+        from rss import rSNAPsim 
+        from rss import TranslationSolvers
+        self.smm = SequenceManipMethods('')
+        self.rsnap_1color = rSNAPsim()
+        self.rsnap_1color.open_seq_file('./gene_files/H2B_withTags.txt')
+        self.rsnap_2color = rSNAPsim()
+        self.rsnap_2color.open_seq_file('./gene_files/H2B_2tags.txt')
+        self.solver = TranslationSolvers()
+        
+
+
+    def test_lowmem_ssa_1color(self):
+
+        poi = self.rsnap_1color.proteins['1'][0]
+        ki = poi.ki
+        kt = poi.kt
+        ke = poi.kelong
+        self.solver.protein = poi
+        t = np.linspace(0,1000,1001,dtype=np.float64)
+        ssa_obj = self.solver.solve_ssa(np.array([ki] + ke + [kt]).flatten(),t,n_traj=1)
+        
+        self.assertEqual(1,1)
+        
+        
+    def test_lowmem_ssa_2color(self):
+        poi = self.rsnap_2color.proteins['1'][0]
+        print(poi.probe_loc)
+        self.solver.protein = poi
+        ki = poi.ki
+        kt = poi.kt
+        ke = poi.kelong
+        t = np.linspace(0,1000,1001,dtype=np.float64)
+        ssa_obj = self.solver.solve_ssa(np.array([ki] + ke + [kt]).flatten(),t,n_traj=1)
+        self.assertEqual(1,1)
+        
+    def test_lowmem_ssa_ncolor(self):
+        poi = self.rsnap_2color.proteins['1'][0]
+        print(poi.probe_loc)
+
+        self.assertEqual(1,1)
+
+
+
+
+
+
+
+
 class TestSequenceMethods(unittest.TestCase):
     def setUp(self):
         from rss import SequenceManipMethods
@@ -219,11 +270,19 @@ if __name__ == '__main__':
     sequence_methods_suite.addTest(TestSequenceMethods('test_protein_obj_seqs' ))
     
     
+    ssa_methods_suite = unittest.TestSuite()
+    ssa_methods_suite.addTest(Test_SSA_Methods('test_lowmem_ssa_1color' ))
+    ssa_methods_suite.addTest(Test_SSA_Methods('test_lowmem_ssa_2color' ))
+    
+    
     print('testing file parser...')
     runner.run(file_parser_suite)
     
     print('testing sequence manipulation methods...')
     runner.run(sequence_methods_suite)
+    
+    print('testing ssa methods...')
+    runner.run(ssa_methods_suite)
     
     
     

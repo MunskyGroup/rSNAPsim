@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
 """
+Created on Thu May 21 15:31:44 2020
+
+@author: willi
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Wed Apr 29 16:01:24 2020
 
 @author: willi
 """
 
 import numpy as np
-import ssa_translation_lowmem
+import ssa_translation_lowmem_nostats
 import matplotlib.pyplot as plt
 import time
 
@@ -31,17 +38,14 @@ lenfrap = len(np.intersect1d(np.where(t_array>0)[0],np.where(t_array<20)[0]))
 
 all_frapresults = np.zeros((n_trajectories,N_rib*len(t_array)),dtype=np.int32)
 
-all_ribtimes = np.zeros((n_trajectories,400),dtype=np.float64)
-all_coltimes = np.zeros((n_trajectories,400),dtype=np.int32)
-nribs = np.array([0],dtype=np.int32)
-all_ribs = np.zeros((n_trajectories,1))
+
 seeds = np.random.randint(0,0x7FFFFFF,n_trajectories)
 x0 = np.zeros((N_rib),dtype=np.int32)
 
-pl = np.zeros((len(kelong),ncolor), dtype=np.int32)
+pl = np.zeros((len(kelong)-2,ncolor), dtype=np.int32)
 
 pl[ [10,20,30,100,120,140],0  ] = 1
-#pl[ [10,140],1  ] = 1
+pl[ [10,140],1  ] = 1
 
 pl = np.cumsum(pl,axis=0)
 pl = pl.T.copy(order='C')
@@ -50,36 +54,22 @@ pl = pl.T.copy(order='C')
 print(x0.shape)
 print(all_results.shape)
 print(all_frapresults.shape)
-print(all_ribtimes.shape)
-print(all_coltimes.shape)
 
-all_col_points = []
 
 for i in range(n_trajectories):
     result = np.zeros((ncolor,len(t_array)),dtype=np.int32)    
     frapresult = np.zeros((len(t_array)*N_rib),dtype=np.int32)
     
-    ribtimes = np.zeros((400),dtype=np.float64)
-    coltimes = np.zeros((400),dtype=np.int32)
     
-    colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
-    colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
-    
-    ssa_translation_lowmem.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9, pl,2)
+    ssa_translation_lowmem_nostats.run_SSA(result, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],x0,9, pl,2)
     
 
   
     all_results[i,:,:] = result.T
     
     all_frapresults[i,:] = frapresult
-    all_coltimes[i,:] = coltimes
-    all_ribtimes[i,:] = ribtimes
-    all_ribs[i,:] = nribs[0]
 
-    endcolrec = np.where(colpointsx == 0)[0][0]
-    
-    colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
-    all_col_points.append(colpoints.T)
+
 print('time for {0} trajectories {1}'.format(n_trajectories,time.time()-start))
 #plt.hist(result[result>0])
 #plt.show()

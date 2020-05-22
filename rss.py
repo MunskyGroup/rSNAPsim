@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Apr 13 12:02:41 2020
-
-@author: willi
-"""
-
 # -*- coding: utf-8 -*--
 """
 Created on Tue Oct 23 09:42:24 2018
@@ -3006,7 +2999,8 @@ class PropensityFactory():
         self.codon_dicts = CodonDictionaries()
         pass    
 
-    def bin_k(self,k,inds):
+    @staticmethod
+    def bin_k(k,inds):
         try: 
             k = k.tolist()
         except:
@@ -3015,6 +3009,7 @@ class PropensityFactory():
         binned_ks = []
         for i in range(0,len(inds)-1):
             binned_ks = binned_ks +   [k[inds[i]:inds[i+1]],]  
+        
          
         for i in range(0,len(inds)-1):            
             k_binned[i] = 1/ np.sum( 1/np.array(binned_ks[i]))
@@ -3127,8 +3122,8 @@ class PropensityFactory():
        
         if 0 not in pl_inds:
             pl_inds = np.hstack((np.array([0]), pl_inds))
-        if len(pl) not in pl_inds:
-            pl_inds = np.hstack(( pl_inds,np.array(pl.shape[1]) ))
+        if pl.shape[1]+1 not in pl_inds:
+            pl_inds = np.hstack(( pl_inds,np.array(pl.shape[1]+1) ))
      
         used_bins = len(pl_inds)
         k = len(pl_inds)-1
@@ -3142,6 +3137,7 @@ class PropensityFactory():
                 prev_pl_inds = pl_inds
                 pl_inds = np.hstack(( pl_inds,np.array(to_add)) )
                 pl_inds = np.sort(pl_inds)
+             
                 if np.array_equal(prev_pl_inds,pl_inds):
                     break
                 k =  len(pl_inds)-1
@@ -3203,6 +3199,9 @@ class ProbeVectorFactory():
         probeloc_binned = np.zeros((probe_loc.shape[0],   len(inds)-1 ) )
         for i in range(0,len(inds)-1):
             probeloc_binned[:,i] = np.sum(probe_loc[:,inds[i]:inds[i+1]],axis=1)
+            
+            
+        #probeloc_binned[:,-1] = np.sum(probe_loc[:,inds[-1]:],axis=1)
         probevec_binned = np.cumsum(probeloc_binned,axis=1)
         
         return probeloc_binned.astype(int),probevec_binned.astype(int)
@@ -3225,7 +3224,7 @@ class ProbeVectorFactory():
         pl_inds = np.where(pl == 1)[1]
         if 0 not in pl_inds:
             pl_inds = np.hstack((np.array([0]), pl_inds))
-        if len(pl) not in pl_inds:
+        if pl.shape[1] not in pl_inds:
             pl_inds = np.hstack(( pl_inds,np.array(pl.shape[1]) ))
      
         used_bins = len(pl_inds)
@@ -3240,6 +3239,7 @@ class ProbeVectorFactory():
                 prev_pl_inds = pl_inds
                 pl_inds = np.hstack(( pl_inds,np.array(to_add)) )
                 pl_inds = np.sort(pl_inds)
+             
                 if np.array_equal(prev_pl_inds,pl_inds):
                     break
                 k =  pl.shape[1]-1
@@ -3574,19 +3574,21 @@ class TranslationSolvers():
         self.additional_rxns = {}
         self.probe_locations = None
         self.colors = 1
+        
         self.default_conditions = {'low_mem':True,
                                    'perturb':[0,0,0],
                                    'leaky_probes':False,
                                    'bins':None,
                                    'k_probe':0,
                                    'footprint':9,
-                                   'burnin':500}
+                                   'burnin':500,
+                                   'record_stats':False}
         
         self.protein = None
         
     
     
-    def solve_ssa(self,k,t,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,k_probe=1):
+    def solve_ssa(self,k,t,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,k_probe=1,record_stats=False):
         
         ssa_conditions = self.default_conditions
         if k_probe != 1:
@@ -3596,19 +3598,36 @@ class TranslationSolvers():
         ssa_conditions['perturb'] = perturb
         ssa_conditions['leaky_probes'] = leaky_probes
         ssa_conditions['low_mem'] = low_memory
+        ssa_conditions['record_stats'] = record_stats
         
-        if leaky_probes == False:
-            if low_memory:
-                ssa_obj = self.__solve_ssa_lowmem(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
+        if record_stats:
+        
+            if leaky_probes == False:
+                if low_memory:
+                    ssa_obj = self.__solve_ssa_lowmem(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
+                else:
+                    ssa_obj = self.__solve_ssa(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
             else:
-                ssa_obj = self.__solve_ssa(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
+                if low_memory:
+                    ssa_obj = self.__solve_ssa_lowmem_leaky(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+                else:
+                    ssa_obj = self.__solve_ssa_leaky(k,t,x0,k_probe,n_traj,ssa_conditions = ssa_conditions)         
+           
         else:
-            if low_memory:
-                ssa_obj = self.__solve_ssa_lowmem_leaky(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+            if leaky_probes == False:
+                if low_memory:
+                    ssa_obj = self.__solve_ssa_lowmem_nostats(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
+                else:
+                    ssa_obj = self.__solve_ssa_nostats(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
             else:
-                ssa_obj = self.__solve_ssa_leaky(k,t,x0,k_probe,n_traj,ssa_conditions = ssa_conditions)         
+                if low_memory:
+                    ssa_obj = self.__solve_ssa_lowmem_leaky_nostats(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+                else:
+                    ssa_obj = self.__solve_ssa_leaky_nostats(k,t,x0,k_probe,n_traj,ssa_conditions = ssa_conditions)         
+                       
        
         
+       
         return ssa_obj
     
     
@@ -3702,7 +3721,7 @@ class TranslationSolvers():
 
         no_ribosomes_per_mrna = np.mean(no_ribosomes)
         
-        ssa_obj = SSA_soln()
+        ssa_obj = SSA_Soln()
         ssa_obj.no_ribosomes = no_ribosomes
         ssa_obj.n_traj = n_traj
         ssa_obj.k = k
@@ -3729,16 +3748,27 @@ class TranslationSolvers():
      
     def __solve_ssa_leaky(self):
         return 1
-     
-    def __solve_ssa_lowmem(self,k,t,x0,n_traj,ssa_conditions=None):
+    
+    def __solve_ssa_leaky_nostats(self):
+        return 1
+ 
+        
+    def __solve_ssa_lowmem_nostats(self,k,t,x0,n_traj,ssa_conditions=None):
         seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
-        k = np.array(k).astype(np.float64)
+        
+        if isinstance(k,list):
+            k = np.array(k).astype(np.float64)
+        
+        k = k.flatten()
+
+        
+        
         if ssa_conditions == None:
             ssa_conditions = self.default_conditions
         
         x0 = self.__check_x0(x0)
         
-        pl = self.protein.probe_vec.astype(int).flatten()
+        pl = self.protein.probe_vec.astype(np.int32).flatten()
         
         rib_vec = []
         solutions = []            
@@ -3758,7 +3788,104 @@ class TranslationSolvers():
             result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib)
             nribs = np.array([0],dtype=np.int32)
 
-            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint, pl)
+            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), evf, evi, float(intime), seeds[i],nribs,x0,footprint, pl)
+            #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+            all_results[i, :] = result
+            all_frapresults[i,:] = frapresult
+
+            for i in range(n_traj):
+                soln = all_results[i, :].reshape((N_rib, len(t)))
+
+                so = soln
+                solutionssave.append(so)
+                solutions.append(soln)
+            
+
+            
+            sttime = time.time() - st
+
+
+        no_ribosomes = np.zeros((n_traj, (len(k)+1)))
+        
+        startindex = np.where(t >= non_consider_time)[0][0]
+        
+        #all_results = all_results[:,startindex*N_rib:]
+
+#        for i in range(len(solutions)):
+#            for j in range(len(solutions[0][0][startindex:])):
+#                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+#                print(rib_pos)
+#               
+#                no_ribosomes[i, rib_pos.astype(int)] += 1
+#        no_ribosomes = no_ribosomes[:, 1:]
+#
+#        ribosome_means = np.mean(no_ribosomes, axis=0)
+#        ribosome_density = ribosome_means/len(k)
+#
+#        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+        ssa_obj = SSA_Soln()
+        ssa_obj.no_ribosomes = None
+        ssa_obj.n_traj = n_traj
+        ssa_obj.k = k
+        #ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+        #ssa_obj.rib_density = ribosome_density
+        #ssa_obj.rib_means = ribosome_means
+        ssa_obj.rib_vec = rib_vec
+        ssa_obj.intensity_vec = all_results.T
+        ssa_obj.I = all_results.T
+        ssa_obj.time_vec_fixed = t
+        ssa_obj.time = t
+        ssa_obj.time_rec = t[startindex:]
+        ssa_obj.start_time = None
+        ssa_obj.watched_ribs = None
+        try:
+            ssa_obj.col_points = None
+        except:
+            pass
+        
+        
+        ssa_obj.eval_time = sttime
+        
+        return ssa_obj
+    
+ 
+    def __solve_ssa_lowmem(self,k,t,x0,n_traj,ssa_conditions=None):
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+        
+        if isinstance(k,list):
+            k = np.array(k).astype(np.float64)
+        
+        k = k.flatten()
+
+        
+        
+        if ssa_conditions == None:
+            ssa_conditions = self.default_conditions
+        
+        x0 = self.__check_x0(x0)
+        
+        pl = self.protein.probe_vec.astype(np.int32).flatten()
+        
+        rib_vec = []
+        solutions = []            
+        solutionssave = []       
+        N_rib = 1
+        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats(n_traj,k[0],t,N_rib)
+        footprint = ssa_conditions['footprint']
+        evf = ssa_conditions['perturb'][0]
+        evi = ssa_conditions['perturb'][1]
+        intime = ssa_conditions['perturb'][2]
+        non_consider_time = ssa_conditions['burnin']
+        
+        st = time.time()
+        
+        for i in range(n_traj):
+            
+            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib)
+            nribs = np.array([0],dtype=np.int32)
+
+            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), evf, evi, float(intime), seeds[i],nribs,x0,footprint, pl)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
             all_results[i, :] = result
             all_frapresults[i,:] = frapresult
