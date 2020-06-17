@@ -13,7 +13,7 @@ using Eigen::MatrixXi;
 using Eigen::VectorXd;
 using Eigen::VectorXi;
 
-void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_intensity, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result, double* col_t, int* col_x, int colNp, int* x0, int r_footprint, int* SSA_probe, double* k_probe,int* probe_loc,int* n_probes,int Ncolor)
+void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_intensity, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, int fNt, int* frap_result, int* x0, int r_footprint, int* SSA_probe, double* k_probe,int* probe_loc,int* n_probes,int Ncolor)
 {
     // Declare the variables
 	
@@ -61,7 +61,7 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 	
 	
     int R = r_footprint; // ribosome exclusion.
-    int N_rib = 100; // maximum number of ribosomes. 
+    int N_rib = 200; // maximum number of ribosomes. 
 	//std::cout << "-------nrib=" << N_rib << "-------" << std::endl;
 	
 	
@@ -108,33 +108,16 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 		X(0,i) = x0[i];
 	}
 	
-	
-	MatrixXi col(1,N_rib);
-	col.setZero(1,N_rib);
-	
-    MatrixXi T(1,N_rib); //ribosome travel time array
-    T.setZero(1,N_rib);
-	
+
 	//VectorXd T_array(200);
-	int t_counter = 0;
-	int col_counter = 0;
-	
+
     // Create an eigen matrix that stores the results. 
     Eigen::Map<Eigen::VectorXi> X_array(SSA_intensity,Nt);
 	
 	Eigen::Map<Eigen::MatrixXi> frap_array(frap_result,fNt,N_rib);
 	
 	
-	
-	
-	Eigen::Map<Eigen::VectorXd> T_array(SSA_ribtimes,ribtimesize);  // this map function will fill the python allocated array
-	Eigen::Map<Eigen::VectorXi> col_array(col_result,cNt);
-	
-	
-	Eigen::Map<Eigen::VectorXd> colarrayt(col_t,colNp);
-	Eigen::Map<Eigen::VectorXi> colarrayx(col_x,colNp);
-	
-	Eigen::Map<Eigen::VectorXi> n_ribs(nribs,1);
+
 	
 	
     int total_probes = 0;
@@ -145,8 +128,6 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 	//std::cout << "probes: " << probe_loc  << std::endl;
 	//std::cout << "total probes: " << total_probes  << std::endl;
 	
-	int tsize = T_array.size();
-	int col_size = colarrayt.size();
 
     while( t < tf)
     {
@@ -179,7 +160,7 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 		
 		if (NR > old_NR){
             //std::cout << "adding probes: " << leaky_probe_matrix.block(0,0,NR+3,25) << std::endl;
-			T(0,NR-1) = t;
+
 			number_ribs +=1;
 			
 			for (int k=0; k < total_probes*2; k+=2){
@@ -345,18 +326,6 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 		//std::cout << "rxn "<< Sn.row(ind-1).sum() << std::endl;
 		if (Sn.row(ind-1).sum() < 0){
 
-			if (t_counter < tsize){
-				T_array(t_counter) = t - T(0,0);
-						
-				T.block(0,0,1,NR) = T.block(0,1,1,NR);
-				T(0,NR) = 0;	
-				
-				col_array(t_counter) = col(0,0);	
-				col.block(0,0,1,NR) = col.block(0,1,1,NR);	
-				col(0,NR)= 0;
-				t_counter +=1;		
-				
-			}
 			
 			//std::cout << "deleting leaky probe before" << leaky_probe_matrix.block(0,0,Ncolor*NR,25) << std::endl;
 			
@@ -367,23 +336,11 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 						
 			
 		}
-		else {
-			if (X(0,ind-2) == X(0,ind-1) + R){
-				col(0,ind-1) +=1;
-				if (col_counter < col_size){
-					colarrayt(col_counter) = t;
-					colarrayx(col_counter) = X(0,ind-1);
-					col_counter+=1;
-				}
-				
-			}
 
-
-		}
 		//std::cout << "oneiter" << std::endl;
 
     }
-	n_ribs(0) = number_ribs;
+
 	
         
 }

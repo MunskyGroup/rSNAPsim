@@ -6,7 +6,7 @@ Created on Wed Apr 29 16:01:24 2020
 """
 
 import numpy as np
-import ssa_translation_lowmem_leaky
+import ssa_translation_lowmem_leaky_nostats
 import matplotlib.pyplot as plt
 import time
 
@@ -22,7 +22,7 @@ Ncolor = 2
 t_array = np.array([0,10,20,30,50,100,250,500],dtype=np.float64)
 t0 = 15
 t_array = np.linspace(0,1000,1000,dtype=np.float64)
-N_rib = 100
+N_rib = 200
 result = np.zeros((len(t_array)*N_rib),dtype=np.int32  )
 #kelong = np.array([3.1,3.2,3.3,3.4,3.5,3.1,3.2,3.3,3.4,3.5],dtype=np.float64)
 n_trajectories = 10
@@ -70,7 +70,7 @@ for i in range(n_trajectories):
     colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
     colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
     
-    ssa_translation_lowmem_leaky.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9, pl,k_probe,pv,2 )
+    ssa_translation_lowmem_leaky_nostats.run_SSA(result, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],x0,9, pl,k_probe,pv,2 )
     
  
   

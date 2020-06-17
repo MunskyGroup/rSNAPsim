@@ -9,7 +9,7 @@ import re #import regex
 
 import FileParser
 import warnings
-
+import sys
 import os
 path_to_cpp = ''
 
@@ -28,6 +28,8 @@ if path_to_cpp != '':
         import ssa_translation
         import ssa_translation_lowmem
         import ssa_translation_lowmem_leaky
+        import ssa_translation_lowmem_nostats
+        import ssa_translation_lowmem_leaky_nostats
         os.chdir(cwd)
     except:
         os.chdir(cwd)
@@ -68,7 +70,9 @@ except:
     pass
 
 
+import translation_models as models
 
+import platform
 
 class rSNAPsim():
 
@@ -213,7 +217,7 @@ class rSNAPsim():
 
     def __init__(self):
         #self.gene_sequence_str = lambda: self.sequence_str()
-        
+        self.__version__ = '1.0a-dev'
         self.codon_dicts = CodonDictionaries()
     
     @property
@@ -393,19 +397,6 @@ class rSNAPsim():
 
         return all_k_design
     
-    
-    def get_ui(self, nt_seq):
-        '''
-        return the ratio of average gene copy number / sequence codon copy number
-        '''
-        mean_u = np.mean(self.codon_dict.strGeneCopy.values()) 
-        ui = []
-        for i in range(0, len(nt_seq), 3):
-            ui.append(mean_u/ self.codon_dict.strGeneCopy[nt_seq[i:i+3]])
-        return ui
-        
-
-
         
         
 
@@ -500,1379 +491,6 @@ class rSNAPsim():
         protein_strs,self.proteins, self.tagged_proteins  = smm.get_proteins(self.orfs,self.sequence_str)
         
         
-            
-
-
-    def simple_model(self, poi, tag, ki,ke):
-        '''
-        Simplified model
-        
-        returns the analytical tau, intensity mean, and intensity variance
-        
-        calculated from the simplified model
-        '''
-        
-        L = poi.total_length #get the total length of the gene
-        Lm = np.mean(poi.tag_epitopes[tag])  #the mean location of the tag epitopes
-        
-        L_tag = int((poi.tag_epitopes[tag][-1] - poi.tag_epitopes[tag][0]) / 2)
-        
-        ke_analytical = L*ke / np.sum(self.get_ui(poi.nt_seq[:-3]))
-        
-        
-        tau_analytical = L_tag/ke_analytical  #analytical tau ie autocovariance time 
-        mean_analytical = ki*tau_analytical* (1.-Lm/float(L)) # mean intensity
-        var_analytical = ki*tau_analytical* (1.-Lm/float(L))**2  #var intensity
-        
-        return tau_analytical,mean_analytical,var_analytical
-
-
-
-
-    
-
-        
-            
-    
-    def ssa_binned(self,nt_seq=None, bins = 50,all_k=None, k_elong_mean=10, k_initiation=.03, probePosition=[], n_traj=100, tf=1000, start_time=0, tstep=1000, time_inhibit=0, evaluating_frap=False, evaluating_inhibitor=False,force_python = False):
-        
-        if nt_seq == None:                  #get sequence if none was passed
-            nt_seq = self.POI.nt_seq
-        genelength = int(len(nt_seq)/3)
-        
-        if len(probePosition) == 0:
-            pv,probePosition = self.get_probvec()
-                    
-
-        if all_k == None:          # build the k vector if one was not provided
-
-            codons = nt_seq
-            genelength = int(len(codons)/3)
-            seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
-            k_elongation = np.zeros((1, genelength))
-            tRNA_copynumber = np.zeros((1, genelength))
-
-            for i in range(len(seperated_codons)):
-                tRNA_copynumber[0, i] = self.strGeneCopy[seperated_codons[i]]
-
-            mean_tRNA_copynumber = np.mean(list(self.strGeneCopy.values()))
-
-            k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
-            all_k = [k_initiation] + k_elongation.flatten().tolist()[:-1] + [10]        
-        
-
-        kbin,klen = self.get_binned_k(k_elongation.flatten()[:-1],bins)
-        all_k =     [k_initiation] + kbin.flatten().tolist()  # 
-            
-            
-        pv,probePosition = self.get_binned_probe_vec(probePosition,bins)
-
-        
-        footprint = 0
-        if isinstance(probePosition,list):
-            probePosition = np.array([probePosition]).astype(int)
-            
-        ssa_obj = self.__solve_ssa(genelength, all_k,pv,probePosition,n_traj, tf, start_time, tstep, time_inhibit, evaluating_frap, evaluating_inhibitor,force_python,footprint)
-        return ssa_obj
-
-
-
-
-    def ssa_solver(self, nt_seq=None, all_k=None, k_elong_mean=10, k_initiation=.03, probePosition=[], n_traj=100, tf=1000, start_time=0, tstep=1000, time_inhibit=0, evaluating_frap=False, evaluating_inhibitor=False,force_python = False):
-        '''
-        Solve stochastic simulation algorithms (SSA) for the translation simulation.
-
-        *keyword args*
-
-            **nt_seq**, nucleotide sequence to simulate
-
-            **all_k**, the propensity rates for each codon location (obtained via get_k)
-
-            **k_elong_mean**, average elongation rate to normalize by
-
-            **k_initiation**, rate of mRNA translation initiation
-
-            **probePosition**, binary vector of probe positions, i.e. where the tag epitopes start by codon position
-
-            **n_traj**, number of trajectories
-
-            **tf**, final time point
-
-            **tstep**, number of time steps to record from 0 to tf
-
-            **time_inhibit**, inhibition time of translation either, harringtonine assay or FRAP
-
-            **evaluating_frap**, true or false for evaluating frap assay at time_inhibit
-
-            **evaluating_inhibitor**, true or false for evaluating harringtonine at time_inhibit
-
-        *returns*
-
-            **ssa_obj**, a ssa() class containing the raw ribosome posistions simulated and statistics such as intensity vectors from the SSA trajectory group
-
-        '''
-
-        if len(probePosition) == 0:
-            '''
-            try:
-                probePosition = []
-                for key in self.POI.tag_epitopes.keys():
-                    probePosition = probePosition + self.POI.tag_epitopes[key]
-                probePosition = np.unique(probePosition).tolist()
-            except:
-                print('No POI found')
-                #nt_seq = self.tag_full['T_flag'] + nt_seq
-            '''
-            
-            pv,probePosition = self.get_probvec()
-            
-        
-
-        if nt_seq == None:
-          nt_seq = self.POI.nt_seq
-        genelength = int(len(nt_seq)/3)
-        
-
-        if all_k == None:
-
-
-            codons = nt_seq
-            genelength = int(len(codons)/3)
-            seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
-            k_elongation = np.zeros((1, genelength))
-            tRNA_copynumber = np.zeros((1, genelength))
-
-            for i in range(len(seperated_codons)):
-                tRNA_copynumber[0, i] = self.strGeneCopy[seperated_codons[i]]
-
-            mean_tRNA_copynumber = np.mean(list(self.strGeneCopy.values()))
-
-            k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
-            all_k = [k_initiation] + k_elongation.flatten().tolist()[:-1] + [10]
-
-        
-        if isinstance(probePosition,list):
-            probePosition = np.array([probePosition]).astype(int)
-            
-        footprint = 9
-        ssa_obj = self.__solve_ssa(genelength,  all_k,pv,probePosition,n_traj, tf, start_time, tstep, time_inhibit, evaluating_frap, evaluating_inhibitor,force_python, footprint)
-        return ssa_obj       
-
-
-
-
-            
-            
-    def __solve_ssa(self,genelength,all_k,pv,probePosition,n_traj, tf, start_time, tstep, time_inhibit, evaluating_frap, evaluating_inhibitor,force_python,footprint):
-     
-
-        non_consider_time = start_time
-      
-        '''
-        if probePosition.shape[0] <= 1:
-            pv = np.zeros((1, genelength+1)).astype(int).flatten()
-            
-            for i in range(len(probePosition[0])):
-                pv[probePosition[0][i]:] = i+1
-        else:
-            pv = np.zeros((probePosition.shape[0], genelength+1)).astype(int)
-            for j in range(probePosition.shape[0]):
-                for i in range(len(probePosition)):
-                    pv[j][probePosition[j][i]:] = i+1      
-        '''
-
-        npoints = tstep #non_consider_time + tstep
-        
-        time_vec_fixed = np.linspace(0, npoints-1, npoints, dtype=np.float64)
-        truetime = np.linspace(0, tf, tstep, dtype=np.float64)
-
-
-        rib_vec = []
-
-        solutions = []
-        
-
-
-        
-
-        evf = int(evaluating_frap)
-        evi = int(evaluating_inhibitor)
-        try:
-            intime = float(time_inhibit)
-        except:
-            intime = 0
-
-#        if evaluating_frap == True or evaluating_inhibitor == True:
-#            for i in range(nRepetitions):
-#
-#                soln = self.SSA(all_k,time_vec_fixed,inhibit_time=time_inhibit+non_consider_time,FRAP=evaluating_frap,Inhibitor=evaluating_inhibitor)
-#                solutions.append(soln)
-#        else:
-
-        solutionssave = []
-        
-        st = time.time() 
-        
-        try:
-            if force_python == True:
-                st[0]
-                
-            rib_vec = []
-    
-            solutions = []            
-            solutionssave = []
-            N_rib = 200
-            all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
-            all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
-            result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
-            nribs = np.array([0],dtype=np.int32)
-            k = np.array(all_k)
-            seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
-            all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
-            all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
-            all_nribs = np.zeros((n_traj,1))
-            all_col_points = []
-            x0 = np.zeros((N_rib),dtype=np.int32)
-            for i in range(n_traj):
-                result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
-                ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
-                frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
-                coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
-                colpointsx = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.int32)
-                colpointst = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.float64)
-                
-                nribs = np.array([0],dtype=np.int32)
-               
-                ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint)
-                #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-                all_results[i, :] = result
-                all_frapresults[i,:] = frapresult
-                all_ribtimes[i,:] = ribtimes
-                all_collisions[i,:] = coltimes
-                all_nribs[i,:] = nribs
-                
-                endcolrec = np.where(colpointsx == 0)[0][0]
-                
-                colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
-                all_col_points.append(colpoints.T)
-                
-                
-    
-            for i in range(n_traj):
-                soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
-                validind = np.where(np.sum(soln,axis=1)!=0)[0]
-                if np.max(validind) != N_rib-1:
-                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
-            
-                so = soln[(validind,)]
-                
-                solutionssave.append(so)
-                solutions.append(soln)
-            
-            collisions = np.array([[]])
-            watched_ribs = []
-            for i in range(n_traj):
-                totalrib = all_nribs[i]
-            
-                if totalrib > all_collisions.shape[1]:
-                    collisions = np.append(collisions, all_collisions[i][:])
-                    watched_ribs.append(int(all_collisions.shape[1]))
-            
-                else:
-                   
-                    collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
-                    watched_ribs.append(int(totalrib[0]))
-            
-            sttime = time.time() - st
-
-        except:
-            
-            print('C++ library failed, Using Python Implementation')
-            rib_vec = []
-    
-            solutions = []            
-            solutionssave = []
-            N_rib = 200
-            collisions = np.array([[]])
-            all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
-            all_col_points = []
-            watched_ribs = []
-            for i in range(n_traj):
-                
-                soln,all_ribtimes,Ncol,col_points = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
-                #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
-                
-                collisions = np.append(collisions,Ncol)
-                watched_ribs.append(int(len(collisions)))
-                validind = np.where(np.sum(soln,axis=1)!=0)[0]
-                all_col_points.append(np.array(col_points))
-                if np.max(validind) != N_rib-1:
-                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
-                
-                so = soln[(validind,)]
-               
-                solutionssave.append(so)
-
-                solutions.append(soln)
-            
-                result = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
-                all_results[i, :] = result
-            
-            sttime = time.time() - st
-
-
-                #rb = sparse.lil_matrix((len(time_vec_fixed),genelength),dtype=int)
-                #for j in range(soln.shape[1]):
-
-                    #if len(np.where(soln[:,j]!=0)[0]) !=0:
-                    #print(np.where(soln[:,j]!=0)[0])
-
-
-                    #rb[j,np.where(soln[:,j]!=0)[0]] = 1
-
-
-                        #for value in soln[:,j][np.where(soln[:,j]!=0)[0]].astype(int):
-
-                            #rb[j, value-1] = 1
-
-                #rib_vec.append(rb)
-
-        
-
-
-
-        no_ribosomes = np.zeros((n_traj, (genelength+1)))
-        
-        startindex = np.where(truetime >= non_consider_time)[0][0]
-        
-        #all_results = all_results[:,startindex*N_rib:]
-
-        for i in range(len(solutions)):
-            for j in range(len(solutions[0][0][startindex:])):
-                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
-               
-                no_ribosomes[i, rib_pos.astype(int)] += 1
-        no_ribosomes = no_ribosomes[:, 1:]
-
-        ribosome_means = np.mean(no_ribosomes, axis=0)
-        ribosome_density = ribosome_means/npoints
-
-        no_ribosomes_per_mrna = np.mean(no_ribosomes)
-        
- 
-
-        if probePosition.shape[0] <=1:
-            I = np.zeros((n_traj, len(time_vec_fixed[startindex:])))
-         
-            
-        else:
-            I = np.zeros((int(probePosition.shape[0]),n_traj, len(time_vec_fixed[startindex:])))
-         
-
-        #I = np.zeros((1,tstep+1))
-        
-        if evaluating_frap == False:
-            if probePosition.shape[0] <=1:
-                for i in range(n_traj):
-        
-                    traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
-
-                    I[i, :] = np.sum(np.multiply(pv.flatten()[traj], traj>0), axis=1)[startindex:].T
-            else:
-                for j in range(probePosition.shape[0]):
-                    for i in range(n_traj):
-            
-                        traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
-            
-                        I[j,i, :] = np.sum(pv[j][traj], axis=1)[startindex:].T                
-    
-    
-            intensity_vec = I
-        
-        else:
-            fraptime = time_inhibit
-         
-            
-            inds = np.where(truetime > fraptime)
-
-            inds2 = np.where(truetime  < fraptime+20)
-            inds = np.intersect1d(inds,inds2)
-            endfrap = inds[-1]-1
-            
-
-            
-            for i in range(n_traj):
-    
-                traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
-                
-                nribs = np.sum(solutionssave[i][:,endfrap]!=0)
-             
-                #ribloc = solutionssave[i][:,endfrap]
-                
-                #adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
-                frap_app = 20
-
-                revI = self.get_negative_intensity(traj,genelength,pv,truetime,fraptime+start_time,fraptime+start_time+frap_app)
-                
-
-                I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
-                             
-                I[i,inds[0]:inds[0]+20] = 0
-                #I[i,endfrap-startindex:] = np.sum(pv[traj],axis=1)[endfrap-startindex:].T
-
-                I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] = I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] + revI
-                
-                
-      
-                
-                
-    
-    
-            intensity_vec = I
-
-
-
-
-        ssa_obj = SSA_soln()
-        ssa_obj.no_ribosomes = no_ribosomes
-        ssa_obj.n_traj = n_traj
-        ssa_obj.k = all_k
-        ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
-        ssa_obj.rib_density = ribosome_density
-        ssa_obj.rib_means = ribosome_means
-        ssa_obj.rib_vec = rib_vec
-        ssa_obj.intensity_vec = intensity_vec
-        ssa_obj.time_vec_fixed = time_vec_fixed
-        ssa_obj.time = truetime
-        ssa_obj.time_rec = truetime[startindex:]
-        ssa_obj.start_time = non_consider_time
-        ssa_obj.watched_ribs = watched_ribs
-        try:
-            ssa_obj.col_points = all_col_points
-        except:
-            pass
-
-
-        ssa_obj.evaluating_inhibitor = evaluating_inhibitor
-        ssa_obj.evaluating_frap = evaluating_frap
-        ssa_obj.time_inhibit = time_inhibit
-        ssa_obj.solutions = solutionssave
-        ssa_obj.solvetime = sttime
-        ssa_obj.collisions = collisions
-        
-        
-        try:
-            ssa_obj.ribtimes = all_ribtimes[np.where(all_ribtimes > 0)]
-        except:
-            pass
-
-
-        #solt = solutions.T
-
-        fragmented_trajectories = []
-        fragtimes = []
-        maxlen = 0
-    
-        fragmentspertraj= []
-        for k in range(n_traj):
-            ind = np.array([next(j for j in range(0,solutions[k].shape[0]) if int(solutions[k][j, i]) == 0 or int(solutions[k][j, i]) == -1) for i in range(0, solutions[k].shape[1])])
-            changes = ind[1:] - ind[:-1]
-            addindexes = np.where(changes > 0)[0]
-            subindexes = np.where(changes < 0)[0]
-            
-            sub = solutions[k][:,1:] - solutions[k][:,:-1]
-            neutralindexes = np.unique(np.where(sub < 0)[1])
-            neutralindexes = np.setxor1d(neutralindexes, subindexes)
-            
-            for index in neutralindexes:
-                pre = solutions[k][:,index]
-                post = solutions[k][:,index+1]
-                changecount = 0
-                while len(np.where(post - pre < 0)[0]) > 0:
-    
-                    post = np.append([genelength],post)
-                    pre = np.append(pre,0)
-                    
-                    changecount+=1
-                
-                for i in range(changecount):
-                    addindexes = np.sort(np.append(addindexes,index))
-                    subindexes = np.sort(np.append(subindexes,index))
-                    
-                changes[index] = -changecount
-                ind[index] += changecount
-             
-                
-            for index in np.where(np.abs(changes)>1)[0]:
-                if changes[index] < 0:
-                    for i in range(np.abs(changes[index])-1):
-                        subindexes = np.sort(np.append(subindexes,index))
-                else:
-                    for i in range(np.abs(changes[index])-1):
-                        addindexes = np.sort(np.append(addindexes,index))   
-                
-            truefrags = len(subindexes)
-     
-                
-        
-           
-            if len(subindexes) < len(addindexes):
-                subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(truetime)-1)).astype(int))
-                
-            
-            fragmentspertraj.append(len(subindexes))
-            
-            for m in range(min(len(subindexes),len(addindexes))):
-                traj = solutions[k][:, addindexes[m]:subindexes[m]+1]
-                traj_ind = changes[addindexes[m]:subindexes[m]+1]
-                
-                startind = ind[addindexes[m]]
-                minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
-                fragment = np.array([])
-            
-                    
-                
-                iterind = startind
-                
-                if subindexes[m]-addindexes[m] > 0:
-                    if len(minusloc) > 1:
-                        if m <= truefrags:
-                            for n in range(len(minusloc)-1):
-                                iterind = iterind + min(0,traj_ind[minusloc[n]])
-                                fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
-                                
-                            
-                            fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
-                            
-                        else:
-                            for n in range(len(minusloc)-1):
-
-                                iterind = iterind + min(0,traj_ind[minusloc[n]])
-                                
-                                fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
-                  
-                                
-                            fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
-          
-                        
-                    
-                    else:
-
-                        fragment = solutions[k][startind][addindexes[m]:subindexes[m]+1].flatten()
-                   
-                
-                    
-                    fragtimes.append(addindexes[m]+1)
-                       
-                    
-                    fragmented_trajectories.append(fragment)
-                    #if m <= truefrags:
-                        #kes.append(genelength/truetime[len(fragment)])
-            
-                    if len(fragment) > maxlen:
-                        maxlen = len(fragment)
-                    
-    
-            fragarray = np.zeros((len(fragmented_trajectories), maxlen))
-            for i in range(len(fragmented_trajectories)):
-                fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
-            
-        ssa_obj.fragments = fragarray
-        ssa_obj.fragtimes = fragtimes
-        ssa_obj.frag_per_traj = fragmentspertraj
-        ssa_obj.full_frags = truefrags
-        ssa_obj.all_results = all_results
-        
-        if probePosition.shape[0] > 1:
-            for i in range(probePosition.shape[0]):
-                if i > 0:
-                    autocorr_vec2, mean_autocorr2, error_autocorr2, dwelltime2, ke_sim2  = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
-                    autocorr_vec = np.vstack((autocorr_vec,autocorr_vec2))
-                    mean_autocorr = np.vstack((mean_autocorr,mean_autocorr2))
-                    error_autocorr = np.vstack((error_autocorr,error_autocorr2))
-                    dwelltime.append(dwelltime2)
-                    ke_sim.append(ke_sim2)
-                else:
-                    autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
-                    autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.get_autocorr_norm(intensity_vec[i], truetime, 0, genelength)
-                    dwelltime = [dwelltime]
-                    ke_sim = [ke_sim]
-            
-        else:
-            autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
-            autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.get_autocorr_norm(intensity_vec, truetime, 0, genelength)
-            
-            acov,nacov = self.get_all_autocovariances(intensity_vec,truetime,genelength )              
-        
-        ssa_obj.autocorr_vec = autocorr_vec
-        ssa_obj.mean_autocorr = mean_autocorr
-        ssa_obj.error_autocorr = error_autocorr
-        ssa_obj.autocorr_vec_norm = autocorr_vec_norm
-        ssa_obj.mean_autocorr_norm = mean_autocorr_norm
-        ssa_obj.error_autocorr_norm = error_autocorr_norm
-        ssa_obj.dwelltime = dwelltime
-        ssa_obj.ke_sim = ke_sim
-        ssa_obj.ke_true = float(genelength)/np.mean(ssa_obj.ribtimes)
-        ssa_obj.probe = probePosition
-        
-        
-        try:
-            ssa_obj.autocovariance_dict  = acov
-            ssa_obj.autocovariance_norm_dict = nacov
-        except:
-            pass
-
-        return ssa_obj
-        
-        
-
-
-
-
-    def get_negative_intensity(self,solution,gene_length,pv,tvec,ti,stop_frap):
-        
-        startindex = np.where(tvec >= ti)[0][0]
-        stop_frap = np.where(tvec >= stop_frap)[0][0]
-      
-            
-        solution = solution.T
-        fragmented_trajectories = []
-        fragtimes = []
-        endfragtimes = []
-        maxlen = 0
-        
-        fragmentspertraj= []
-  
-        ind = np.array([next(j for j in range(0,solution.shape[0]) if int(solution[j, i]) == 0 or int(solution[j, i]) == -1) for i in range(0, solution.shape[1])])
-        changes = ind[1:] - ind[:-1]
-        addindexes = np.where(changes > 0)[0]
-        subindexes = np.where(changes < 0)[0]
-        
-        sub = solution[:,1:] - solution[:,:-1]
-        neutralindexes = np.unique(np.where(sub < 0)[1])
-        neutralindexes = np.setxor1d(neutralindexes, subindexes)
-        
-        for index in neutralindexes:
-            pre = solution[:,index]
-            post = solution[:,index+1]
-            changecount = 0
-            while len(np.where(post - pre < 0)[0]) > 0:
-    
-                post = np.append([gene_length],post)
-                pre = np.append(pre,0)
-                
-                changecount+=1
-            
-            for i in range(changecount):
-                addindexes = np.sort(np.append(addindexes,index))
-                subindexes = np.sort(np.append(subindexes,index))
-                
-            changes[index] = -changecount
-            ind[index] += changecount
-         
-            
-        for index in np.where(np.abs(changes)>1)[0]:
-            if changes[index] < 0:
-                for i in range(np.abs(changes[index])-1):
-                    subindexes = np.sort(np.append(subindexes,index))
-            else:
-                for i in range(np.abs(changes[index])-1):
-                    addindexes = np.sort(np.append(addindexes,index))   
-            
-        truefrags = len(subindexes)
-     
-            
-    
-       
-        if len(subindexes) < len(addindexes):
-            subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(tvec)-1)).astype(int))
-            
-        
-        fragmentspertraj.append(len(subindexes))
-        
-        for m in range(min(len(subindexes),len(addindexes))):
-            traj = solution[:, addindexes[m]:subindexes[m]+1]
-            traj_ind = changes[addindexes[m]:subindexes[m]+1]
-            
-            startind = ind[addindexes[m]]
-            minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
-            fragment = np.array([])
-        
-                
-            
-            iterind = startind
-            
-            if subindexes[m]-addindexes[m] > 0:
-                if len(minusloc) > 1:
-                    if m <= truefrags:
-                        for n in range(len(minusloc)-1):
-                            iterind = iterind + min(0,traj_ind[minusloc[n]])
-                            fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
-                            
-                            
-                            
-              
-            
-                  
-                        
-                        fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
-                        
-                    else:
-                        for n in range(len(minusloc)-1):
-    
-                            iterind = iterind + min(0,traj_ind[minusloc[n]])
-                            
-                            fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
-              
-                            
-                        fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
-      
-                    
-                
-                else:
-    
-                    fragment = solution[startind][addindexes[m]:subindexes[m]+1].flatten()
-               
-            
-                
-                fragtimes.append(addindexes[m]+1)
-                if addindexes[m]+1  + len(fragment) > len(tvec):
-                    endfragtimes.append(len(tvec))
-                else:
-                    endfragtimes.append(addindexes[m]+1  + len(fragment))
-                   
-                
-                fragmented_trajectories.append(fragment)
-                #if m <= truefrags:
-                    #kes.append(genelength/truetime[len(fragment)])
-        
-                if len(fragment) > maxlen:
-                    maxlen = len(fragment)
-                
-    
-        fragarray = np.zeros((len(fragmented_trajectories), maxlen))
-        for i in range(len(fragmented_trajectories)):
-            fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
-            
-            
-        affected_frags = []
-        fragindexes = []
-        
-        
-        for i in range(len(fragtimes)):
-        
-           if  np.sum([fragtimes[i]> np.array([startindex, stop_frap]), endfragtimes[i] > np.array([startindex, stop_frap])]) in [1,2,3]:
-               affected_frags.append(i)
-               fragindexes.append([fragtimes[i],endfragtimes[i]])
-            
-        
-        #affected_frags = np.intersect1d(np.where(np.array(fragtimes) >=  startindex), np.where(np.array(fragtimes)<= stop_frap))
-        if len(fragindexes)> 0:
-            findexes = np.array(fragindexes)
-  
-            frange = findexes[:,1]-stop_frap
-            afterfrapribs = findexes[np.where(frange > 0 )]
-            
-            
-            relevantfrags = np.array(affected_frags)[np.where(frange > 0 )]
-            if len(relevantfrags) > 0:
-                cooked_ribs = 0#(len(affected_frags) - len(relevantfrags))*max(pv)
-      
-                stopfrapindex = stop_frap - afterfrapribs[:,0]
-                
-                rfrags = fragarray[relevantfrags]
-                np.diag(rfrags[:,stopfrapindex])
-                laglen = afterfrapribs[:,1] - stop_frap
-                posistions_at_end_of_FRAP = np.diag(rfrags[:,stopfrapindex])
-             
-                offset = pv[posistions_at_end_of_FRAP.astype(int)]
-             
-                trailing_intensity = np.zeros((max(laglen)))
-                
-                for i in range(len(laglen)):
-                    trailing_intensity[:laglen[i]] -= offset[i] 
-                    
-                trailing_intensity= trailing_intensity-cooked_ribs
-            else:
-                trailing_intensity = np.array([0])
-        else:
-            trailing_intensity = np.array([0])
-        
-        return trailing_intensity
-
-
-    def ssa_solver_append(self, ssa_obj, n=100):
-
-        nRepetitions = ssa_obj.n_traj
-        all_k = ssa_obj.k
-        no_ribosomes_per_mrna = ssa_obj.no_rib_per_mrna
-        ribosome_density = ssa_obj.rib_density
-        ribosome_means = ssa_obj.rib_means
-        rib_vec = ssa_obj.rib_vec
-        intensity_vec = ssa_obj.intensity_vec
-        time_vec_fixed = ssa_obj.time_vec_fixed
-        non_consider_time = ssa_obj.start_time
-
-        evaluating_inhibitor = ssa_obj.evaluating_inhibitor
-        evaluating_frap = ssa_obj.evaluating_frap
-        time_inhibit = ssa_obj.time_inhibit
-        truetime = ssa_obj.time
-        tstep = len(ssa_obj.time)
-
-        npoints = tstep #non_consider_time + tstep
-
-        rib_vec = []
-
-        solutions = []
-        
-        pv = ssa_obj.probe
-    
-        genelength = len(pv[0])-1
-        
-
-
-
-        evf = int(evaluating_frap)
-        evi = int(evaluating_inhibitor)
-        try:
-            intime = float(time_inhibit)
-        except:
-            intime = 0
-
-
-        solutionssave = []
-        
-        st = time.time() 
-        n_traj = n
-        force_python = False
-        
-        try:
-            if force_python == True:
-                st[0]
-                
-            rib_vec = []
-    
-            solutions = []            
-            solutionssave = []
-            N_rib = 200
-            all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
-            all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
-            result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
-            nribs = np.array([0],dtype=np.int32)
-            k = np.array(all_k)
-            seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
-            all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
-            all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
-            all_nribs = np.zeros((n_traj,1))
-            all_col_points = []
-            for i in range(n_traj):
-                result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
-                ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
-                frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
-                coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
-                colpointsx = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.int32)
-                colpointst = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.float64)
-                
-                nribs = np.array([0],dtype=np.int32)
-                
-                ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-                #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-                all_results[i, :] = result
-                all_frapresults[i,:] = frapresult
-                all_ribtimes[i,:] = ribtimes
-                all_collisions[i,:] = coltimes
-                all_nribs[i,:] = nribs
-                
-                endcolrec = np.where(colpointsx == 0)[0][0]
-                
-                colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
-                all_col_points.append(colpoints.T)
-                
-                
-    
-            for i in range(n_traj):
-                soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
-                validind = np.where(np.sum(soln,axis=1)!=0)[0]
-                if np.max(validind) != N_rib-1:
-                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
-            
-                so = soln[(validind,)]
-                
-                solutionssave.append(so)
-                solutions.append(soln)
-            
-            collisions = np.array([[]])
-            watched_ribs = []
-            for i in range(n_traj):
-                totalrib = all_nribs[i]
-            
-                if totalrib > all_collisions.shape[1]:
-                    collisions = np.append(collisions, all_collisions[i][:])
-                    watched_ribs.append(int(all_collisions.shape[1]))
-            
-                else:
-                   
-                    collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
-                    watched_ribs.append(int(totalrib[0]))
-            
-            sttime = time.time() - st
-
-        except:
-            
-            print('C++ library failed, Using Python Implementation')
-            rib_vec = []
-    
-            solutions = []            
-            solutionssave = []
-            N_rib = 200
-            collisions = np.array([[]])
-            all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
-            all_col_points = []
-            watched_ribs = []
-            for i in range(n_traj):
-                
-                soln,all_ribtimes,Ncol,col_points = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
-                #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
-                
-                collisions = np.append(collisions,Ncol)
-                watched_ribs.append(int(len(collisions)))
-                validind = np.where(np.sum(soln,axis=1)!=0)[0]
-                all_col_points.append(np.array(col_points))
-                if np.max(validind) != N_rib-1:
-                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
-                
-                so = soln[(validind,)]
-               
-                solutionssave.append(so)
-
-                solutions.append(soln)
-            
-                result = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
-                all_results[i, :] = result
-            
-            sttime = time.time() - st
-
-
-                #rb = sparse.lil_matrix((len(time_vec_fixed),genelength),dtype=int)
-                #for j in range(soln.shape[1]):
-
-                    #if len(np.where(soln[:,j]!=0)[0]) !=0:
-                    #print(np.where(soln[:,j]!=0)[0])
-
-
-                    #rb[j,np.where(soln[:,j]!=0)[0]] = 1
-
-
-                        #for value in soln[:,j][np.where(soln[:,j]!=0)[0]].astype(int):
-
-                            #rb[j, value-1] = 1
-
-                #rib_vec.append(rb)
-
-        
-
-
-
-        no_ribosomes = np.zeros((n_traj, (genelength+1)))
-        
-        startindex = np.where(truetime >= non_consider_time)[0][0]
-        
-        #all_results = all_results[:,startindex*N_rib:]
-
-        for i in range(len(solutions)):
-            for j in range(len(solutions[0][0][startindex:])):
-                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
-               
-                no_ribosomes[i, rib_pos.astype(int)] += 1
-        no_ribosomes = no_ribosomes[:, 1:]
-
-        ribosome_means = np.mean(no_ribosomes, axis=0)
-        ribosome_density = ribosome_means/npoints
-
-        no_ribosomes_per_mrna = np.mean(no_ribosomes)
-        
- 
-
-        if pv.shape[0] <=1:
-            I = np.zeros((n_traj, len(time_vec_fixed[startindex:])))
-         
-            
-        else:
-            I = np.zeros((int(pv.shape[0]),n_traj, len(time_vec_fixed[startindex:])))
-         
-
-        #I = np.zeros((1,tstep+1))
-        
-        if evaluating_frap == False:
-            if pv.shape[0] <=1:
-                for i in range(n_traj):
-        
-                    traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
-        
-                    I[i, :] = np.sum(pv[0][traj], axis=1)[startindex:].T
-            else:
-                for j in range(pv.shape[0]):
-                    for i in range(n_traj):
-            
-                        traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
-            
-                        I[j,i, :] = np.sum(pv[j][traj], axis=1)[startindex:].T                
-    
-    
-            intensity_vec = I
-        
-        else:
-            fraptime = time_inhibit
-         
-            
-            inds = np.where(truetime > fraptime)
-
-            inds2 = np.where(truetime  < fraptime+20)
-            inds = np.intersect1d(inds,inds2)
-            endfrap = inds[-1]-1
-            
-
-            
-            for i in range(n_traj):
-    
-                traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
-                
-                nribs = np.sum(solutionssave[i][:,endfrap]!=0)
-             
-                #ribloc = solutionssave[i][:,endfrap]
-                
-                #adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
-                frap_app = 20
-
-                revI = self.get_negative_intensity(traj,genelength,pv,truetime,fraptime+start_time,fraptime+start_time+frap_app)
-                
-
-                I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
-                             
-                I[i,inds[0]:inds[0]+20] = 0
-                #I[i,endfrap-startindex:] = np.sum(pv[traj],axis=1)[endfrap-startindex:].T
-
-                I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] = I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] + revI
-                
-                
-      
-                
-                
-    
-    
-            intensity_vec = I
-
-
-
-
-        new_ssa_obj = ssa()
-        new_ssa_obj.no_ribosomes = np.vstack(( ssa_obj.no_ribosomes , no_ribosomes))
-        new_ssa_obj.n_traj = n_traj+ssa_obj.n_traj
-        new_ssa_obj.k = all_k
-        new_ssa_obj.no_rib_per_mrna = float(n_traj)/(n_traj+ssa_obj.n_traj) * no_ribosomes_per_mrna  + float(ssa_obj.n_traj)/(n_traj+ssa_obj.n_traj) * ssa_obj.no_rib_per_mrna
-        new_ssa_obj.rib_density = ribosome_density
-        new_ssa_obj.rib_means = ribosome_means
-        
-        new_ssa_obj.rib_means = np.mean(np.vstack((ssa_obj.rib_means,ribosome_means)),0)
-        
-        
-        new_ssa_obj.rib_vec = rib_vec
-        new_ssa_obj.intensity_vec = np.vstack((ssa_obj.intensity_vec,intensity_vec))
-        new_ssa_obj.time_vec_fixed = time_vec_fixed
-        new_ssa_obj.time = truetime
-        new_ssa_obj.time_rec = truetime[startindex:]
-        new_ssa_obj.start_time = non_consider_time
-        new_ssa_obj.watched_ribs = ssa_obj.watched_ribs + watched_ribs
-        try:
-            new_ssa_obj.col_points = ssa_obj.col_points + all_col_points
-        except:
-            pass
-
-
-        new_ssa_obj.evaluating_inhibitor = evaluating_inhibitor
-        new_ssa_obj.evaluating_frap = evaluating_frap
-        new_ssa_obj.time_inhibit = time_inhibit
-        new_ssa_obj.solutions = ssa_obj.solutions + solutionssave
-        new_ssa_obj.solvetime = sttime
-        new_ssa_obj.collisions = np.hstack((ssa_obj.collisions,collisions))
-        
-        
-        try:
-            new_ssa_obj.ribtimes = np.hstack((ssa_obj.ribtimes, all_ribtimes[np.where(all_ribtimes > 0)]))
-            
-            
-            
-        except:
-            pass
-
-
-        #solt = solutions.T
-
-        fragmented_trajectories = []
-        fragtimes = []
-        maxlen = 0
-    
-        fragmentspertraj= []
-        for k in range(n_traj):
-            ind = np.array([next(j for j in range(0,solutions[k].shape[0]) if int(solutions[k][j, i]) == 0 or int(solutions[k][j, i]) == -1) for i in range(0, solutions[k].shape[1])])
-            changes = ind[1:] - ind[:-1]
-            addindexes = np.where(changes > 0)[0]
-            subindexes = np.where(changes < 0)[0]
-            
-            sub = solutions[k][:,1:] - solutions[k][:,:-1]
-            neutralindexes = np.unique(np.where(sub < 0)[1])
-            neutralindexes = np.setxor1d(neutralindexes, subindexes)
-            
-            for index in neutralindexes:
-                pre = solutions[k][:,index]
-                post = solutions[k][:,index+1]
-                changecount = 0
-                while len(np.where(post - pre < 0)[0]) > 0:
-    
-                    post = np.append([genelength],post)
-                    pre = np.append(pre,0)
-                    
-                    changecount+=1
-                
-                for i in range(changecount):
-                    addindexes = np.sort(np.append(addindexes,index))
-                    subindexes = np.sort(np.append(subindexes,index))
-                    
-                changes[index] = -changecount
-                ind[index] += changecount
-             
-                
-            for index in np.where(np.abs(changes)>1)[0]:
-                if changes[index] < 0:
-                    for i in range(np.abs(changes[index])-1):
-                        subindexes = np.sort(np.append(subindexes,index))
-                else:
-                    for i in range(np.abs(changes[index])-1):
-                        addindexes = np.sort(np.append(addindexes,index))   
-                
-            truefrags = len(subindexes)
-     
-                
-        
-           
-            if len(subindexes) < len(addindexes):
-                subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(truetime)-1)).astype(int))
-                
-            
-            fragmentspertraj.append(len(subindexes))
-            
-            for m in range(min(len(subindexes),len(addindexes))):
-                traj = solutions[k][:, addindexes[m]:subindexes[m]+1]
-                traj_ind = changes[addindexes[m]:subindexes[m]+1]
-                
-                startind = ind[addindexes[m]]
-                minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
-                fragment = np.array([])
-            
-                    
-                
-                iterind = startind
-                
-                if subindexes[m]-addindexes[m] > 0:
-                    if len(minusloc) > 1:
-                        if m <= truefrags:
-                            for n in range(len(minusloc)-1):
-                                iterind = iterind + min(0,traj_ind[minusloc[n]])
-                                fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
-                                
-                                
-                                
-                  
-                
-                      
-                            
-                            fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
-                            
-                        else:
-                            for n in range(len(minusloc)-1):
-
-                                iterind = iterind + min(0,traj_ind[minusloc[n]])
-                                
-                                fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
-                  
-                                
-                            fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
-          
-                        
-                    
-                    else:
-
-                        fragment = solutions[k][startind][addindexes[m]:subindexes[m]+1].flatten()
-                   
-                
-                    
-                    fragtimes.append(addindexes[m]+1)
-                       
-                    
-                    fragmented_trajectories.append(fragment)
-                    #if m <= truefrags:
-                        #kes.append(genelength/truetime[len(fragment)])
-            
-                    if len(fragment) > maxlen:
-                        maxlen = len(fragment)
-                    
-    
-            fragarray = np.zeros((len(fragmented_trajectories), maxlen))
-            for i in range(len(fragmented_trajectories)):
-                fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
-                
-                
-        fraglen_size = max(fragarray.shape[1],ssa_obj.fragments.shape[1])
-        
-        if fragarray.shape[1] != fraglen_size:
-            fragarray =  np.hstack((fragarray, np.zeros((fragarray.shape[0],fraglen_size-fragarray.shape[1]))) )
-        if ssa_obj.fragments.shape[1] != fraglen_size:
-            ssa_obj.fragments =  np.hstack((ssa_obj.fragments, np.zeros((ssa_obj.fragments.shape[0],fraglen_size-ssa_obj.fragments.shape[1]))) )            
-
-        
-        new_ssa_obj.fragments = np.vstack((ssa_obj.fragments,fragarray))
-        new_ssa_obj.fragtimes = ssa_obj.fragtimes+fragtimes
-        new_ssa_obj.frag_per_traj = fragmentspertraj
-        new_ssa_obj.full_frags = ssa_obj.full_frags + truefrags
-        new_ssa_obj.all_results = np.vstack((ssa_obj.all_results,all_results))
-        
-        if pv.shape[0] > 1:
-            for i in range(pv.shape[0]):
-                if i > 0:
-                    autocorr_vec2, mean_autocorr2, error_autocorr2, dwelltime2, ke_sim2  = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
-                    autocorr_vec = np.vstack((autocorr_vec,autocorr_vec2))
-                    mean_autocorr = np.vstack((mean_autocorr,mean_autocorr2))
-                    error_autocorr = np.vstack((error_autocorr,error_autocorr2))
-                    dwelltime.append(dwelltime2)
-                    ke_sim.append(ke_sim2)
-                else:
-                    autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
-                    autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.get_autocorr_norm(intensity_vec[i], truetime, 0, genelength)
-                    dwelltime = [dwelltime]
-                    ke_sim = [ke_sim]
-            
-        else:
-            autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
-            autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.get_autocorr_norm(intensity_vec, truetime, 0, genelength)
-            
-            acov,nacov = self.get_all_autocovariances(intensity_vec,truetime,genelength )              
-        
-        new_ssa_obj.autocorr_vec = autocorr_vec
-        new_ssa_obj.mean_autocorr = mean_autocorr
-        new_ssa_obj.error_autocorr = error_autocorr
-        new_ssa_obj.autocorr_vec_norm = autocorr_vec_norm
-        new_ssa_obj.mean_autocorr_norm = mean_autocorr_norm
-        new_ssa_obj.error_autocorr_norm = error_autocorr_norm
-        new_ssa_obj.dwelltime = dwelltime
-        
-        new_ssa_obj.ke_sim = float(n_traj)/(n_traj+ssa_obj.n_traj) * ke_sim  + float(ssa_obj.n_traj)/(n_traj+ssa_obj.n_traj) * ssa_obj.ke_sim
-        new_ssa_obj.ke_true = float(genelength)/np.mean(   new_ssa_obj.ribtimes   )
-        new_ssa_obj.probe = ssa_obj.probe
-        
-        
-        
-        new_ssa_obj.autocovariance_dict  = acov
-        new_ssa_obj.autocovariance_norm_dict = nacov
-
-#        try:
-#            probePosition = []
-#            for key in self.POI.tag_epitopes.keys():
-#                probePosition = probePosition + self.POI.tag_epitopes[key]
-#            probePosition = np.unique(probePosition).tolist()
-#        except:
-#            print('No POI found')
-#                #nt_seq = self.tag_full['T_flag'] + nt_seq
-#
-#
-#        nt_seq = self.POI.nt_seq
-#        genelength = int(len(nt_seq)/3)
-#
-#
-#
-#        pv = np.zeros((1, genelength)).astype(int).flatten()
-#
-#        for i in range(len(probePosition)):
-#            pv[probePosition[i]:] = i
-#
-#
-#
-#
-#
-#        npoints = len(time_vec_fixed)
-#        tstep = npoints-non_consider_time
-#        for i in range(n):
-#
-#            soln = self.SSA(all_k, time_vec_fixed, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
-#
-#            rb = sparse.lil_matrix((len(time_vec_fixed), genelength), dtype=int)
-#            for j in range(soln.shape[1]):
-#
-#                #if len(np.where(soln[:,j]!=0)[0]) !=0:
-#                #print(np.where(soln[:,j]!=0)[0])
-#
-#
-#                #rb[j,np.where(soln[:,j]!=0)[0]] = 1
-#
-#
-#                    for value in soln[:, j][np.where(soln[:, j] != 0 )[0]].astype(int):
-#
-#                        rb[j, value-1] = 1
-#
-#            rib_vec.append(rb)
-#
-#
-#        no_ribosomes = np.zeros((len(rib_vec), genelength))
-#
-#
-#
-#        for i in range(len(rib_vec)):
-#            no_ribosomes[i] = np.sum(rib_vec[i].todense()[non_consider_time:], axis=0).flatten()
-#
-#        ribosome_means = np.mean(no_ribosomes, axis=0)
-#        ribosome_density = ribosome_means/npoints
-#
-#        no_ribosomes_per_mrna = np.mean(no_ribosomes)
-#
-#        intensity_vec = np.zeros((len(rib_vec), tstep+1))
-#
-#        I = np.zeros((1, tstep+1))
-#        for i in range(len(rib_vec)):
-#            for j in range(tstep):
-#                temp_output = rib_vec[i][non_consider_time + j, :].todense()
-#
-#                I[0, j] = np.sum(pv * temp_output.flatten().T)
-#            intensity_vec[i] = I
-#
-#
-#
-#        ssa_obj = ssa()
-#
-#        ssa_obj.n_traj = nRepetitions + n
-#        ssa_obj.k = all_k
-#        ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
-#        ssa_obj.rib_density = ribosome_density
-#        ssa_obj.rib_means = ribosome_means
-#        ssa_obj.rib_vec = rib_vec
-#        ssa_obj.intensity_vec = intensity_vec
-#        ssa_obj.time_vec_fixed = time_vec_fixed
-#        ssa_obj.start_time = non_consider_time
-#        ssa_obj.probe = probePosition
-#        ssa_obj.evaluating_inhibitor = evaluating_inhibitor
-#        ssa_obj.evaluating_frap = evaluating_frap
-#        ssa_obj.time_inhibit = time_inhibit
-#
-#
-#
-#        if evaluating_inhibitor == False:
-#            autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, time_vec_fixed, 0, genelength)
-#            ssa_obj.autocorr_vec = autocorr_vec
-#            ssa_obj.mean_autocorr = mean_autocorr
-#            ssa_obj.error_autocorr = error_autocorr
-#            ssa_obj.dwelltime = dwelltime
-#            ssa_obj.ke_sim = ke_sim
-
-        return new_ssa_obj
-
 
 
     def multitau_acc(self, ivec, n, sampling_rate, sample_rate_seconds):
@@ -1912,25 +530,6 @@ class rSNAPsim():
             binnedData_1 = data
 
 
-
-    def get_acc2(self, data, trunc=False):
-        '''
-        Get autocorrelation function
-
-        *NOT* multi-tau
-        '''
-        N = len(data)
-        fvi = np.fft.fft(data, n=2*N)
-        acf = fvi*np.conjugate(fvi)
-        acf = np.fft.ifft(acf)
-        acf = np.real(acf[:N])/float(N)
-        if trunc:
-            acf[acf < 0]=0
-            for i in range(1, len(acf)):
-                if acf[i] > acf[i-1]:
-                    acf[i] = acf[i-1]
-        return acf
-    
 
     def analyze_seq_file(self, filename):
         '''
@@ -2296,170 +895,6 @@ class rSNAPsim():
                 
 
             
-
-    def get_autocorr_norm(self, intensity_vec, time_vec, totalSimulationTime, geneLength,normalization= 'Individual'):
-        '''
-        returns the autocorrelations
-        '''
-
-        autocorr_vec = np.zeros((intensity_vec.shape))
-
-
-        if normalization in [ 'Individual','I','individual','ind']:
-            for i in range(intensity_vec.shape[0]):
-                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
-        elif normalization in ['global','Global','g','G']:
-            global_mean = np.mean(intensity_vec)
-            for i in range(intensity_vec.shape[0]):
-                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-global_mean)
-            
-        else:   
-            print('unrecognized normalization, using indivdual means')
-            for i in range(intensity_vec.shape[0]):
-                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
-                
-                
-
-
-        normalized_autocorr = autocorr_vec.T/ autocorr_vec[:,0]
-        mean_autocorr = np.mean(normalized_autocorr, axis=1)
-        
-        error_autocorr = np.std(normalized_autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
- 
-        dwelltime = None
-
-        try:
-            dwelltime = time_vec[np.where(mean_autocorr < .01)[0][0]]
-            
-        except:
-            try:
-                dwelltime = time_vec[np.where(mean_autocorr < .05)[0][0]]
-                
-            except:
-                dwelltime = 1
-
-        
-        try:
-            zeroind = np.where(mean_autocorr<0)[0][0]
-            length = int(.3*len(mean_autocorr))
-            zeromean = np.mean(mean_autocorr[-length:])
-            zeromean2 = np.mean(mean_autocorr[zeroind:])
-    
-            normalized_autocorr = normalized_autocorr-zeromean2
-            mean_autocorr = np.mean(normalized_autocorr, axis=1)
-            
-            error_autocorr = np.std(normalized_autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
-     
-        except:
-            pass
-        
-
-
-        ke_exp = np.round(geneLength/dwelltime ,1)
-
-        return normalized_autocorr, mean_autocorr, error_autocorr, dwelltime, ke_exp
-
-
-    def get_autocorr(self, intensity_vec, time_vec, totalSimulationTime, geneLength, normalization='Individual'):
-        '''
-        returns the autocorrelations
-        '''
-
-        autocorr_vec = np.zeros((intensity_vec.shape))
-        
-        
-        if normalization in [ 'Individual','I','individual','ind']:
-            for i in range(intensity_vec.shape[0]):
-                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
-        elif normalization in ['global','Global','g','G']:
-            global_mean = np.mean(intensity_vec)
-            for i in range(intensity_vec.shape[0]):
-                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-global_mean)
-            
-        else:   
-            print('unrecognized normalization, using indivdual means')
-            for i in range(intensity_vec.shape[0]):
-                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
-        autocorr = autocorr_vec.T
-        mean_autocorr = np.mean(autocorr, axis=1)
-        error_autocorr = np.std(autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
-        
- 
-        dwelltime = None
-
-        try:
-            dwelltime = time_vec[np.where(mean_autocorr < .01)[0][0]]
-
-        except:
-            try:
-                dwelltime = time_vec[np.where(mean_autocorr < .05)[0][0]]
-            except:
-                dwelltime = 1
-
-
-
-
-        ke_exp = np.round(geneLength/dwelltime ,1)
-
-        return autocorr, mean_autocorr, error_autocorr, dwelltime, ke_exp
-
-
-    def get_crosscorr(self, iv1,iv2):
-        '''
-        returns the autocorrelations
-        '''
-
-        i = 0
-        slen = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full').shape[0]
-        crosscorr_vec = np.zeros((iv1.shape[0],slen))
-        
-        for i in range(iv1.shape[0]):
-            crosscorr_vec[i,:] = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full')/len(iv1)
-
-        normalized_autocorr = crosscorr_vec.T/ crosscorr_vec[:,len(iv1[i])-1]
-        mean_autocorr = np.mean(normalized_autocorr, axis=1)
-
-        return crosscorr_vec, mean_autocorr
-    
-    
-    
-    def normalize_cc(self, correlation,mode='max'):
-        '''
-        normalize cc via either center or maximum. 
-        '''
-        
-        if mode.lower() in ['max','maximum']:
-            norm_cor = correlation/np.max(correlation,1)
-            
-        if mode.lower() in ['center','middle']:
-            centerpoint = int((correlation.shape[1]+1)/2)-1
-            norm_cor = correlation/(correlation[:,centerpoint])
-            
-        return norm_cor 
-        
-        
-        
-    
-    def get_g0(self,correlation, mode = 'interp'):
-        '''
-        
-        '''
-        if mode.lower() in ['interp','inter','extrapolate','interpolate']:
-            X = [1,2,3,4]
-            V = correlation[:,X]
-            G0 = np.interp(0,X,V)      
-            
-        if mode.lower() in ['g1','1']:
-            G0 = correlation[:,1]
-            
-        if mode.lower() in ['g0','0']:
-            G0 = correlation[:,0]
-            
-            
-        return G0
-        
-        
-
 
 
 
@@ -2871,6 +1306,13 @@ class SequenceManipMethods():
                 
                 pro = self.nt2aa(seq[orfs[str(i+1)][j][0]:orfs[str(i+1)][j][1]+3])
                 nt_seq = seq[orfs[str(i+1)][j][0]:orfs[str(i+1)][j][1]+3]
+                if pro[-1] == '*':
+                    pro = pro[:-1]
+                    nt_seq = nt_seq[:-3]
+                
+                
+                
+                
                 
                 protein.aa_seq = pro
                 protein.nt_seq = nt_seq
@@ -2918,6 +1360,7 @@ class SequenceManipMethods():
         
         POI.nt_seq = cd.tag_full[tag_type] + POI.nt_seq
         POI.aa_seq = self.nt2aa(POI.nt_seq)
+        
         self.analyze_protein_w_tags(POI)
     
     def analyze_protein_w_tags(self,POI,epitope_loc='front'):
@@ -3043,7 +1486,7 @@ class PropensityFactory():
         mean_tRNA_copynumber = np.mean(list(self.codon_dicts.strGeneCopy.values()))
 
         k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
-        all_k = [k_init] + k_elongation.flatten().tolist()[:-1] + [k_end]
+        all_k = [k_init] + k_elongation.flatten().tolist() + [k_end]
         
         return all_k
     
@@ -3261,9 +1704,20 @@ class ProbeVectorFactory():
     @staticmethod
     def even_bin(length,nbins):
         '''
-        evenly bins a length over a given amount of bins as best it can
-        
+        Parameters
+        ----------
+        length : int
+            Length of the vector to bin.
+        nbins : int
+            Number of desired bins.
+
+        Returns
+        -------
+        inds : TYPE
+            n bin locations over the vector length given.
+
         '''
+        
         binsize = int(np.floor(length/nbins))
         
         k_lens = np.ones(nbins)*binsize
@@ -3562,6 +2016,256 @@ class CodonDictionaries():
             
         f.close()    
     
+    
+    
+class IntensityAnalyses():
+    def __init__(self):
+        pass
+    
+    @staticmethod
+    def get_acc2(data, trunc=False):
+        '''
+        Get autocorrelation function
+
+        *NOT* multi-tau
+        '''
+        N = len(data)
+        fvi = np.fft.fft(data, n=2*N)
+        acf = fvi*np.conjugate(fvi)
+        acf = np.fft.ifft(acf)
+        acf = np.real(acf[:N])/float(N)
+        if trunc:
+            acf[acf < 0]=0
+            for i in range(1, len(acf)):
+                if acf[i] > acf[i-1]:
+                    acf[i] = acf[i-1]
+        return acf    
+        
+    
+    def get_g0(self,correlation, mode = 'interp'):
+        '''
+        
+        '''
+        if mode.lower() in ['interp','inter','extrapolate','interpolate']:
+            X = [1,2,3,4]
+            V = correlation[:,X,:]
+            G0 = np.interp(0,X,V)      
+            
+        if mode.lower() in ['g1','1']:
+            G0 = correlation[:,1,:]
+            
+        if mode.lower() in ['g0','0']:
+            G0 = correlation[:,0,:]
+
+        return G0
+    
+    def normalize_cc(self, correlation,mode='max'):
+        '''
+        normalize cc via either center or maximum. 
+        '''
+        
+        if mode.lower() in ['max','maximum']:
+            norm_cor = correlation/np.max(correlation,1)
+            
+        if mode.lower() in ['center','middle']:
+            centerpoint = int((correlation.shape[1]+1)/2)-1
+            norm_cor = correlation/(correlation[:,centerpoint])
+            
+        return norm_cor 
+        
+    
+    def get_crosscorr(self,intensity_vecs):
+        
+        ncolors = intensity_vecs.shape[0]
+        time_pts = intensity_vecs.shape[1]
+        traj = intensity_vecs.shape[2]
+        cross_corr = np.zeros( (ncolors**2,time_pts*2-1,traj ))
+        
+        i = 0
+        k = 0
+        inds = []
+        for n in range(intensity_vecs.shape[0]):
+            for m in range(intensity_vecs.shape[0]):
+                iv1 = intensity_vecs[n].T
+                iv2 = intensity_vecs[m].T
+                inds.append((n,m))
+                
+                # slen = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full').shape[0]
+                # crosscorr_vec = np.zeros((iv1.shape[0],slen))
+                
+                for i in range(traj):
+                    cross_corr[k,:,i] = np.correlate(iv1[i,:]-np.mean(iv1[i,:]),iv2[i,:]-np.mean(iv2[i,:]),'full')/time_pts
+                k +=1
+                
+        return cross_corr  ,inds     
+
+    def get_crosscorr2(self, iv1,iv2):
+        '''
+        returns the autocorrelations
+        '''
+
+        i = 0
+        slen = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full').shape[0]
+        crosscorr_vec = np.zeros((iv1.shape[0],slen))
+        
+        for i in range(iv1.shape[0]):
+            crosscorr_vec[i,:] = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full')/len(iv1)
+
+        normalized_autocorr = crosscorr_vec.T/ crosscorr_vec[:,len(iv1[i])-1]
+        mean_autocorr = np.mean(normalized_autocorr, axis=1)
+
+        return crosscorr_vec, mean_autocorr
+        
+
+    def get_autocorr_norm(self, intensity_vec, time_vec, totalSimulationTime, geneLength,normalization= 'Individual'):
+        '''
+        returns the autocorrelations
+        '''
+
+        autocorr_vec = np.zeros((intensity_vec.shape))
+
+
+        if normalization in [ 'Individual','I','individual','ind']:
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
+        elif normalization in ['global','Global','g','G']:
+            global_mean = np.mean(intensity_vec)
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-global_mean)
+            
+        else:   
+            print('unrecognized normalization, using indivdual means')
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
+                
+                
+
+
+        normalized_autocorr = autocorr_vec.T/ autocorr_vec[:,0]
+        mean_autocorr = np.mean(normalized_autocorr, axis=1)
+        
+        error_autocorr = np.std(normalized_autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
+ 
+        dwelltime = None
+
+        try:
+            dwelltime = time_vec[np.where(mean_autocorr < .01)[0][0]]
+            
+        except:
+            try:
+                dwelltime = time_vec[np.where(mean_autocorr < .05)[0][0]]
+                
+            except:
+                dwelltime = 1
+
+        
+        try:
+            zeroind = np.where(mean_autocorr<0)[0][0]
+            length = int(.3*len(mean_autocorr))
+            zeromean = np.mean(mean_autocorr[-length:])
+            zeromean2 = np.mean(mean_autocorr[zeroind:])
+    
+            normalized_autocorr = normalized_autocorr-zeromean2
+            mean_autocorr = np.mean(normalized_autocorr, axis=1)
+            
+            error_autocorr = np.std(normalized_autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
+     
+        except:
+            pass
+        
+
+
+        ke_exp = np.round(geneLength/dwelltime ,1)
+
+        return normalized_autocorr, mean_autocorr, error_autocorr, dwelltime, ke_exp
+    
+    
+    
+    def get_autocov(self,intensity_vec,norm='raw'):
+        autocorr_vec = np.zeros((intensity_vec.shape))
+        autocorr_err = np.zeros((intensity_vec.shape))
+        colors = intensity_vec.shape[0]
+        n_traj = intensity_vec.shape[2]
+        
+        for n in range(colors):
+            if norm in [ 'Individual','I','individual','ind']:
+                for i in range(intensity_vec.shape[2]):
+                    ivec = intensity_vec[n,:,i]
+                    autocorr_vec[n,:,i] = self.get_acc2( (ivec-np.mean(ivec))/np.var(ivec)  )
+                    
+            elif norm in ['global','Global','g','G']:
+                global_mean = np.mean(intensity_vec[n])
+                global_var = np.var(intensity_vec[n])
+                for i in range(intensity_vec.shape[2]):
+                    autocorr_vec[n,:,i] = self.get_acc2((intensity_vec[n,:,i]-global_mean)/global_var )
+            elif norm in ['raw','Raw']:
+                for i in range(intensity_vec.shape[2]):
+                    autocorr_vec[n,:,i] = self.get_acc2(intensity_vec[n,:,i])     
+            else:
+                print('unrecognized normalization, please use individual, global, or none')
+                return
+
+        autocorr_err =  1.0/np.sqrt(n_traj)*np.std(autocorr_vec,ddof=1,axis=2)
+                
+        return autocorr_vec, autocorr_err
+    
+    
+    def get_autocorr(self,autocov,g0='G0'):
+        '''
+        normalize the autocovariance over g0
+        '''
+        autocorr = np.copy(autocov)
+        g0 = self.get_g0(autocov,g0)
+        for n in range(autocov.shape[0]):
+            autocorr[n] = autocorr[n]/g0[n]
+        
+        return autocorr
+                
+                
+                
+    def get_autocorr2(self, intensity_vec, time_vec, totalSimulationTime, geneLength, normalization='Individual'):
+        '''
+        returns the autocorrelations
+        '''
+
+        autocorr_vec = np.zeros((intensity_vec.shape))
+        
+        
+        if normalization in [ 'Individual','I','individual','ind']:
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
+        elif normalization in ['global','Global','g','G']:
+            global_mean = np.mean(intensity_vec)
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-global_mean)
+            
+        else:   
+            print('unrecognized normalization, using indivdual means')
+            for i in range(intensity_vec.shape[0]):
+                autocorr_vec[i,:] = self.get_acc2(intensity_vec[i]-np.mean(intensity_vec[i]))
+        autocorr = autocorr_vec.T
+        mean_autocorr = np.mean(autocorr, axis=1)
+        error_autocorr = np.std(autocorr, axis=1)/np.sqrt(intensity_vec.shape[0])
+        
+ 
+        dwelltime = None
+
+        try:
+            dwelltime = time_vec[np.where(mean_autocorr < .01)[0][0]]
+
+        except:
+            try:
+                dwelltime = time_vec[np.where(mean_autocorr < .05)[0][0]]
+            except:
+                dwelltime = 1
+
+
+
+
+        ke_exp = np.round(geneLength/dwelltime ,1)
+
+        return autocorr, mean_autocorr, error_autocorr, dwelltime, ke_exp  
+    
 class TranslationSolvers():
     '''
     Container class for the solvers
@@ -3584,11 +2288,127 @@ class TranslationSolvers():
                                    'burnin':500,
                                    'record_stats':False}
         
-        self.protein = None
+        self._poi = None
+    
+    @property
+    def protein(self):
+        return self._poi
+
+    @protein.setter         #Auto detect amount of colors if protein is set
+    def protein(self,newpoi):
+        self._poi = newpoi
+        try:
+            self.colors = self._poi.probe_loc.shape[0]
+        except:
+            pass
         
+
+    def solve_ballistic_model(self, ki,ke, poi=None, tag= None):
+        '''
+        
+
+        Parameters
+        ----------
+        ki : float
+            initation rate of ribosomes.
+        ke : float
+            mean elongation rate along the transcript.
+        poi : protein object, optional
+            a particular protein object to pull geometry from. The default is None.
+        tag : list, optional
+            list of tag locations if geometry not given. The default is None.
+
+        Returns
+        -------
+        tau_analyticals : list of floats
+            analytically sovled decorrelation times tau.
+        mean_analyticals : list of floats
+            the visible ribosome means on the transcript.
+        var_analyticals : list of floats
+            variances of ribosomes on the transcript.
+
+        '''
+   
+        if poi == None:
+            poi = self._poi
+        if tag == None:
+            colors = np.where((poi.probe_loc)== 1)[0]
+            locs = np.where((poi.probe_loc)== 1)[1]
+            tags = []
+            for i in range(0,max(colors)+1):
+                
+                tags.append(locs[np.where(colors == i)].tolist())
+            
+            
+        tau_analyticals = []
+        mean_analyticals = []
+        var_analyticals = []
+        for tag in tags:
+
+            
+            L = poi.total_length #get the total length of the gene
+            Lm = np.mean(tag)  #the mean location of the tag epitopes
+            L_after_tag = L - tag[-1]
+            L_tag = int((tag[-1] - tag[0]) / 2)
+
+            ke_analytical = L*ke / np.sum(self.__get_ui(poi.nt_seq[:-3]))
+
+            tau_analytical = (L )/ke_analytical  #analytical tau ie autocovariance time 
+            mean_analytical = ki*tau_analytical * (1.-Lm/float(L)) # mean intensity
+            var_analytical = ki*tau_analytical * (1.-Lm/float(L))**2  #var intensity
+            
+            tau_analyticals.append(tau_analytical)
+            mean_analyticals.append(mean_analytical)
+            var_analyticals.append(var_analytical)
+        
+        return tau_analyticals,mean_analyticals,var_analyticals
     
     
-    def solve_ssa(self,k,t,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,k_probe=1,record_stats=False):
+    def invert_ballistic(self,tau_measured, mu_I, geometry):
+        '''
+
+        Parameters
+        ----------
+        tau_measured : TYPE
+            DESCRIPTION.
+        mu_I : TYPE
+            DESCRIPTION.
+        geometry : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        ke : TYPE
+            DESCRIPTION.
+        ki : TYPE
+            DESCRIPTION.
+
+        '''
+        
+        ke=1
+        ki=1
+        
+        return ke, ki
+
+
+    
+    def __get_ui(self, nt_seq):
+        '''
+        return the ratio of average gene copy number / sequence codon copy number
+        '''
+        
+        codon_dict = CodonDictionaries()
+        mean_u = np.mean(list(codon_dict.strGeneCopy.values()) )
+        ui = []
+        for i in range(0, len(nt_seq), 3):
+            ui.append(mean_u/ codon_dict.strGeneCopy[nt_seq[i:i+3]])
+        return ui
+        
+
+
+    
+    
+    def solve_ssa(self,k,t,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,k_probe=1,record_stats=False,probe_vec = None):
         
         ssa_conditions = self.default_conditions
         if k_probe != 1:
@@ -3599,6 +2419,35 @@ class TranslationSolvers():
         ssa_conditions['leaky_probes'] = leaky_probes
         ssa_conditions['low_mem'] = low_memory
         ssa_conditions['record_stats'] = record_stats
+        ssa_conditions['bins'] = bins
+        
+        provided_probe = False
+        try:
+            probe_vec[0]
+            provided_probe = True
+        except:
+            pass
+        
+        provided_protein = False
+        try:
+            self.protein.kelong[0]
+            provided_protein = True
+        except:
+            pass       
+            
+            
+        if not provided_probe:
+            if provided_protein:
+                probe_vec = self.protein.probe_vec.astype(np.int32)
+            else:
+                print("no provided probe vector, please set the solver.protein with a protein object or provide a probe vector")
+                raise 
+        else:
+            probe_vec = probe_vec
+            
+            
+        ssa_conditions['probe_vec'] = probe_vec
+        
         
         if record_stats:
         
@@ -3631,8 +2480,85 @@ class TranslationSolvers():
         return ssa_obj
     
     
-    def solve_ode(self,k,t,x0,bins=None):
-        pass
+
+    def solve_ode(self,k,t,x0,kbind,pl,bins=None, corr = False):
+        st = time.time()
+        m_ode = models.TranslateODE()
+        m_ode.N = len(k)
+        m_ode.tf = t[-1]
+        m_ode.ptimes = len(t)
+        m_ode.ke = k
+        m_ode.kb = kbind 
+        m_ode.fi = 1
+        m_ode.ti = t[0]
+        m_ode.binary = pl
+        
+        #mu_intensity = m_ode.solve()
+        
+        m = models.TranslateCorrs()
+        m.N = len(k)
+        m.tf = t[-1]
+        m.ptimes = len(t)
+        m.ke = k
+        m.kb = kbind 
+        m.fi = 1
+        m.ti = t[0]
+        m.xi = x0
+        m.binary = pl
+        
+        
+        ode_soln = ODE_Soln()
+              
+        m.get_autonomous_matrix()
+        #m.faster_solve()
+       
+        m.get_mean_SS()
+        
+
+        
+        mean_ss = m.get_mean_SS()
+        
+        mean_I = m.map_to_fluorescence3(mean_ss)
+        m.mu_ss = mean_ss
+    
+        var_ss = m.get_var_SS()
+        var_I = m.map_to_fluorescence(var_ss) 
+        
+        
+        if corr:
+            
+            m.csolve()
+            norm_acc = np.ravel((m.intensity)/var_I)
+            intensity_acc = m.intensity
+            ode_soln.intensity_acc = m.intensity
+            ode_soln.intensity_acc_norm = norm_acc
+            
+
+        ode_soln.mu_state_ss = mean_ss
+        ode_soln.var_state_ss = var_ss
+
+        ode_soln.mu_It = m.solve()
+        ode_soln.mu_I_ss = mean_I
+        ode_soln.var_I_ss = var_I
+        ode_soln.time = t
+        
+        ode_soln.N = len(k)
+        ode_soln.k = k
+        ode_soln.x0 = x0
+        ode_soln.fi = 1
+        ode_soln.kb = kbind
+        ode_soln.prob_loc = pl
+        ode_soln.solve_time = time.time()-st
+        
+        if len(k) > 100:
+            ode_soln.solve_method = 'expv'
+        else:
+            ode_soln.solve_method = 'odeint'
+        
+        
+        return ode_soln
+    
+    
     
     
     def __solve_ssa(self,k,t,x0,n_traj,ssa_conditions=None):
@@ -3643,27 +2569,35 @@ class TranslationSolvers():
             ssa_conditions = self.default_conditions
         
         x0 = self.__check_x0(x0)
+   
+       
         rib_vec = []
         solutions = []            
         solutionssave = []       
         N_rib = 200
-        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats(n_traj,k[0],t,N_rib)
+        colors = self.colors
+        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats(n_traj,k[0],t,N_rib,colors)
         footprint = ssa_conditions['footprint']
         evf = ssa_conditions['perturb'][0]
         evi = ssa_conditions['perturb'][1]
         intime = ssa_conditions['perturb'][2]
-        non_consider_time = ssa_conditions['Burn in']
+        non_consider_time = ssa_conditions['burnin']
         
         st = time.time()
         
         for i in range(n_traj):
             
-            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib)
+            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib,colors)
             nribs = np.array([0],dtype=np.int32)
+            kelong = np.array(k[1:-1]).flatten()
+            
 
-            ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint)
+    
+
+            ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, kelong,frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint,200)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-            all_results[i, :] = result
+            
+            all_results[i, :] = result.T
             all_frapresults[i,:] = frapresult
             all_ribtimes[i,:] = ribtimes
             all_collisions[i,:] = coltimes
@@ -3674,33 +2608,36 @@ class TranslationSolvers():
             colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
             all_col_points.append(colpoints.T)
                 
-    
-            for i in range(n_traj):
-                soln = all_results[i, :].reshape((N_rib, len(t)))
-                validind = np.where(np.sum(soln,axis=1)!=0)[0]
-                if np.max(validind) != N_rib-1:
-                    validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
             
-                so = soln[(validind,)]
-                
-                solutionssave.append(so)
-                solutions.append(soln)
+        for i in range(n_traj):
+            soln = all_results[i, :].reshape((N_rib, len(t)))
+       
+
+            validind = np.where(np.sum(soln,axis=1)!=0)[0]
+
+            if np.max(validind) != N_rib-1:
+                validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+        
+            so = soln[(validind,)]
             
-            collisions = np.array([[]])
-            watched_ribs = []
-            for i in range(n_traj):
-                totalrib = all_nribs[i]
-            
-                if totalrib > all_collisions.shape[1]:
-                    collisions = np.append(collisions, all_collisions[i][:])
-                    watched_ribs.append(int(all_collisions.shape[1]))
-            
-                else:
-                   
-                    collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
-                    watched_ribs.append(int(totalrib[0]))
-            
-            sttime = time.time() - st
+            solutionssave.append(so)
+            solutions.append(soln)
+        
+        collisions = np.array([[]])
+        watched_ribs = []
+        for i in range(n_traj):
+            totalrib = all_nribs[i]
+        
+            if totalrib > all_collisions.shape[1]:
+                collisions = np.append(collisions, all_collisions[i][:])
+                watched_ribs.append(int(all_collisions.shape[1]))
+        
+            else:
+               
+                collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+                watched_ribs.append(int(totalrib[0]))
+        
+        sttime = time.time() - st
 
 
         no_ribosomes = np.zeros((n_traj, (len(k)+1)))
@@ -3708,6 +2645,16 @@ class TranslationSolvers():
         startindex = np.where(t >= non_consider_time)[0][0]
         
         #all_results = all_results[:,startindex*N_rib:]
+        pv = self.protein.probe_vec
+        I = np.zeros((colors,len(t), n_traj))
+        
+        for n in range(colors):
+            for i in range(n_traj):
+                traj = all_results[i,:].reshape((N_rib,len(t))).T
+                for j in range(len(t)):
+                    temp_output = traj[j,:]
+    
+                    I[n,j,i] = np.sum(pv[n][temp_output[temp_output>0]-1]  )
 
         for i in range(len(solutions)):
             for j in range(len(solutions[0][0][startindex:])):
@@ -3735,15 +2682,20 @@ class TranslationSolvers():
         ssa_obj.time_rec = t[startindex:]
         ssa_obj.start_time = non_consider_time
         ssa_obj.watched_ribs = watched_ribs
+        ssa_obj.intensity_vec = I
+        ssa_obj.solutions = solutionssave
         try:
             ssa_obj.col_points = all_col_points
         except:
             pass
         
+        
+        
         return ssa_obj
     
                 
     def __map_to_intensity(self): 
+        
         return 1           
      
     def __solve_ssa_leaky(self):
@@ -3768,13 +2720,18 @@ class TranslationSolvers():
         
         x0 = self.__check_x0(x0)
         
-        pl = self.protein.probe_vec.astype(np.int32).flatten()
+        
+        pl = ssa_conditions['probe_vec']
+        
+        
+        colors = self.colors
+        print(self.colors)
         
         rib_vec = []
         solutions = []            
         solutionssave = []       
         N_rib = 1
-        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats(n_traj,k[0],t,N_rib)
+        all_results,all_frapresults = self.__generate_mats_lowmem_nostats(n_traj,k[0],t,N_rib,colors)
         footprint = ssa_conditions['footprint']
         evf = ssa_conditions['perturb'][0]
         evi = ssa_conditions['perturb'][1]
@@ -3784,17 +2741,20 @@ class TranslationSolvers():
         st = time.time()
         
         for i in range(n_traj):
-            
-            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib)
+    
+            result,frapresult = self.__generate_vecs_lowmem_nostats(k,t,N_rib,colors)
             nribs = np.array([0],dtype=np.int32)
 
-            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), evf, evi, float(intime), seeds[i],nribs,x0,footprint, pl)
+
+            ssa_translation_lowmem_nostats.run_SSA(result, k[1:-1],frapresult,t,k[0], float(k[-1]), evf, evi, float(intime), seeds[i],x0,footprint, pl,colors)
+
+            #ssa_translation_lowmem_nostats.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), evf, evi, float(intime), seeds[i],nribs,x0,footprint, pl,colors)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-            all_results[i, :] = result
+            all_results[i, :] = result.T
             all_frapresults[i,:] = frapresult
 
             for i in range(n_traj):
-                soln = all_results[i, :].reshape((N_rib, len(t)))
+                soln = all_results[i, :].reshape((N_rib, len(t),colors))
 
                 so = soln
                 solutionssave.append(so)
@@ -3865,13 +2825,14 @@ class TranslationSolvers():
         
         x0 = self.__check_x0(x0)
         
-        pl = self.protein.probe_vec.astype(np.int32).flatten()
+        pl = ssa_conditions['probe_vec']
+        colors = self.colors
         
         rib_vec = []
         solutions = []            
         solutionssave = []       
         N_rib = 1
-        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats(n_traj,k[0],t,N_rib)
+        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats_lowmem(n_traj,k[0],t,N_rib,colors)
         footprint = ssa_conditions['footprint']
         evf = ssa_conditions['perturb'][0]
         evi = ssa_conditions['perturb'][1]
@@ -3882,12 +2843,12 @@ class TranslationSolvers():
         
         for i in range(n_traj):
             
-            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib)
+            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
             nribs = np.array([0],dtype=np.int32)
 
-            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), evf, evi, float(intime), seeds[i],nribs,x0,footprint, pl)
+            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), evf, evi, float(intime), seeds[i],nribs,x0,footprint, pl,colors)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-            all_results[i, :] = result
+            all_results[i, :] = result.T
             all_frapresults[i,:] = frapresult
             all_ribtimes[i,:] = ribtimes
             all_collisions[i,:] = coltimes
@@ -3900,7 +2861,7 @@ class TranslationSolvers():
                 
     
             for i in range(n_traj):
-                soln = all_results[i, :].reshape((N_rib, len(t)))
+                soln = all_results[i, :].reshape((N_rib, len(t),colors))
 
                 so = soln
                 solutionssave.append(so)
@@ -3957,6 +2918,9 @@ class TranslationSolvers():
         ssa_obj.time_rec = t[startindex:]
         ssa_obj.start_time = non_consider_time
         ssa_obj.watched_ribs = watched_ribs
+        ssa_obj.collisions = collisions
+        
+        
         try:
             ssa_obj.col_points = all_col_points
         except:
@@ -3968,7 +2932,7 @@ class TranslationSolvers():
         return ssa_obj
             
 
-    def __solve_ssa_lowmem_leaky(self,k,t,x0,k_probe,n_traj,ssa_conditions=None):
+    def __solve_ssa_lowmem_leaky_nostats(self,k,t,x0,k_probe,n_traj,ssa_conditions=None):
         seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
         k = np.array(k).astype(np.float64)
         if ssa_conditions == None:
@@ -3976,14 +2940,20 @@ class TranslationSolvers():
         
         x0 = self.__check_x0(x0)
         
-        pl = self.protein.probe_loc.astype(int).flatten()
-        pv = self.protein.probe_vec.astype(int).flatten()
+        pl = self.protein.probe_loc.astype(int)
+        
+        
+        if isinstance(k_probe,list):
+            k_probe = np.array(k_probe)
+        
+        pv = ssa_conditions['probe_vec']
+        colors = self.colors
         
         rib_vec = []
         solutions = []            
         solutionssave = []       
         N_rib = 1
-        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats(n_traj,k[0],t,N_rib)
+        all_results,all_frapresults = self.__generate_mats_lowmem_nostats(n_traj,k[0],t,N_rib,colors)
         footprint = ssa_conditions['footprint']
         evf = ssa_conditions['perturb'][0]
         evi = ssa_conditions['perturb'][1]
@@ -3994,12 +2964,107 @@ class TranslationSolvers():
         
         for i in range(n_traj):
             
-            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib)
+            result,frapresult = self.__generate_vecs_lowmem_nostats(k,t,N_rib,colors)
             nribs = np.array([0],dtype=np.int32)
 
-            ssa_translation_lowmem_leaky.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint, pv,k_probe,pl)
+            ssa_translation_lowmem_leaky.run_SSA(result, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],x0,footprint, pv,k_probe,pl, colors)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-            all_results[i, :] = result
+            all_results[i, :] = result.T
+            all_frapresults[i,:] = frapresult
+
+
+            for i in range(n_traj):
+                soln = all_results[i, :].reshape((N_rib, len(t),colors))
+
+                so = soln
+                solutionssave.append(so)
+                solutions.append(soln)
+            
+            collisions = np.array([[]])
+            watched_ribs = []
+
+            
+            sttime = time.time() - st
+
+
+        no_ribosomes = np.zeros((n_traj, (len(k)+1)))
+        
+        startindex = np.where(t >= non_consider_time)[0][0]
+        
+        #all_results = all_results[:,startindex*N_rib:]
+
+#        for i in range(len(solutions)):
+#            for j in range(len(solutions[0][0][startindex:])):
+#                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+#                print(rib_pos)
+#               
+#                no_ribosomes[i, rib_pos.astype(int)] += 1
+#        no_ribosomes = no_ribosomes[:, 1:]
+#
+#        ribosome_means = np.mean(no_ribosomes, axis=0)
+#        ribosome_density = ribosome_means/len(k)
+#
+#        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+        ssa_obj = SSA_Soln()
+        ssa_obj.no_ribosomes = no_ribosomes
+        ssa_obj.n_traj = n_traj
+        ssa_obj.k = k
+        #ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+        #ssa_obj.rib_density = ribosome_density
+        #ssa_obj.rib_means = ribosome_means
+        ssa_obj.rib_vec = rib_vec
+        ssa_obj.intensity_vec = all_results.T
+        ssa_obj.I = all_results.T
+        ssa_obj.time_vec_fixed = t
+        ssa_obj.time = t
+        ssa_obj.time_rec = t[startindex:]
+        ssa_obj.start_time = non_consider_time
+        ssa_obj.watched_ribs = watched_ribs
+
+        ssa_obj.eval_time = sttime
+        return ssa_obj       
+    
+
+
+    def __solve_ssa_lowmem_leaky(self,k,t,x0,k_probe,n_traj,ssa_conditions=None):
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+        k = np.array(k).astype(np.float64)
+        if ssa_conditions == None:
+            ssa_conditions = self.default_conditions
+        
+        x0 = self.__check_x0(x0)
+        
+        pl = self.protein.probe_loc.astype(int)
+        
+        
+        if isinstance(k_probe,list):
+            k_probe = np.array(k_probe)
+        
+        pv = ssa_conditions['probe_vec']
+        colors = self.colors
+        
+        rib_vec = []
+        solutions = []            
+        solutionssave = []       
+        N_rib = 1
+        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats_lowmem(n_traj,k[0],t,N_rib,colors)
+        footprint = ssa_conditions['footprint']
+        evf = ssa_conditions['perturb'][0]
+        evi = ssa_conditions['perturb'][1]
+        intime = ssa_conditions['perturb'][2]
+        non_consider_time = ssa_conditions['burnin']
+        
+        st = time.time()
+        
+        for i in range(n_traj):
+            
+            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
+            nribs = np.array([0],dtype=np.int32)
+
+            ssa_translation_lowmem_leaky.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint, pv,k_probe,pl, colors)
+            #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+            all_results[i, :] = result.T
             all_frapresults[i,:] = frapresult
             all_ribtimes[i,:] = ribtimes
             all_collisions[i,:] = coltimes
@@ -4012,7 +3077,7 @@ class TranslationSolvers():
                 
     
             for i in range(n_traj):
-                soln = all_results[i, :].reshape((N_rib, len(t)))
+                soln = all_results[i, :].reshape((N_rib, len(t),colors))
 
                 so = soln
                 solutionssave.append(so)
@@ -4087,9 +3152,10 @@ class TranslationSolvers():
     
         
     @classmethod
-    def __generate_vecs(cls,k,t,N_rib):
+    def __generate_vecs(cls,k,t,N_rib,ncolor):
         tf = t[-1]
         ki = k[0]
+        
         guessed_no_ribosomes = int(1.3*ki*tf)
         result = np.zeros((len(t)*N_rib), dtype=np.int32)
         ribtimes = np.zeros((guessed_no_ribosomes),dtype=np.float64)
@@ -4098,9 +3164,38 @@ class TranslationSolvers():
         colpointsx = np.zeros(len(k[1:-1])*(guessed_no_ribosomes),dtype=np.int32)
         colpointst = np.zeros(len(k[1:-1])*(guessed_no_ribosomes),dtype=np.float64)
         return result,ribtimes,frapresult,coltimes,colpointsx,colpointst
+    
+    
+    @classmethod
+    def __generate_vecs_lowmem(cls,k,t,N_rib,ncolor):
+        tf = t[-1]
+        ki = k[0]
+        
+        guessed_no_ribosomes = int(1.3*ki*tf)
+        result = np.zeros((ncolor,len(t)), dtype=np.int32)
+        ribtimes = np.zeros((guessed_no_ribosomes),dtype=np.float64)
+        frapresult = np.zeros((len(t)*N_rib),dtype=np.int32)
+        coltimes = np.zeros((guessed_no_ribosomes),dtype=np.int32)
+        colpointsx = np.zeros(len(k[1:-1])*(guessed_no_ribosomes),dtype=np.int32)
+        colpointst = np.zeros(len(k[1:-1])*(guessed_no_ribosomes),dtype=np.float64)
+        return result,ribtimes,frapresult,coltimes,colpointsx,colpointst
+
+    @classmethod
+    def __generate_mats_lowmem(cls,ntraj, ki,t,N_rib,ncolor):
+        tf = t[-1]
+        guessed_no_ribosomes = int(1.3*ki*tf)           
+        all_results = np.zeros((ntraj, len(t),ncolor), dtype=np.int32)
+        all_ribtimes = np.zeros((ntraj,guessed_no_ribosomes),dtype=np.float64)
+        all_frapresults = np.zeros((ntraj,N_rib*len(t)),dtype=np.int32)
+        all_collisions = np.zeros((ntraj,guessed_no_ribosomes),dtype=np.int32)
+        all_nribs = np.zeros((ntraj,1))
+        all_col_points = []
+    
+        return all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points
+        
         
     @classmethod
-    def __generate_mats(cls,ntraj, ki,t,N_rib):
+    def __generate_mats(cls,ntraj, ki,t,N_rib,ncolor):
         tf = t[-1]
         guessed_no_ribosomes = int(1.3*ki*tf)           
         all_results = np.zeros((ntraj, N_rib*len(t)), dtype=np.int32)
@@ -4109,8 +3204,28 @@ class TranslationSolvers():
         all_collisions = np.zeros((ntraj,guessed_no_ribosomes),dtype=np.int32)
         all_nribs = np.zeros((ntraj,1))
         all_col_points = []
+        
+        
+
     
         return all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points
+ 
+    @classmethod
+    def __generate_mats_lowmem_nostats(cls,ntraj, ki,t,N_rib,ncolor):
+
+        all_results = np.zeros((ntraj, len(t),ncolor), dtype=np.int32)
+        all_frapresults = np.zeros((ntraj,N_rib*len(t)),dtype=np.int32)
+        return all_results,all_frapresults
+        
+    @classmethod
+    def __generate_vecs_lowmem_nostats(cls,k,t,N_rib,ncolor):
+
+
+        result = np.zeros((ncolor,len(t)), dtype=np.int32)
+
+        frapresult = np.zeros((len(t)*N_rib),dtype=np.int32)
+
+        return result,frapresult
     
     def __check_x0(self,x0):
         if len(x0) == 0:
@@ -4364,6 +3479,174 @@ class poi():
         probeloc_binned,probevec_binned = ProbeVectorFactory().bin_probe_vecs(self.probe_loc,inds)
                 
         return inds,  probeloc_binned, probevec_binned,bin_k
+    
+    
+    
+    def visualize_probe(self):
+        probe = self.probe_loc
+        fig,ax = plt.subplots(1)
+        N = len(self.kelong)
+        ncolors = probe.shape[0]
+        
+        cmap = cm.get_cmap('gist_rainbow')
+        colors = cmap(np.linspace(.01,.95, ncolors))
+        
+        rectangle =  mpatches.Rectangle((0,.1), N ,.8,linewidth=1,edgecolor='k',facecolor='lightgray')
+
+        ax.add_patch(rectangle)
+        
+        color = np.where(probe == 1)[0]
+        location = np.where(probe == 1)[1]
+        
+        colorlabels = ['Color %d'% i for i in range(ncolors)    ]
+        
+        for c in range(ncolors):
+            ax.plot([-10,-10],[-4,-4],color = colors[c]  )  #fix the legend colors
+        
+        
+        for c,loc in zip(color,location):
+            ax.plot([loc,loc],[.1,.9],color = colors[c]  )
+            
+        ax.set_ylim([-.1,10])
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.set_xlabel('codon')
+        ax.axes.legend(colorlabels,loc=7)
+        ax.axes.get_yaxis().set_visible(False)
+        
+        ax.text(0,5,'Transcript Name: %s' % self.name)
+        ax.text(0,4,'Total Length: %d codons' % self.total_length)
+        ax.text(0,3,'Seq: %s ...' % self.aa_seq[:10])
+        
+        fig.show()    
+        
+        
+        
+    
+
+
+class ODE_Soln():
+    def __init__(self):
+        
+        self.__arrays = [    'probe_loc',
+                             'x0',
+                             'k',
+                             'N',
+                             'time',
+                             'mu_It',
+                             'intensity_acc',
+                             'intensity_acc_norm',]
+        
+        self.__arrays_2d = ['var_state_ss']
+        
+        self.__vals = ['fi','kb','N','solve_time','mu_I_ss','var_I_ss']
+        self.__meta = GenericMetaData().get()
+        
+        
+        pass
+    
+    def save(self,filename):
+        ext = filename.split('.')[-1]
+        
+        if 'txt' == ext:
+            self.__save_txt(filename)
+        if 'json' == ext:
+            self.__save_json(filename)
+            
+
+    def load(self,filename):
+        ext = filename.split('.')[-1]
+        
+        if 'txt' == ext:
+            self.__load_from_txt(filename)
+        if 'json' == ext:
+            self.__load_from_json(filename)
+            
+    def __save_txt(self,filename):
+
+        if '.txt' not in filename:    
+            filename = filename + '.txt'
+
+
+      
+        f = open(filename,'w')
+        for key in self.__dict__.keys():
+            
+            if key in self.__arrays + self.__arrays_2d + self.__vals:
+
+                f.write((key + '\r\n'))
+                np.savetxt(f, np.atleast_2d(self.__dict__[key]), delimiter=',', fmt='%s')
+                f.write(('\r\n'))
+                
+        f.close()
+
+    def __load_from_txt(self, filename):
+        if '.txt' in filename:
+            ode_obj = np.loadtxt(filename, dtype=str,delimiter='\n')
+          
+            solutions = []
+            for i in range(0,len(ode_obj)-1):
+                label = ode_obj[i]                
+                
+                if label in self.__arrays:
+                    
+                    array = np.fromstring(ode_obj[i+1], dtype=float, sep=',')
+                    exec(('self.'+label+ '=array'))  
+                
+                if label in self.__vals:
+                    value = np.fromstring(ode_obj[i+1], dtype=float, sep=',')
+                    exec(('self.'+label+'=value'))
+                    
+                if label in self.__arrays_2d:
+                    j = 1
+                    array2d = np.array([[]])
+                    while ode_obj[i+j] not in self.__arrays + self.__vals:
+                        if j == 1:
+                            array2d = np.array([np.fromstring(ode_obj[i+j], dtype=float, sep=',')   ])
+                        else:
+                            str_2d = np.fromstring(ode_obj[i+j], dtype=float, sep=',')    
+                            array2d = np.vstack((array2d,str_2d))
+                        
+                        j+=1
+                        
+                   
+                    exec(('self.'+label+'=array2d'))
+                        
+                
+
+
+    def __save_from_json(self, filename):
+
+        if '.json' not in filename:
+            filename =  filename + '.json'
+
+        odedict = {}
+        for key in self.__dict__.keys():
+            if key in self.__arrays:
+                
+                odedict[key] = self.ssa_harr.__dict__[key].tolist()
+            else:
+                odedict[key] = self.ssa_harr.__dict__[key]
+
+        json.dump(odedict, codecs.open(filename, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
+
+
+    def __load_json(self,filename):
+        if '.json' in filename:
+
+            obj_text = codecs.open(filename, 'r', encoding='utf-8').read()
+            ode_dict = json.loads(obj_text)
+
+            for key in ode_dict.keys():
+                if key in self.__arrays:
+
+                    self.__dict__[key] = np.array(ode_dict[key])
+                else:
+                    self.__dict__[key] = ode_dict[key]
+           
+
 
 class SSA_Soln():
     '''
@@ -4387,11 +3670,28 @@ class SSA_Soln():
         self.rib_vec = 0          #actual vector of ribosome locations
         self.intensity_vec = []   #intensity vectors per SSA trajectory
         self.time_vec_fixed = []   #time array
+        self.__meta = GenericMetaData().get()
 
 
 
+    def save(self,filename):
+        ext = filename.split('.')[-1]
+        
+        if 'txt' == ext:
+            self.__save_txt(filename)
+        if 'json' == ext:
+            self.__save_json(filename)
+            
 
-    def save_txt(self,filename):
+    def load(self,filename):
+        ext = filename.split('.')[-1]
+        
+        if 'txt' == ext:
+            self.__load_from_txt(filename)
+        if 'json' == ext:
+            self.__load_from_json(filename)
+
+    def __save_txt(self,filename):
 
         if '.txt' in filename:
             f = open(filename, 'a')
@@ -4413,7 +3713,7 @@ class SSA_Soln():
                     f.write(('\r\n'))
         f.close()
 
-    def load_from_txt(self, filename):
+    def __load_from_txt(self, filename):
         if '.txt' in filename:
             ssa_obj = np.loadtxt(filename, dtype=str,delimiter='\n')
             solutions = []
@@ -4487,7 +3787,7 @@ class SSA_Soln():
                      
                      
 
-    def save_from_json(self, filename):
+    def __save_from_json(self, filename):
 
         if '.json' in filename:
 
@@ -4515,7 +3815,7 @@ class SSA_Soln():
             json.dump(ssadict, codecs.open(filename, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
 
 
-    def load_json(self,filename):
+    def __load_json(self,filename):
         if '.json' in filename:
 
             obj_text = codecs.open(filename, 'r', encoding='utf-8').read()
@@ -4528,6 +3828,21 @@ class SSA_Soln():
                 else:
                     self.__dict__[key] = ssadict[key]
 
+
+
+class GenericMetaData():
+    def __init__(self):
+        self.id = ''
+        self.created_at = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime( time.time() ))
+        self.user = os.path.expanduser("~")
+        self.rss_version = rSNAPsim().__version__
+        self.platform = platform.platform()
+        self.python_version = sys.version
+        
+    def get(self):
+        return self.__dict__
+        
+        
 
 class GenericSSA():
 
@@ -4843,4 +4158,1340 @@ class GenericSSA():
 
 
 
+
+
+#     def ssa_binned(self,nt_seq=None, bins = 50,all_k=None, k_elong_mean=10, k_initiation=.03, probePosition=[], n_traj=100, tf=1000, start_time=0, tstep=1000, time_inhibit=0, evaluating_frap=False, evaluating_inhibitor=False,force_python = False):
+        
+#         if nt_seq == None:                  #get sequence if none was passed
+#             nt_seq = self.POI.nt_seq
+#         genelength = int(len(nt_seq)/3)
+        
+#         if len(probePosition) == 0:
+#             pv,probePosition = self.get_probvec()
+                    
+
+#         if all_k == None:          # build the k vector if one was not provided
+
+#             codons = nt_seq
+#             genelength = int(len(codons)/3)
+#             seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
+#             k_elongation = np.zeros((1, genelength))
+#             tRNA_copynumber = np.zeros((1, genelength))
+
+#             for i in range(len(seperated_codons)):
+#                 tRNA_copynumber[0, i] = self.strGeneCopy[seperated_codons[i]]
+
+#             mean_tRNA_copynumber = np.mean(list(self.strGeneCopy.values()))
+
+#             k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
+#             all_k = [k_initiation] + k_elongation.flatten().tolist()[:-1] + [10]        
+        
+
+#         kbin,klen = self.get_binned_k(k_elongation.flatten()[:-1],bins)
+#         all_k =     [k_initiation] + kbin.flatten().tolist()  # 
+            
+            
+#         pv,probePosition = self.get_binned_probe_vec(probePosition,bins)
+
+        
+#         footprint = 0
+#         if isinstance(probePosition,list):
+#             probePosition = np.array([probePosition]).astype(int)
+            
+#         ssa_obj = self.__solve_ssa(genelength, all_k,pv,probePosition,n_traj, tf, start_time, tstep, time_inhibit, evaluating_frap, evaluating_inhibitor,force_python,footprint)
+#         return ssa_obj
+
+
+
+
+#     def ssa_solver(self, nt_seq=None, all_k=None, k_elong_mean=10, k_initiation=.03, probePosition=[], n_traj=100, tf=1000, start_time=0, tstep=1000, time_inhibit=0, evaluating_frap=False, evaluating_inhibitor=False,force_python = False):
+#         '''
+#         Solve stochastic simulation algorithms (SSA) for the translation simulation.
+
+#         *keyword args*
+
+#             **nt_seq**, nucleotide sequence to simulate
+
+#             **all_k**, the propensity rates for each codon location (obtained via get_k)
+
+#             **k_elong_mean**, average elongation rate to normalize by
+
+#             **k_initiation**, rate of mRNA translation initiation
+
+#             **probePosition**, binary vector of probe positions, i.e. where the tag epitopes start by codon position
+
+#             **n_traj**, number of trajectories
+
+#             **tf**, final time point
+
+#             **tstep**, number of time steps to record from 0 to tf
+
+#             **time_inhibit**, inhibition time of translation either, harringtonine assay or FRAP
+
+#             **evaluating_frap**, true or false for evaluating frap assay at time_inhibit
+
+#             **evaluating_inhibitor**, true or false for evaluating harringtonine at time_inhibit
+
+#         *returns*
+
+#             **ssa_obj**, a ssa() class containing the raw ribosome posistions simulated and statistics such as intensity vectors from the SSA trajectory group
+
+#         '''
+
+#         if len(probePosition) == 0:
+#             '''
+#             try:
+#                 probePosition = []
+#                 for key in self.POI.tag_epitopes.keys():
+#                     probePosition = probePosition + self.POI.tag_epitopes[key]
+#                 probePosition = np.unique(probePosition).tolist()
+#             except:
+#                 print('No POI found')
+#                 #nt_seq = self.tag_full['T_flag'] + nt_seq
+#             '''
+            
+#             pv,probePosition = self.get_probvec()
+            
+        
+
+#         if nt_seq == None:
+#           nt_seq = self.POI.nt_seq
+#         genelength = int(len(nt_seq)/3)
+        
+
+#         if all_k == None:
+
+
+#             codons = nt_seq
+#             genelength = int(len(codons)/3)
+#             seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
+#             k_elongation = np.zeros((1, genelength))
+#             tRNA_copynumber = np.zeros((1, genelength))
+
+#             for i in range(len(seperated_codons)):
+#                 tRNA_copynumber[0, i] = self.strGeneCopy[seperated_codons[i]]
+
+#             mean_tRNA_copynumber = np.mean(list(self.strGeneCopy.values()))
+
+#             k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
+#             all_k = [k_initiation] + k_elongation.flatten().tolist()[:-1] + [10]
+
+        
+#         if isinstance(probePosition,list):
+#             probePosition = np.array([probePosition]).astype(int)
+            
+#         footprint = 9
+#         ssa_obj = self.__solve_ssa(genelength,  all_k,pv,probePosition,n_traj, tf, start_time, tstep, time_inhibit, evaluating_frap, evaluating_inhibitor,force_python, footprint)
+#         return ssa_obj       
+
+
+
+
+            
+            
+#     def __solve_ssa(self,genelength,all_k,pv,probePosition,n_traj, tf, start_time, tstep, time_inhibit, evaluating_frap, evaluating_inhibitor,force_python,footprint):
+     
+
+#         non_consider_time = start_time
+      
+#         '''
+#         if probePosition.shape[0] <= 1:
+#             pv = np.zeros((1, genelength+1)).astype(int).flatten()
+            
+#             for i in range(len(probePosition[0])):
+#                 pv[probePosition[0][i]:] = i+1
+#         else:
+#             pv = np.zeros((probePosition.shape[0], genelength+1)).astype(int)
+#             for j in range(probePosition.shape[0]):
+#                 for i in range(len(probePosition)):
+#                     pv[j][probePosition[j][i]:] = i+1      
+#         '''
+
+#         npoints = tstep #non_consider_time + tstep
+        
+#         time_vec_fixed = np.linspace(0, npoints-1, npoints, dtype=np.float64)
+#         truetime = np.linspace(0, tf, tstep, dtype=np.float64)
+
+
+#         rib_vec = []
+
+#         solutions = []
+        
+
+
+        
+
+#         evf = int(evaluating_frap)
+#         evi = int(evaluating_inhibitor)
+#         try:
+#             intime = float(time_inhibit)
+#         except:
+#             intime = 0
+
+# #        if evaluating_frap == True or evaluating_inhibitor == True:
+# #            for i in range(nRepetitions):
+# #
+# #                soln = self.SSA(all_k,time_vec_fixed,inhibit_time=time_inhibit+non_consider_time,FRAP=evaluating_frap,Inhibitor=evaluating_inhibitor)
+# #                solutions.append(soln)
+# #        else:
+
+#         solutionssave = []
+        
+#         st = time.time() 
+        
+#         try:
+#             if force_python == True:
+#                 st[0]
+                
+#             rib_vec = []
+    
+#             solutions = []            
+#             solutionssave = []
+#             N_rib = 200
+#             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
+#             all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
+#             result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+#             nribs = np.array([0],dtype=np.int32)
+#             k = np.array(all_k)
+#             seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+#             all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
+#             all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
+#             all_nribs = np.zeros((n_traj,1))
+#             all_col_points = []
+#             x0 = np.zeros((N_rib),dtype=np.int32)
+#             for i in range(n_traj):
+#                 result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+#                 ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+#                 frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
+#                 coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+#                 colpointsx = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+#                 colpointst = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+                
+#                 nribs = np.array([0],dtype=np.int32)
+               
+#                 ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint)
+#                 #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+#                 all_results[i, :] = result
+#                 all_frapresults[i,:] = frapresult
+#                 all_ribtimes[i,:] = ribtimes
+#                 all_collisions[i,:] = coltimes
+#                 all_nribs[i,:] = nribs
+                
+#                 endcolrec = np.where(colpointsx == 0)[0][0]
+                
+#                 colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+#                 all_col_points.append(colpoints.T)
+                
+                
+    
+#             for i in range(n_traj):
+#                 soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
+#                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
+#                 if np.max(validind) != N_rib-1:
+#                     validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+            
+#                 so = soln[(validind,)]
+                
+#                 solutionssave.append(so)
+#                 solutions.append(soln)
+            
+#             collisions = np.array([[]])
+#             watched_ribs = []
+#             for i in range(n_traj):
+#                 totalrib = all_nribs[i]
+            
+#                 if totalrib > all_collisions.shape[1]:
+#                     collisions = np.append(collisions, all_collisions[i][:])
+#                     watched_ribs.append(int(all_collisions.shape[1]))
+            
+#                 else:
+                   
+#                     collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+#                     watched_ribs.append(int(totalrib[0]))
+            
+#             sttime = time.time() - st
+
+#         except:
+            
+#             print('C++ library failed, Using Python Implementation')
+#             rib_vec = []
+    
+#             solutions = []            
+#             solutionssave = []
+#             N_rib = 200
+#             collisions = np.array([[]])
+#             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
+#             all_col_points = []
+#             watched_ribs = []
+#             for i in range(n_traj):
+                
+#                 soln,all_ribtimes,Ncol,col_points = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
+#                 #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
+                
+#                 collisions = np.append(collisions,Ncol)
+#                 watched_ribs.append(int(len(collisions)))
+#                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
+#                 all_col_points.append(np.array(col_points))
+#                 if np.max(validind) != N_rib-1:
+#                     validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+                
+#                 so = soln[(validind,)]
+               
+#                 solutionssave.append(so)
+
+#                 solutions.append(soln)
+            
+#                 result = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
+#                 all_results[i, :] = result
+            
+#             sttime = time.time() - st
+
+
+#                 #rb = sparse.lil_matrix((len(time_vec_fixed),genelength),dtype=int)
+#                 #for j in range(soln.shape[1]):
+
+#                     #if len(np.where(soln[:,j]!=0)[0]) !=0:
+#                     #print(np.where(soln[:,j]!=0)[0])
+
+
+#                     #rb[j,np.where(soln[:,j]!=0)[0]] = 1
+
+
+#                         #for value in soln[:,j][np.where(soln[:,j]!=0)[0]].astype(int):
+
+#                             #rb[j, value-1] = 1
+
+#                 #rib_vec.append(rb)
+
+        
+
+
+
+#         no_ribosomes = np.zeros((n_traj, (genelength+1)))
+        
+#         startindex = np.where(truetime >= non_consider_time)[0][0]
+        
+#         #all_results = all_results[:,startindex*N_rib:]
+
+#         for i in range(len(solutions)):
+#             for j in range(len(solutions[0][0][startindex:])):
+#                 rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+               
+#                 no_ribosomes[i, rib_pos.astype(int)] += 1
+#         no_ribosomes = no_ribosomes[:, 1:]
+
+#         ribosome_means = np.mean(no_ribosomes, axis=0)
+#         ribosome_density = ribosome_means/npoints
+
+#         no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+ 
+
+#         if probePosition.shape[0] <=1:
+#             I = np.zeros((n_traj, len(time_vec_fixed[startindex:])))
+         
+            
+#         else:
+#             I = np.zeros((int(probePosition.shape[0]),n_traj, len(time_vec_fixed[startindex:])))
+         
+
+#         #I = np.zeros((1,tstep+1))
+        
+#         if evaluating_frap == False:
+#             if probePosition.shape[0] <=1:
+#                 for i in range(n_traj):
+        
+#                     traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+
+#                     I[i, :] = np.sum(np.multiply(pv.flatten()[traj], traj>0), axis=1)[startindex:].T
+#             else:
+#                 for j in range(probePosition.shape[0]):
+#                     for i in range(n_traj):
+            
+#                         traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+            
+#                         I[j,i, :] = np.sum(pv[j][traj], axis=1)[startindex:].T                
+    
+    
+#             intensity_vec = I
+        
+#         else:
+#             fraptime = time_inhibit
+         
+            
+#             inds = np.where(truetime > fraptime)
+
+#             inds2 = np.where(truetime  < fraptime+20)
+#             inds = np.intersect1d(inds,inds2)
+#             endfrap = inds[-1]-1
+            
+
+            
+#             for i in range(n_traj):
+    
+#                 traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+                
+#                 nribs = np.sum(solutionssave[i][:,endfrap]!=0)
+             
+#                 #ribloc = solutionssave[i][:,endfrap]
+                
+#                 #adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
+#                 frap_app = 20
+
+#                 revI = self.get_negative_intensity(traj,genelength,pv,truetime,fraptime+start_time,fraptime+start_time+frap_app)
+                
+
+#                 I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
+                             
+#                 I[i,inds[0]:inds[0]+20] = 0
+#                 #I[i,endfrap-startindex:] = np.sum(pv[traj],axis=1)[endfrap-startindex:].T
+
+#                 I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] = I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] + revI
+                
+                
+      
+                
+                
+    
+    
+#             intensity_vec = I
+
+
+
+
+#         ssa_obj = SSA_soln()
+#         ssa_obj.no_ribosomes = no_ribosomes
+#         ssa_obj.n_traj = n_traj
+#         ssa_obj.k = all_k
+#         ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+#         ssa_obj.rib_density = ribosome_density
+#         ssa_obj.rib_means = ribosome_means
+#         ssa_obj.rib_vec = rib_vec
+#         ssa_obj.intensity_vec = intensity_vec
+#         ssa_obj.time_vec_fixed = time_vec_fixed
+#         ssa_obj.time = truetime
+#         ssa_obj.time_rec = truetime[startindex:]
+#         ssa_obj.start_time = non_consider_time
+#         ssa_obj.watched_ribs = watched_ribs
+#         try:
+#             ssa_obj.col_points = all_col_points
+#         except:
+#             pass
+
+
+#         ssa_obj.evaluating_inhibitor = evaluating_inhibitor
+#         ssa_obj.evaluating_frap = evaluating_frap
+#         ssa_obj.time_inhibit = time_inhibit
+#         ssa_obj.solutions = solutionssave
+#         ssa_obj.solvetime = sttime
+#         ssa_obj.collisions = collisions
+        
+        
+#         try:
+#             ssa_obj.ribtimes = all_ribtimes[np.where(all_ribtimes > 0)]
+#         except:
+#             pass
+
+
+#         #solt = solutions.T
+
+#         fragmented_trajectories = []
+#         fragtimes = []
+#         maxlen = 0
+    
+#         fragmentspertraj= []
+#         for k in range(n_traj):
+#             ind = np.array([next(j for j in range(0,solutions[k].shape[0]) if int(solutions[k][j, i]) == 0 or int(solutions[k][j, i]) == -1) for i in range(0, solutions[k].shape[1])])
+#             changes = ind[1:] - ind[:-1]
+#             addindexes = np.where(changes > 0)[0]
+#             subindexes = np.where(changes < 0)[0]
+            
+#             sub = solutions[k][:,1:] - solutions[k][:,:-1]
+#             neutralindexes = np.unique(np.where(sub < 0)[1])
+#             neutralindexes = np.setxor1d(neutralindexes, subindexes)
+            
+#             for index in neutralindexes:
+#                 pre = solutions[k][:,index]
+#                 post = solutions[k][:,index+1]
+#                 changecount = 0
+#                 while len(np.where(post - pre < 0)[0]) > 0:
+    
+#                     post = np.append([genelength],post)
+#                     pre = np.append(pre,0)
+                    
+#                     changecount+=1
+                
+#                 for i in range(changecount):
+#                     addindexes = np.sort(np.append(addindexes,index))
+#                     subindexes = np.sort(np.append(subindexes,index))
+                    
+#                 changes[index] = -changecount
+#                 ind[index] += changecount
+             
+                
+#             for index in np.where(np.abs(changes)>1)[0]:
+#                 if changes[index] < 0:
+#                     for i in range(np.abs(changes[index])-1):
+#                         subindexes = np.sort(np.append(subindexes,index))
+#                 else:
+#                     for i in range(np.abs(changes[index])-1):
+#                         addindexes = np.sort(np.append(addindexes,index))   
+                
+#             truefrags = len(subindexes)
+     
+                
+        
+           
+#             if len(subindexes) < len(addindexes):
+#                 subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(truetime)-1)).astype(int))
+                
+            
+#             fragmentspertraj.append(len(subindexes))
+            
+#             for m in range(min(len(subindexes),len(addindexes))):
+#                 traj = solutions[k][:, addindexes[m]:subindexes[m]+1]
+#                 traj_ind = changes[addindexes[m]:subindexes[m]+1]
+                
+#                 startind = ind[addindexes[m]]
+#                 minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
+#                 fragment = np.array([])
+            
+                    
+                
+#                 iterind = startind
+                
+#                 if subindexes[m]-addindexes[m] > 0:
+#                     if len(minusloc) > 1:
+#                         if m <= truefrags:
+#                             for n in range(len(minusloc)-1):
+#                                 iterind = iterind + min(0,traj_ind[minusloc[n]])
+#                                 fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                                
+                            
+#                             fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
+                            
+#                         else:
+#                             for n in range(len(minusloc)-1):
+
+#                                 iterind = iterind + min(0,traj_ind[minusloc[n]])
+                                
+#                                 fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                  
+                                
+#                             fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
+          
+                        
+                    
+#                     else:
+
+#                         fragment = solutions[k][startind][addindexes[m]:subindexes[m]+1].flatten()
+                   
+                
+                    
+#                     fragtimes.append(addindexes[m]+1)
+                       
+                    
+#                     fragmented_trajectories.append(fragment)
+#                     #if m <= truefrags:
+#                         #kes.append(genelength/truetime[len(fragment)])
+            
+#                     if len(fragment) > maxlen:
+#                         maxlen = len(fragment)
+                    
+    
+#             fragarray = np.zeros((len(fragmented_trajectories), maxlen))
+#             for i in range(len(fragmented_trajectories)):
+#                 fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
+            
+#         ssa_obj.fragments = fragarray
+#         ssa_obj.fragtimes = fragtimes
+#         ssa_obj.frag_per_traj = fragmentspertraj
+#         ssa_obj.full_frags = truefrags
+#         ssa_obj.all_results = all_results
+        
+#         if probePosition.shape[0] > 1:
+#             for i in range(probePosition.shape[0]):
+#                 if i > 0:
+#                     autocorr_vec2, mean_autocorr2, error_autocorr2, dwelltime2, ke_sim2  = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+#                     autocorr_vec = np.vstack((autocorr_vec,autocorr_vec2))
+#                     mean_autocorr = np.vstack((mean_autocorr,mean_autocorr2))
+#                     error_autocorr = np.vstack((error_autocorr,error_autocorr2))
+#                     dwelltime.append(dwelltime2)
+#                     ke_sim.append(ke_sim2)
+#                 else:
+#                     autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+#                     autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.get_autocorr_norm(intensity_vec[i], truetime, 0, genelength)
+#                     dwelltime = [dwelltime]
+#                     ke_sim = [ke_sim]
+            
+#         else:
+#             autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
+#             autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.get_autocorr_norm(intensity_vec, truetime, 0, genelength)
+            
+#             acov,nacov = self.get_all_autocovariances(intensity_vec,truetime,genelength )              
+        
+#         ssa_obj.autocorr_vec = autocorr_vec
+#         ssa_obj.mean_autocorr = mean_autocorr
+#         ssa_obj.error_autocorr = error_autocorr
+#         ssa_obj.autocorr_vec_norm = autocorr_vec_norm
+#         ssa_obj.mean_autocorr_norm = mean_autocorr_norm
+#         ssa_obj.error_autocorr_norm = error_autocorr_norm
+#         ssa_obj.dwelltime = dwelltime
+#         ssa_obj.ke_sim = ke_sim
+#         ssa_obj.ke_true = float(genelength)/np.mean(ssa_obj.ribtimes)
+#         ssa_obj.probe = probePosition
+        
+        
+#         try:
+#             ssa_obj.autocovariance_dict  = acov
+#             ssa_obj.autocovariance_norm_dict = nacov
+#         except:
+#             pass
+
+#         return ssa_obj
+        
+    # def get_negative_intensity(self,solution,gene_length,pv,tvec,ti,stop_frap):
+        
+    #     startindex = np.where(tvec >= ti)[0][0]
+    #     stop_frap = np.where(tvec >= stop_frap)[0][0]
+      
+            
+    #     solution = solution.T
+    #     fragmented_trajectories = []
+    #     fragtimes = []
+    #     endfragtimes = []
+    #     maxlen = 0
+        
+    #     fragmentspertraj= []
+  
+    #     ind = np.array([next(j for j in range(0,solution.shape[0]) if int(solution[j, i]) == 0 or int(solution[j, i]) == -1) for i in range(0, solution.shape[1])])
+    #     changes = ind[1:] - ind[:-1]
+    #     addindexes = np.where(changes > 0)[0]
+    #     subindexes = np.where(changes < 0)[0]
+        
+    #     sub = solution[:,1:] - solution[:,:-1]
+    #     neutralindexes = np.unique(np.where(sub < 0)[1])
+    #     neutralindexes = np.setxor1d(neutralindexes, subindexes)
+        
+    #     for index in neutralindexes:
+    #         pre = solution[:,index]
+    #         post = solution[:,index+1]
+    #         changecount = 0
+    #         while len(np.where(post - pre < 0)[0]) > 0:
+    
+    #             post = np.append([gene_length],post)
+    #             pre = np.append(pre,0)
+                
+    #             changecount+=1
+            
+    #         for i in range(changecount):
+    #             addindexes = np.sort(np.append(addindexes,index))
+    #             subindexes = np.sort(np.append(subindexes,index))
+                
+    #         changes[index] = -changecount
+    #         ind[index] += changecount
+         
+            
+    #     for index in np.where(np.abs(changes)>1)[0]:
+    #         if changes[index] < 0:
+    #             for i in range(np.abs(changes[index])-1):
+    #                 subindexes = np.sort(np.append(subindexes,index))
+    #         else:
+    #             for i in range(np.abs(changes[index])-1):
+    #                 addindexes = np.sort(np.append(addindexes,index))   
+            
+    #     truefrags = len(subindexes)
+     
+            
+    
+       
+    #     if len(subindexes) < len(addindexes):
+    #         subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(tvec)-1)).astype(int))
+            
+        
+    #     fragmentspertraj.append(len(subindexes))
+        
+    #     for m in range(min(len(subindexes),len(addindexes))):
+    #         traj = solution[:, addindexes[m]:subindexes[m]+1]
+    #         traj_ind = changes[addindexes[m]:subindexes[m]+1]
+            
+    #         startind = ind[addindexes[m]]
+    #         minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
+    #         fragment = np.array([])
+        
+                
+            
+    #         iterind = startind
+            
+    #         if subindexes[m]-addindexes[m] > 0:
+    #             if len(minusloc) > 1:
+    #                 if m <= truefrags:
+    #                     for n in range(len(minusloc)-1):
+    #                         iterind = iterind + min(0,traj_ind[minusloc[n]])
+    #                         fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                            
+                            
+                            
+              
+            
+                  
+                        
+    #                     fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
+                        
+    #                 else:
+    #                     for n in range(len(minusloc)-1):
+    
+    #                         iterind = iterind + min(0,traj_ind[minusloc[n]])
+                            
+    #                         fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+              
+                            
+    #                     fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
+      
+                    
+                
+    #             else:
+    
+    #                 fragment = solution[startind][addindexes[m]:subindexes[m]+1].flatten()
+               
+            
+                
+    #             fragtimes.append(addindexes[m]+1)
+    #             if addindexes[m]+1  + len(fragment) > len(tvec):
+    #                 endfragtimes.append(len(tvec))
+    #             else:
+    #                 endfragtimes.append(addindexes[m]+1  + len(fragment))
+                   
+                
+    #             fragmented_trajectories.append(fragment)
+    #             #if m <= truefrags:
+    #                 #kes.append(genelength/truetime[len(fragment)])
+        
+    #             if len(fragment) > maxlen:
+    #                 maxlen = len(fragment)
+                
+    
+    #     fragarray = np.zeros((len(fragmented_trajectories), maxlen))
+    #     for i in range(len(fragmented_trajectories)):
+    #         fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
+            
+            
+    #     affected_frags = []
+    #     fragindexes = []
+        
+        
+    #     for i in range(len(fragtimes)):
+        
+    #        if  np.sum([fragtimes[i]> np.array([startindex, stop_frap]), endfragtimes[i] > np.array([startindex, stop_frap])]) in [1,2,3]:
+    #            affected_frags.append(i)
+    #            fragindexes.append([fragtimes[i],endfragtimes[i]])
+            
+        
+    #     #affected_frags = np.intersect1d(np.where(np.array(fragtimes) >=  startindex), np.where(np.array(fragtimes)<= stop_frap))
+    #     if len(fragindexes)> 0:
+    #         findexes = np.array(fragindexes)
+  
+    #         frange = findexes[:,1]-stop_frap
+    #         afterfrapribs = findexes[np.where(frange > 0 )]
+            
+            
+    #         relevantfrags = np.array(affected_frags)[np.where(frange > 0 )]
+    #         if len(relevantfrags) > 0:
+    #             cooked_ribs = 0#(len(affected_frags) - len(relevantfrags))*max(pv)
+      
+    #             stopfrapindex = stop_frap - afterfrapribs[:,0]
+                
+    #             rfrags = fragarray[relevantfrags]
+    #             np.diag(rfrags[:,stopfrapindex])
+    #             laglen = afterfrapribs[:,1] - stop_frap
+    #             posistions_at_end_of_FRAP = np.diag(rfrags[:,stopfrapindex])
+             
+    #             offset = pv[posistions_at_end_of_FRAP.astype(int)]
+             
+    #             trailing_intensity = np.zeros((max(laglen)))
+                
+    #             for i in range(len(laglen)):
+    #                 trailing_intensity[:laglen[i]] -= offset[i] 
+                    
+    #             trailing_intensity= trailing_intensity-cooked_ribs
+    #         else:
+    #             trailing_intensity = np.array([0])
+    #     else:
+    #         trailing_intensity = np.array([0])
+        
+    #     return trailing_intensity        
+
+
+
+#     def ssa_solver_append(self, ssa_obj, n=100):
+
+#         nRepetitions = ssa_obj.n_traj
+#         all_k = ssa_obj.k
+#         no_ribosomes_per_mrna = ssa_obj.no_rib_per_mrna
+#         ribosome_density = ssa_obj.rib_density
+#         ribosome_means = ssa_obj.rib_means
+#         rib_vec = ssa_obj.rib_vec
+#         intensity_vec = ssa_obj.intensity_vec
+#         time_vec_fixed = ssa_obj.time_vec_fixed
+#         non_consider_time = ssa_obj.start_time
+
+#         evaluating_inhibitor = ssa_obj.evaluating_inhibitor
+#         evaluating_frap = ssa_obj.evaluating_frap
+#         time_inhibit = ssa_obj.time_inhibit
+#         truetime = ssa_obj.time
+#         tstep = len(ssa_obj.time)
+
+#         npoints = tstep #non_consider_time + tstep
+
+#         rib_vec = []
+
+#         solutions = []
+        
+#         pv = ssa_obj.probe
+    
+#         genelength = len(pv[0])-1
+        
+
+
+
+#         evf = int(evaluating_frap)
+#         evi = int(evaluating_inhibitor)
+#         try:
+#             intime = float(time_inhibit)
+#         except:
+#             intime = 0
+
+
+#         solutionssave = []
+        
+#         st = time.time() 
+#         n_traj = n
+#         force_python = False
+        
+#         try:
+#             if force_python == True:
+#                 st[0]
+                
+#             rib_vec = []
+    
+#             solutions = []            
+#             solutionssave = []
+#             N_rib = 200
+#             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
+#             all_ribtimes = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.float64)
+#             result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+#             nribs = np.array([0],dtype=np.int32)
+#             k = np.array(all_k)
+#             seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+#             all_frapresults = np.zeros((n_traj,N_rib*len(time_vec_fixed)),dtype=np.int32)
+#             all_collisions = np.zeros((n_traj,int(1.3*all_k[0]*truetime[-1])),dtype=np.int32)
+#             all_nribs = np.zeros((n_traj,1))
+#             all_col_points = []
+#             for i in range(n_traj):
+#                 result = np.zeros((len(time_vec_fixed)*N_rib), dtype=np.int32)
+#                 ribtimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+#                 frapresult = np.zeros((len(time_vec_fixed)*N_rib),dtype=np.int32)
+#                 coltimes = np.zeros((int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+#                 colpointsx = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.int32)
+#                 colpointst = np.zeros(len(k[1:-1])*(int(1.3*k[0]*truetime[-1])),dtype=np.float64)
+                
+#                 nribs = np.array([0],dtype=np.int32)
+                
+#                 ssa_translation.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+#                 #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+#                 all_results[i, :] = result
+#                 all_frapresults[i,:] = frapresult
+#                 all_ribtimes[i,:] = ribtimes
+#                 all_collisions[i,:] = coltimes
+#                 all_nribs[i,:] = nribs
+                
+#                 endcolrec = np.where(colpointsx == 0)[0][0]
+                
+#                 colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+#                 all_col_points.append(colpoints.T)
+                
+                
+    
+#             for i in range(n_traj):
+#                 soln = all_results[i, :].reshape((N_rib, len(time_vec_fixed)))
+#                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
+#                 if np.max(validind) != N_rib-1:
+#                     validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+            
+#                 so = soln[(validind,)]
+                
+#                 solutionssave.append(so)
+#                 solutions.append(soln)
+            
+#             collisions = np.array([[]])
+#             watched_ribs = []
+#             for i in range(n_traj):
+#                 totalrib = all_nribs[i]
+            
+#                 if totalrib > all_collisions.shape[1]:
+#                     collisions = np.append(collisions, all_collisions[i][:])
+#                     watched_ribs.append(int(all_collisions.shape[1]))
+            
+#                 else:
+                   
+#                     collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+#                     watched_ribs.append(int(totalrib[0]))
+            
+#             sttime = time.time() - st
+
+#         except:
+            
+#             print('C++ library failed, Using Python Implementation')
+#             rib_vec = []
+    
+#             solutions = []            
+#             solutionssave = []
+#             N_rib = 200
+#             collisions = np.array([[]])
+#             all_results = np.zeros((n_traj, N_rib*len(time_vec_fixed)), dtype=np.int32)
+#             all_col_points = []
+#             watched_ribs = []
+#             for i in range(n_traj):
+                
+#                 soln,all_ribtimes,Ncol,col_points = self.SSA(all_k, truetime, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
+#                 #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
+                
+#                 collisions = np.append(collisions,Ncol)
+#                 watched_ribs.append(int(len(collisions)))
+#                 validind = np.where(np.sum(soln,axis=1)!=0)[0]
+#                 all_col_points.append(np.array(col_points))
+#                 if np.max(validind) != N_rib-1:
+#                     validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+                
+#                 so = soln[(validind,)]
+               
+#                 solutionssave.append(so)
+
+#                 solutions.append(soln)
+            
+#                 result = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
+#                 all_results[i, :] = result
+            
+#             sttime = time.time() - st
+
+
+#                 #rb = sparse.lil_matrix((len(time_vec_fixed),genelength),dtype=int)
+#                 #for j in range(soln.shape[1]):
+
+#                     #if len(np.where(soln[:,j]!=0)[0]) !=0:
+#                     #print(np.where(soln[:,j]!=0)[0])
+
+
+#                     #rb[j,np.where(soln[:,j]!=0)[0]] = 1
+
+
+#                         #for value in soln[:,j][np.where(soln[:,j]!=0)[0]].astype(int):
+
+#                             #rb[j, value-1] = 1
+
+#                 #rib_vec.append(rb)
+
+        
+
+
+
+#         no_ribosomes = np.zeros((n_traj, (genelength+1)))
+        
+#         startindex = np.where(truetime >= non_consider_time)[0][0]
+        
+#         #all_results = all_results[:,startindex*N_rib:]
+
+#         for i in range(len(solutions)):
+#             for j in range(len(solutions[0][0][startindex:])):
+#                 rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+               
+#                 no_ribosomes[i, rib_pos.astype(int)] += 1
+#         no_ribosomes = no_ribosomes[:, 1:]
+
+#         ribosome_means = np.mean(no_ribosomes, axis=0)
+#         ribosome_density = ribosome_means/npoints
+
+#         no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+ 
+
+#         if pv.shape[0] <=1:
+#             I = np.zeros((n_traj, len(time_vec_fixed[startindex:])))
+         
+            
+#         else:
+#             I = np.zeros((int(pv.shape[0]),n_traj, len(time_vec_fixed[startindex:])))
+         
+
+#         #I = np.zeros((1,tstep+1))
+        
+#         if evaluating_frap == False:
+#             if pv.shape[0] <=1:
+#                 for i in range(n_traj):
+        
+#                     traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+        
+#                     I[i, :] = np.sum(pv[0][traj], axis=1)[startindex:].T
+#             else:
+#                 for j in range(pv.shape[0]):
+#                     for i in range(n_traj):
+            
+#                         traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+            
+#                         I[j,i, :] = np.sum(pv[j][traj], axis=1)[startindex:].T                
+    
+    
+#             intensity_vec = I
+        
+#         else:
+#             fraptime = time_inhibit
+         
+            
+#             inds = np.where(truetime > fraptime)
+
+#             inds2 = np.where(truetime  < fraptime+20)
+#             inds = np.intersect1d(inds,inds2)
+#             endfrap = inds[-1]-1
+            
+
+            
+#             for i in range(n_traj):
+    
+#                 traj = all_results[i, :].reshape((N_rib, len(time_vec_fixed))).T
+                
+#                 nribs = np.sum(solutionssave[i][:,endfrap]!=0)
+             
+#                 #ribloc = solutionssave[i][:,endfrap]
+                
+#                 #adj_pv = pv[solutionssave[i][:,inds[-1]][:nribs]]
+#                 frap_app = 20
+
+#                 revI = self.get_negative_intensity(traj,genelength,pv,truetime,fraptime+start_time,fraptime+start_time+frap_app)
+                
+
+#                 I[i, :] = np.sum(pv[traj], axis=1)[startindex:].T
+                             
+#                 I[i,inds[0]:inds[0]+20] = 0
+#                 #I[i,endfrap-startindex:] = np.sum(pv[traj],axis=1)[endfrap-startindex:].T
+
+#                 I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] = I[i,inds[0]+frap_app:len(revI)+inds[0]+frap_app] + revI
+                
+                
+      
+                
+                
+    
+    
+#             intensity_vec = I
+
+
+
+
+#         new_ssa_obj = ssa()
+#         new_ssa_obj.no_ribosomes = np.vstack(( ssa_obj.no_ribosomes , no_ribosomes))
+#         new_ssa_obj.n_traj = n_traj+ssa_obj.n_traj
+#         new_ssa_obj.k = all_k
+#         new_ssa_obj.no_rib_per_mrna = float(n_traj)/(n_traj+ssa_obj.n_traj) * no_ribosomes_per_mrna  + float(ssa_obj.n_traj)/(n_traj+ssa_obj.n_traj) * ssa_obj.no_rib_per_mrna
+#         new_ssa_obj.rib_density = ribosome_density
+#         new_ssa_obj.rib_means = ribosome_means
+        
+#         new_ssa_obj.rib_means = np.mean(np.vstack((ssa_obj.rib_means,ribosome_means)),0)
+        
+        
+#         new_ssa_obj.rib_vec = rib_vec
+#         new_ssa_obj.intensity_vec = np.vstack((ssa_obj.intensity_vec,intensity_vec))
+#         new_ssa_obj.time_vec_fixed = time_vec_fixed
+#         new_ssa_obj.time = truetime
+#         new_ssa_obj.time_rec = truetime[startindex:]
+#         new_ssa_obj.start_time = non_consider_time
+#         new_ssa_obj.watched_ribs = ssa_obj.watched_ribs + watched_ribs
+#         try:
+#             new_ssa_obj.col_points = ssa_obj.col_points + all_col_points
+#         except:
+#             pass
+
+
+#         new_ssa_obj.evaluating_inhibitor = evaluating_inhibitor
+#         new_ssa_obj.evaluating_frap = evaluating_frap
+#         new_ssa_obj.time_inhibit = time_inhibit
+#         new_ssa_obj.solutions = ssa_obj.solutions + solutionssave
+#         new_ssa_obj.solvetime = sttime
+#         new_ssa_obj.collisions = np.hstack((ssa_obj.collisions,collisions))
+        
+        
+#         try:
+#             new_ssa_obj.ribtimes = np.hstack((ssa_obj.ribtimes, all_ribtimes[np.where(all_ribtimes > 0)]))
+            
+            
+            
+#         except:
+#             pass
+
+
+#         #solt = solutions.T
+
+#         fragmented_trajectories = []
+#         fragtimes = []
+#         maxlen = 0
+    
+#         fragmentspertraj= []
+#         for k in range(n_traj):
+#             ind = np.array([next(j for j in range(0,solutions[k].shape[0]) if int(solutions[k][j, i]) == 0 or int(solutions[k][j, i]) == -1) for i in range(0, solutions[k].shape[1])])
+#             changes = ind[1:] - ind[:-1]
+#             addindexes = np.where(changes > 0)[0]
+#             subindexes = np.where(changes < 0)[0]
+            
+#             sub = solutions[k][:,1:] - solutions[k][:,:-1]
+#             neutralindexes = np.unique(np.where(sub < 0)[1])
+#             neutralindexes = np.setxor1d(neutralindexes, subindexes)
+            
+#             for index in neutralindexes:
+#                 pre = solutions[k][:,index]
+#                 post = solutions[k][:,index+1]
+#                 changecount = 0
+#                 while len(np.where(post - pre < 0)[0]) > 0:
+    
+#                     post = np.append([genelength],post)
+#                     pre = np.append(pre,0)
+                    
+#                     changecount+=1
+                
+#                 for i in range(changecount):
+#                     addindexes = np.sort(np.append(addindexes,index))
+#                     subindexes = np.sort(np.append(subindexes,index))
+                    
+#                 changes[index] = -changecount
+#                 ind[index] += changecount
+             
+                
+#             for index in np.where(np.abs(changes)>1)[0]:
+#                 if changes[index] < 0:
+#                     for i in range(np.abs(changes[index])-1):
+#                         subindexes = np.sort(np.append(subindexes,index))
+#                 else:
+#                     for i in range(np.abs(changes[index])-1):
+#                         addindexes = np.sort(np.append(addindexes,index))   
+                
+#             truefrags = len(subindexes)
+     
+                
+        
+           
+#             if len(subindexes) < len(addindexes):
+#                 subindexes = np.append(subindexes, (np.ones((len(addindexes)-len(subindexes)))*(len(truetime)-1)).astype(int))
+                
+            
+#             fragmentspertraj.append(len(subindexes))
+            
+#             for m in range(min(len(subindexes),len(addindexes))):
+#                 traj = solutions[k][:, addindexes[m]:subindexes[m]+1]
+#                 traj_ind = changes[addindexes[m]:subindexes[m]+1]
+                
+#                 startind = ind[addindexes[m]]
+#                 minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
+#                 fragment = np.array([])
+            
+                    
+                
+#                 iterind = startind
+                
+#                 if subindexes[m]-addindexes[m] > 0:
+#                     if len(minusloc) > 1:
+#                         if m <= truefrags:
+#                             for n in range(len(minusloc)-1):
+#                                 iterind = iterind + min(0,traj_ind[minusloc[n]])
+#                                 fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                                
+                                
+                                
+                  
+                
+                      
+                            
+#                             fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
+                            
+#                         else:
+#                             for n in range(len(minusloc)-1):
+
+#                                 iterind = iterind + min(0,traj_ind[minusloc[n]])
+                                
+#                                 fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
+                  
+                                
+#                             fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
+          
+                        
+                    
+#                     else:
+
+#                         fragment = solutions[k][startind][addindexes[m]:subindexes[m]+1].flatten()
+                   
+                
+                    
+#                     fragtimes.append(addindexes[m]+1)
+                       
+                    
+#                     fragmented_trajectories.append(fragment)
+#                     #if m <= truefrags:
+#                         #kes.append(genelength/truetime[len(fragment)])
+            
+#                     if len(fragment) > maxlen:
+#                         maxlen = len(fragment)
+                    
+    
+#             fragarray = np.zeros((len(fragmented_trajectories), maxlen))
+#             for i in range(len(fragmented_trajectories)):
+#                 fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
+                
+                
+#         fraglen_size = max(fragarray.shape[1],ssa_obj.fragments.shape[1])
+        
+#         if fragarray.shape[1] != fraglen_size:
+#             fragarray =  np.hstack((fragarray, np.zeros((fragarray.shape[0],fraglen_size-fragarray.shape[1]))) )
+#         if ssa_obj.fragments.shape[1] != fraglen_size:
+#             ssa_obj.fragments =  np.hstack((ssa_obj.fragments, np.zeros((ssa_obj.fragments.shape[0],fraglen_size-ssa_obj.fragments.shape[1]))) )            
+
+        
+#         new_ssa_obj.fragments = np.vstack((ssa_obj.fragments,fragarray))
+#         new_ssa_obj.fragtimes = ssa_obj.fragtimes+fragtimes
+#         new_ssa_obj.frag_per_traj = fragmentspertraj
+#         new_ssa_obj.full_frags = ssa_obj.full_frags + truefrags
+#         new_ssa_obj.all_results = np.vstack((ssa_obj.all_results,all_results))
+        
+#         if pv.shape[0] > 1:
+#             for i in range(pv.shape[0]):
+#                 if i > 0:
+#                     autocorr_vec2, mean_autocorr2, error_autocorr2, dwelltime2, ke_sim2  = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+#                     autocorr_vec = np.vstack((autocorr_vec,autocorr_vec2))
+#                     mean_autocorr = np.vstack((mean_autocorr,mean_autocorr2))
+#                     error_autocorr = np.vstack((error_autocorr,error_autocorr2))
+#                     dwelltime.append(dwelltime2)
+#                     ke_sim.append(ke_sim2)
+#                 else:
+#                     autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec[i], truetime, 0, genelength)
+#                     autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.get_autocorr_norm(intensity_vec[i], truetime, 0, genelength)
+#                     dwelltime = [dwelltime]
+#                     ke_sim = [ke_sim]
+            
+#         else:
+#             autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, truetime, 0, genelength)
+#             autocorr_vec_norm, mean_autocorr_norm, error_autocorr_norm, dwelltime, ke_sim = self.get_autocorr_norm(intensity_vec, truetime, 0, genelength)
+            
+#             acov,nacov = self.get_all_autocovariances(intensity_vec,truetime,genelength )              
+        
+#         new_ssa_obj.autocorr_vec = autocorr_vec
+#         new_ssa_obj.mean_autocorr = mean_autocorr
+#         new_ssa_obj.error_autocorr = error_autocorr
+#         new_ssa_obj.autocorr_vec_norm = autocorr_vec_norm
+#         new_ssa_obj.mean_autocorr_norm = mean_autocorr_norm
+#         new_ssa_obj.error_autocorr_norm = error_autocorr_norm
+#         new_ssa_obj.dwelltime = dwelltime
+        
+#         new_ssa_obj.ke_sim = float(n_traj)/(n_traj+ssa_obj.n_traj) * ke_sim  + float(ssa_obj.n_traj)/(n_traj+ssa_obj.n_traj) * ssa_obj.ke_sim
+#         new_ssa_obj.ke_true = float(genelength)/np.mean(   new_ssa_obj.ribtimes   )
+#         new_ssa_obj.probe = ssa_obj.probe
+        
+        
+        
+#         new_ssa_obj.autocovariance_dict  = acov
+#         new_ssa_obj.autocovariance_norm_dict = nacov
+
+# #        try:
+# #            probePosition = []
+# #            for key in self.POI.tag_epitopes.keys():
+# #                probePosition = probePosition + self.POI.tag_epitopes[key]
+# #            probePosition = np.unique(probePosition).tolist()
+# #        except:
+# #            print('No POI found')
+# #                #nt_seq = self.tag_full['T_flag'] + nt_seq
+# #
+# #
+# #        nt_seq = self.POI.nt_seq
+# #        genelength = int(len(nt_seq)/3)
+# #
+# #
+# #
+# #        pv = np.zeros((1, genelength)).astype(int).flatten()
+# #
+# #        for i in range(len(probePosition)):
+# #            pv[probePosition[i]:] = i
+# #
+# #
+# #
+# #
+# #
+# #        npoints = len(time_vec_fixed)
+# #        tstep = npoints-non_consider_time
+# #        for i in range(n):
+# #
+# #            soln = self.SSA(all_k, time_vec_fixed, inhibit_time=time_inhibit+non_consider_time, FRAP=evaluating_frap, Inhibitor=evaluating_inhibitor)
+# #
+# #            rb = sparse.lil_matrix((len(time_vec_fixed), genelength), dtype=int)
+# #            for j in range(soln.shape[1]):
+# #
+# #                #if len(np.where(soln[:,j]!=0)[0]) !=0:
+# #                #print(np.where(soln[:,j]!=0)[0])
+# #
+# #
+# #                #rb[j,np.where(soln[:,j]!=0)[0]] = 1
+# #
+# #
+# #                    for value in soln[:, j][np.where(soln[:, j] != 0 )[0]].astype(int):
+# #
+# #                        rb[j, value-1] = 1
+# #
+# #            rib_vec.append(rb)
+# #
+# #
+# #        no_ribosomes = np.zeros((len(rib_vec), genelength))
+# #
+# #
+# #
+# #        for i in range(len(rib_vec)):
+# #            no_ribosomes[i] = np.sum(rib_vec[i].todense()[non_consider_time:], axis=0).flatten()
+# #
+# #        ribosome_means = np.mean(no_ribosomes, axis=0)
+# #        ribosome_density = ribosome_means/npoints
+# #
+# #        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+# #
+# #        intensity_vec = np.zeros((len(rib_vec), tstep+1))
+# #
+# #        I = np.zeros((1, tstep+1))
+# #        for i in range(len(rib_vec)):
+# #            for j in range(tstep):
+# #                temp_output = rib_vec[i][non_consider_time + j, :].todense()
+# #
+# #                I[0, j] = np.sum(pv * temp_output.flatten().T)
+# #            intensity_vec[i] = I
+# #
+# #
+# #
+# #        ssa_obj = ssa()
+# #
+# #        ssa_obj.n_traj = nRepetitions + n
+# #        ssa_obj.k = all_k
+# #        ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+# #        ssa_obj.rib_density = ribosome_density
+# #        ssa_obj.rib_means = ribosome_means
+# #        ssa_obj.rib_vec = rib_vec
+# #        ssa_obj.intensity_vec = intensity_vec
+# #        ssa_obj.time_vec_fixed = time_vec_fixed
+# #        ssa_obj.start_time = non_consider_time
+# #        ssa_obj.probe = probePosition
+# #        ssa_obj.evaluating_inhibitor = evaluating_inhibitor
+# #        ssa_obj.evaluating_frap = evaluating_frap
+# #        ssa_obj.time_inhibit = time_inhibit
+# #
+# #
+# #
+# #        if evaluating_inhibitor == False:
+# #            autocorr_vec, mean_autocorr, error_autocorr, dwelltime, ke_sim = self.get_autocorr(intensity_vec, time_vec_fixed, 0, genelength)
+# #            ssa_obj.autocorr_vec = autocorr_vec
+# #            ssa_obj.mean_autocorr = mean_autocorr
+# #            ssa_obj.error_autocorr = error_autocorr
+# #            ssa_obj.dwelltime = dwelltime
+# #            ssa_obj.ke_sim = ke_sim
+
+#         return new_ssa_obj
 

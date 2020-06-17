@@ -56,6 +56,8 @@ pl[ [10,20,30,100,120,140],0  ] = 1
 pl = np.cumsum(pl,axis=0)
 pl = pl.T.copy(order='C')
 
+
+
 print('-----------------------')
 print('GENERATING REPORT')
 print('-----------------------')
@@ -197,6 +199,17 @@ for i in range(n_trajectories):
     
     colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
     colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
+    
+    
+    
+    print(result.shape)
+    print(kelong.shape)
+    print(frapresult.shape)
+    print(ribtimes.shape)
+    print(coltimes.shape)
+    print(colpointsx.shape)
+    print(colpointst.shape)
+    
     
     ssa_translation.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9,N_rib)
     

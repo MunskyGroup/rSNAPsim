@@ -127,8 +127,12 @@ class GenericODE:
         self.parameters={}
     
     def updateparams(self):
-        for k, v in self.params.iteritems():
-            setattr(self, k, v)
+        try:
+            for k, v in self.params.items():
+                setattr(self, k, v)
+        except:
+             for k, v in self.params.iteritems():
+                setattr(self, k, v)           
             
     def gettvec(self):
         '''
@@ -147,6 +151,11 @@ class GenericODE:
             solution=odeint(self.ODE,self.xi,self.tvec)
         self.soln = solution.T
         return solution.T
+        
+    def _expm_solve(self):
+        self.tvec = self.gettvec()
+        
+        
         
 class GenericStats():
     '''
