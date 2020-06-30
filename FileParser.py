@@ -48,7 +48,7 @@ class FileParser():
         
         Supported: .txt, .dna, .gb, .fasta
         '''
-        
+        self.__check_valid_file(file)
         extension = file.split('.')[-1] 
         if extension == 'dna':            
             try:
@@ -76,8 +76,19 @@ class FileParser():
         
         return cleaned_sequence_str
     
+    def __check_valid_file(self,file):
+        extension = file.split('.')[-1]
+
+        if extension in ['fasta','gb','txt','dna']:
+            return True
+        else:
+            raise Exception("Unrecognized File type, the sequence file must be a .txt, .dna, .gb, or .fasta")
+    
     
     def get_name(self,file):
+        
+        self.__check_valid_file(file)
+        
         name = 'unknown'
         extension = file.split('.')[-1] 
         if extension == 'fasta':                  
@@ -105,6 +116,8 @@ class FileParser():
     
     
     def get_description(self,file):
+        self.__check_valid_file(file)
+        
         extension = file.split('.')[-1] 
         
         if extension == 'fasta':                  
