@@ -154,6 +154,7 @@ class FileParser():
     
     @classmethod
     def __get_name_from_text(cls,file):
+        name = ''
         with open(file) as f:
             raw = f.readlines()
             raw = ''.join(raw)
