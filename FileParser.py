@@ -16,6 +16,8 @@ try:
 except:
     pass
 
+import os
+
 class FileParser():
     '''
     Class to parse incoming files
@@ -173,5 +175,9 @@ class FileParser():
                         if len(section)>namelen:
                             name = section
                             namelen = len(section)
+                            
+        if name =='':
+            
+            name =  os.path.basename(file)[:-4]
                     
         return name
