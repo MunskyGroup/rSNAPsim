@@ -78,7 +78,7 @@ class FileParser():
     
     
     def get_name(self,file):
-        
+        name = 'unknown'
         extension = file.split('.')[-1] 
         if extension == 'fasta':                  
             fastas = list(SeqIO.parse(file,'fasta'))
