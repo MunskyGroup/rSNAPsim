@@ -84,7 +84,7 @@ from scipy.stats import kde
 import scipy as sci
 
 import pandas as pd
-
+import copy
 try:
     from Bio import SeqIO
     from Bio import Entrez
@@ -98,6 +98,7 @@ import translation_models as models
 
 import platform
 from scipy.stats import multivariate_normal,chi2
+import pickle
 
 class rSNAPsim():
 
@@ -2944,9 +2945,7 @@ class TranslationOptimization():
                         
         objective_fun_args = self.args[optfun_type]
         
-        print(bounds)
-        print(initial_par)
-        
+
         if logspace:
             oldpars=initial_par
             f_old=f_best=optfun(10**oldpars, *objective_fun_args)             
@@ -2963,10 +2962,10 @@ class TranslationOptimization():
                     self.__mh_print_report(i,bestpars,f_best,niter)
             
             newpars=evolvepars(oldpars,stepsize)
-            print(newpars)
-            
+
             if logspace:
-                f_new=optfun(10**newpars,*objective_fun_args)
+                tmp_pars = copy.deepcopy(newpars)
+                f_new=optfun(10**tmp_pars,*objective_fun_args)
             else:
                 f_new=optfun(newpars,*objective_fun_args)
             #print("newpars = "+str(newpars)+ "     oldpars = "+str(oldpars))
@@ -2979,9 +2978,7 @@ class TranslationOptimization():
                 if f_new<f_best:
                     f_best=f_new
                     bestpars=newpars
-                
-                self.__update_chain(newpars,f_new)
-        
+                    
         result = sci.optimize.OptimizeResult()
         result.x = bestpars
         result.fun = f_best
@@ -3072,6 +3069,8 @@ class TranslationOptimization():
         
         
     def __update_chain(self,pars, funeval):   
+
+        
         self.chain.parchain = np.vstack( (self.chain.parchain, pars) )
         self.chain.evalchain = np.append(self.chain.evalchain,funeval)
         self.chain.iterations = self.chain.iterations + 1
@@ -3084,7 +3083,7 @@ class TranslationOptimization():
         data_autocorrelation = self.data_obj.acorr
         data_acc_err = self.data_obj.acorr_err
         LL = self.loglikelihood_acc(model_acorr[:,:n_points,:],  data_autocorrelation[:,:n_points,:], data_acc_err[:,:n_points], total_n_spots)
-        
+    
         self.__update_chain(pars,LL)
         
         return LL
@@ -3318,7 +3317,32 @@ class OptChain():
         e.set_linestyle(('-'))
         e.set_facecolor(('none'))
         return ax
-        
+    
+    def save(self,filename):
+        ext = filename.split('.')[-1]
+        if ext == 'txt':
+            x=1
+        if ext in ['p','pickle']:
+            pickle.dump(self,open('filename','wb'))
+        if ext == 'csv':
+            x=1
+        if ext == 'npz':
+            x=1
+            
+    def load(self,filename):
+        ext = filename.split('.')[-1]
+        if ext == 'txt':
+            x=1
+        if ext in ['p','pickle']:
+            tmp_obj = pickle.load(open('filename','wb'))
+            for item in tmp_obj.__dict__.keys():
+                self.__dict__[item] = tmp_obj.__dict__[item]
+            
+        if ext == 'csv':
+            x=1
+        if ext == 'npz':
+            x=1
+                    
 
 class TranslationSolvers():
     '''
@@ -3423,7 +3447,7 @@ class TranslationSolvers():
         return tau_analyticals,mean_analyticals,var_analyticals
     
     
-    def invert_ballistic(self,tau_measured, mu_I, geometry):
+    def invert_ballistic(self,tau_measured, mu_I, poi= None):
         '''
 
         Parameters
@@ -3443,11 +3467,44 @@ class TranslationSolvers():
             DESCRIPTION.
 
         '''
+        if poi == None:
+            poi = self._poi
+        #if tag == None:
+        colors = np.where((poi.probe_loc)== 1)[0]
+        locs = np.where((poi.probe_loc)== 1)[1]
         
-        ke=1
-        ki=1
+        tags = []
+        if isinstance(mu_I,np.ndarray):
+            mu_I = mu_I.tolist()
         
-        return ke, ki
+        if not isinstance(mu_I,list):
+            mu_I = [mu_I]
+            
+            
+        for i in range(0,max(colors)+1):
+            
+            tags.append(locs[np.where(colors == i)].tolist())
+            
+        kes = []
+        kis = []
+        
+        for i in range(len(tags)):
+            tag= tags[i]
+            print(tag)
+            L = poi.total_length #get the total length of the gene
+            Lm = np.mean(tag)  #the mean location of the tag epitopes
+            L_after_tag = L - tag[-1]
+            L_tag = int((tag[-1] - tag[0]) / 2)
+        
+            ke_analytical = (L)/tau_measured
+            
+            ke = ke_analytical/(L)*np.sum(self.__get_ui(poi.nt_seq[:-3]))
+            
+            kes.append(ke)
+            ki = (mu_I[i]/len(tag)) / ( (1.-Lm/float(L))*tau_measured)
+            kis.append(ki)
+            
+        return kes, kis
 
 
     
