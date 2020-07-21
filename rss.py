@@ -3372,9 +3372,9 @@ class OptChain():
                 
                 if len(self.parnames) >0:
                     if i == n_par-1:
-                        ax[i][j].set_xlabel(self.parnames[j])
+                        ax[i][j].set_xlabel(self.parnames[i])
                     if j == 0:
-                        ax[i][j].set_ylabel(self.parnames[i])
+                        ax[i][j].set_ylabel(self.parnames[j])
  
         fig.tight_layout()
         fig.colorbar(a, ax=ax)
