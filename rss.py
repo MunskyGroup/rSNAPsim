@@ -2836,6 +2836,10 @@ class TranslationOptimization():
         self.params = np.array([])
         self.initial_params = np.array([])
         
+        self.pff = PropensityFactory()
+        self.pvf = ProbeVectorFactory()
+        
+        
         self._int_a = IntensityAnalyses()
         self.methods={'met_hast':self.methast,\
                       'methast':self.methast,\
@@ -2851,13 +2855,19 @@ class TranslationOptimization():
                    'chi':self.chisq,\
                    'chisq':self.chisq,\
                    'LL_acorr':self.get_loglikelihood_autocorr,\
-                   'I_mu_sse':self.get_intensity_sse}
+                   'I_mu_sse':self.get_intensity_sse,\
+                   'LL_I_distb':self.get_loglikelihood_intensity_distribution,\
+                   'LL_acorr_ode':self.get_loglikelihood_autocorr_ode}
             
         self.opts={'bounds':([0,10],)*len(self.params)}  
         
-        self.args = {'LL_acorr': (20,'raw','G0'), 'I_mu_sse':(), 'combined_objective':[]}
+        self.args = {'LL_acorr': (20,'raw','G0'), 'I_mu_sse':(), 'combined_objective':[],'LL_I_distb':(30,True)}
         
-        self._obj_weights = {'LL_acorr':1, 'I_mu_sse':1}
+        self._obj_weights = self.args.copy()
+        for key in self._obj_weights.keys():
+            self._obj_weights[key] = 1
+        
+     
         
         self.last_run = None
         self.chain = None
@@ -2893,21 +2903,37 @@ class TranslationOptimization():
         ssa_soln = self.solver_obj.solve_ssa_set_conditions()
         return ssa_soln.intensity_vec
     
-    def autocovariance_fun(self,x,norm='ind'):
-        self.solver_obj._poi.ke_mu = x[1]
-        self.solver_obj._poi.ki = x[0]
-        ssa_soln = self.solver_obj.solve_ssa_set_conditions()
-        acov,err_acov = self._int_a.get_autocov(ssa_soln.intensity_vec,norm=norm)
-        
+    def autocovariance_fun(self,intensity,norm='ind'):
+        acov,err_acov = self._int_a.get_autocov(intensity,norm=norm)        
         return acov,err_acov
-    
-    def autocorrelation_fun(self,x,norm='ind',g0='G0'):
-        self.solver_obj._poi.ke_mu = x[1]
-        self.solver_obj._poi.ki = x[0]
-        ssa_soln = self.solver_obj.solve_ssa_set_conditions()
-        acov,err_acov = self._int_a.get_autocov(ssa_soln.intensity_vec,norm=norm)
+
+    def autocorrelation_fun(self,intensity,norm='ind',g0='G0'):
+        acov,err_acov = self._int_a.get_autocov(intensity,norm=norm)
         acorr,err_acorr = self._int_a.get_autocorr(acov,g0=g0)
-        return acorr,err_acorr
+        return acorr,err_acorr    
+
+    def intensity_distribution(self,intensity,bins =30,density=True,Norm=1):
+        
+        int_dist = np.histogram(intensity/Norm, bins=bins, density=density,) 
+        int_dist_bins = int_dist[1]
+        int_dist_heights = int_dist[0]
+        return int_dist_heights,int_dist_bins
+    
+    def analytical_autocorrelation(self,x,bins=None,bin_method='intellegent'):
+        
+        self.solver_obj._poi.ke_mu = x[1]
+        self.solver_obj._poi.ki = x[0]       
+        
+        if not isinstance(bins,None):
+            
+            
+            inds = self.pff.intellegent_bin(np.atleast_2d(self.solver_obj._poi.probe_loc),100)
+            bpl,bpv = self.pvf.bin_probe_vecs(self.solver_obj._poi.probe_loc,inds)
+            k_bin = self.pff.bin_k(self.solver_obj._poi.kelong, inds)
+            x0 = np.zeros((k_bin.shape[0],1))
+            t = self.solver_obj.t
+            ode_soln_bin = self.solver_obj.solve_ode(k_bin,   t, x0, self.solver_obj._poi.ki, bpl,corr=True)
+        
         
     def genetic(self,objfun,**kwargs):
         
@@ -2949,10 +2975,12 @@ class TranslationOptimization():
         if logspace:
             oldpars=initial_par
             f_old=f_best=optfun(10**oldpars, *objective_fun_args)             
+            bestpars=initial_par
         else:
             oldpars=initial_par
             f_old=f_best=optfun(oldpars, *objective_fun_args) 
-        
+            bestpars=initial_par
+            
         if disp:
             print('Burning in....')
         
@@ -2980,7 +3008,12 @@ class TranslationOptimization():
                     bestpars=newpars
                     
         result = sci.optimize.OptimizeResult()
-        result.x = bestpars
+        
+        if logspace:
+            result.x = 10**bestpars
+        else:
+            result.x = bestpars
+        
         result.fun = f_best
         result.success = True
         result.nit = niter
@@ -2995,18 +3028,32 @@ class TranslationOptimization():
         return 1
     
     
-    def combined_objective(self,x,objfun_list):
+    def combined_objective(self,x,objfun_list,intensity_fun):
         obj_sum = 0
-        for objective in objfun_list:
+        intensity = intensity_fun(x)
+        obj_fun_evals = np.zeros(len(objfun_list))
+        k = 0
+        for i in range(len(objfun_list)):
+            objective = objfun_list[i]
             obj_args = self.args[objective]
-            obj_sum += self._obj_weights[objective]*self.objective_funs[objective](x,*obj_args)   
+            
+            obj_fun_evals[i] = self._obj_weights[objective]*self.objective_funs[objective](intensity,*obj_args)
+            print(obj_fun_evals)
+            #obj_sum += self._obj_weights[objective]*self.objective_funs[objective](intensity,*obj_args)  
+        obj_sum = np.sum(obj_fun_evals)
+        self.__update_chain(x,obj_sum)
         return obj_sum
     
-    def run_optimization_multiobj(self, objective_fun_list, method ,model = None, data = None,**kwargs):
+    def run_optimization(self, objective_fun_list, method ,model = None, data = None, intensity_fun = None,**kwargs):
+        if isinstance(objective_fun_list,str):
+            objective_fun_list = [objective_fun_list]
+        
         if model == None:
             model = self.solver_obj
         if data == None:
             data = self.data_obj
+        if intensity_fun == None:
+            intensity_fun = self.intensity_fun
                         
         obj_fun = self.combined_objective
                 
@@ -3026,7 +3073,7 @@ class TranslationOptimization():
         #kwargs['args'] = args
         
         if method in ['met_haste','methaste','MH']:
-            self.args['combined_objective'] = [objective_fun_list]
+            self.args['combined_objective'] = [objective_fun_list,intensity_fun]
             result = method_fun(obj_fun,'combined_objective', **kwargs)
         else:
             kwargs['args'] = args
@@ -3038,34 +3085,34 @@ class TranslationOptimization():
         self.chain.besteval = result.fun
         #return self.chain        
     
-    def run_optimization(self,  objective_fun, method ,model = None, data = None,**kwargs):
-        if model == None:
-            model = self.solver_obj
-        if data == None:
-            data = self.data_obj
+    # def run_optimization(self,  objective_fun, method ,model = None, data = None,**kwargs):
+    #     if model == None:
+    #         model = self.solver_obj
+    #     if data == None:
+    #         data = self.data_obj
                         
-        obj_fun = self.objective_funs[objective_fun]    
+    #     obj_fun = self.objective_funs[objective_fun]    
                 
-        method_fun = self.methods[method]
+    #     method_fun = self.methods[method]
         
-        self.chain = OptChain()
+    #     self.chain = OptChain()
         
-        self.chain.parchain = self.initial_params
-        self.chain.iterations = 0
-        self.chain.parnames = self.parnames
-        self.chain.evalchain  = np.array([])
-        self.chain.bestpar = None
-        self.chain.besteval = None
-        self.chain.opt_method = method
+    #     self.chain.parchain = self.initial_params
+    #     self.chain.iterations = 0
+    #     self.chain.parnames = self.parnames
+    #     self.chain.evalchain  = np.array([])
+    #     self.chain.bestpar = None
+    #     self.chain.besteval = None
+    #     self.chain.opt_method = method
     
-        if method in ['met_haste','methaste','MH']:
-            result = method_fun(obj_fun,objective_fun, **kwargs)
-        else:
-            result =  method_fun(obj_fun,**kwargs)
+    #     if method in ['met_haste','methaste','MH']:
+    #         result = method_fun(obj_fun,objective_fun, **kwargs)
+    #     else:
+    #         result =  method_fun(obj_fun,**kwargs)
         
-        self.chain.bestpar = result.x
-        self.chain.besteval = result.fun
-        #return self.chain
+    #     self.chain.bestpar = result.x
+    #     self.chain.besteval = result.fun
+    #     #return self.chain
         
         
     def __update_chain(self,pars, funeval):   
@@ -3074,22 +3121,49 @@ class TranslationOptimization():
         self.chain.parchain = np.vstack( (self.chain.parchain, pars) )
         self.chain.evalchain = np.append(self.chain.evalchain,funeval)
         self.chain.iterations = self.chain.iterations + 1
-    
-    def get_loglikelihood_autocorr(self, pars, n_points,norm,g0):
         
-        model_acorr,model_acorr_err = self.autocorrelation_fun(pars,norm=norm,g0=g0)
+        
+    def __intensity_generator(self,pars,objective_fun_list):
+        intensity = self.intensity_fun(pars)
+        
+        return intensity
+    
+    def get_loglikelihood_autocorr(self, intensity, n_points,norm,g0):
+        
+        model_acorr,model_acorr_err = self.autocorrelation_fun(intensity,norm=norm,g0=g0)
 
         total_n_spots = self.solver_obj.n_traj
         data_autocorrelation = self.data_obj.acorr
         data_acc_err = self.data_obj.acorr_err
         LL = self.loglikelihood_acc(model_acorr[:,:n_points,:],  data_autocorrelation[:,:n_points,:], data_acc_err[:,:n_points], total_n_spots)
     
-        self.__update_chain(pars,LL)
+        
         
         return LL
+
+    def get_loglikelihood_autocorr_ode(self, intensity, n_points,norm,g0):
+        
+        model_acorr,model_acorr_err = self.autocorrelation_fun(intensity,norm=norm,g0=g0)
+
+        total_n_spots = self.solver_obj.n_traj
+        data_autocorrelation = self.data_obj.acorr
+        data_acc_err = self.data_obj.acorr_err
+        LL = self.loglikelihood_acc(model_acorr[:,:n_points,:],  data_autocorrelation[:,:n_points,:], data_acc_err[:,:n_points], total_n_spots)
     
-    def get_intensity_sse(self,pars):
-        return (np.mean(self.intensity_fun(pars)) - np.mean(self.data_obj.I_mu))**2
+       
+        
+        return LL
+
+    def get_intensity_sse(self,intensity):
+        
+        return (np.mean(intensity) - np.mean(self.data_obj.I_mu))**2
+    
+    def get_loglikelihood_intensity_distribution(self,intensity,bins,density):
+        
+        dist_sim_data = self.intensity_distribution(intensity,bins=bins,density=density)[0]
+        LL = -np.dot(self.data_obj.histogram,np.log(dist_sim_data))
+        
+        return LL
         
     @staticmethod
     def sse(model_data,data):        
@@ -3130,7 +3204,7 @@ class TranslationOptimization():
         return (nspots/2) * np.sum(( d[:,2:] - m[:,2:])**2/ data_err[:,2:])
     
     @staticmethod
-    def loglikelihood_distb( model_intensity, data_intensity,nbins=20):
+    def loglikelihood_distb( model_intensity, data_intensity,nbins=30,norm=1):
         '''
     
         Parameters
@@ -3148,7 +3222,7 @@ class TranslationOptimization():
             LogLikelihood of the intensity distributions.
 
         '''
-        dist_sim_data = np.histogram(model_intensity, bins=nbins, density=True, normed=True)[1]
+        dist_sim_data = np.histogram(model_intensity/norm, bins=nbins, density=True)[1]
         hist_exp_data = np.histogram(data_intensity, bins=nbins)
         return -np.dot(hist_exp_data,np.log(dist_sim_data))
     
@@ -3251,6 +3325,21 @@ class OptChain():
         self.bestpar = None
         self.besteval = None
         self.opt_method = None
+        self.opt_args = None
+        self.objective_args = None
+        self.objective_fun_list  = None
+        self.intensity_fun = None
+        self.logspace = False
+        
+    def report(self):
+        print('=====================')
+        print('Optimizer: %s ran for %d iterations ' % (self.opt_method,self.iterations))
+        print('Optimizer arguments: ' + str(self.opt_args))
+        print('Objective function: ' + str(self.objective_fun_list))
+        print('Objective arguments: ' + str(self.objective_args))
+        print('_____________________')
+        print('Best Parameter Set: %s, feval: %d'%  (''.join(str(self.bestpars.tolist())),self.besteval ) )
+        print('=====================')
         
     def parplot(self,ellipse=True):
         n_par = len(self.bestpar)
@@ -3306,9 +3395,7 @@ class OptChain():
         
 
         e = Ellipse(xy = tuple(mu) ,width = w, height = h,angle=90-theta,**kwargs )
-        
-       
-    
+
         ax.add_artist(e)
     
         e.set_clip_box(ax.bbox)
@@ -3452,19 +3539,19 @@ class TranslationSolvers():
 
         Parameters
         ----------
-        tau_measured : TYPE
-            DESCRIPTION.
-        mu_I : TYPE
-            DESCRIPTION.
-        geometry : TYPE
-            DESCRIPTION.
+        tau_measured : float, int, list, ndarray
+            measured analytical decorrelation time(s).
+        mu_I : float, int, list, ndarray
+            average intensitie(s).
+        poi : Poi object (optional)
+            Protein of interest to pull geometry from.
 
         Returns
         -------
-        ke : TYPE
-            DESCRIPTION.
-        ki : TYPE
-            DESCRIPTION.
+        kes : list
+            analytical average k_elongation(s).
+        kis : list
+            analytical average k_initations(s).
 
         '''
         if poi == None:
@@ -3474,6 +3561,14 @@ class TranslationSolvers():
         locs = np.where((poi.probe_loc)== 1)[1]
         
         tags = []
+        
+        if isinstance(tau_measured,np.ndarray):
+            tau_measured = tau_measured.tolist()
+        
+        if not isinstance(tau_measured,list):
+            tau_measured = [tau_measured]
+            
+            
         if isinstance(mu_I,np.ndarray):
             mu_I = mu_I.tolist()
         
@@ -3496,12 +3591,12 @@ class TranslationSolvers():
             L_after_tag = L - tag[-1]
             L_tag = int((tag[-1] - tag[0]) / 2)
         
-            ke_analytical = (L)/tau_measured
+            ke_analytical = (L)/tau_measured[i]
             
             ke = ke_analytical/(L)*np.sum(self.__get_ui(poi.nt_seq[:-3]))
             
             kes.append(ke)
-            ki = (mu_I[i]/len(tag)) / ( (1.-Lm/float(L))*tau_measured)
+            ki = (mu_I[i]/len(tag)) / ( (1.-Lm/float(L))*tau_measured[i])
             kis.append(ki)
             
         return kes, kis
