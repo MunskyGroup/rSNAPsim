@@ -3038,10 +3038,11 @@ class TranslationOptimization():
             obj_args = self.args[objective]
             
             obj_fun_evals[i] = self._obj_weights[objective]*self.objective_funs[objective](intensity,*obj_args)
-            print(obj_fun_evals)
+         
             #obj_sum += self._obj_weights[objective]*self.objective_funs[objective](intensity,*obj_args)  
         obj_sum = np.sum(obj_fun_evals)
-        self.__update_chain(x,obj_sum)
+        self.__update_chain(x, obj_fun_evals )
+        
         return obj_sum
     
     def run_optimization(self, objective_fun_list, method ,model = None, data = None, intensity_fun = None,**kwargs):
@@ -3062,15 +3063,21 @@ class TranslationOptimization():
         self.chain = OptChain()
         
         self.chain.parchain = self.initial_params
+        self.chain.initial_params = self.initial_params
         self.chain.iterations = 0
         self.chain.parnames = self.parnames
-        self.chain.evalchain  = np.array([])
+        
         self.chain.bestpar = None
         self.chain.besteval = None
         self.chain.opt_method = method
-    
-        args = (objective_fun_list,)
-        #kwargs['args'] = args
+        
+
+        self.chain.evalchain  = np.array([11110])
+        self.chain.objfunchain = self.initial_params
+        
+        starttime = time.time()
+        
+        args = (objective_fun_list,intensity_fun)
         
         if method in ['met_haste','methaste','MH']:
             self.args['combined_objective'] = [objective_fun_list,intensity_fun]
@@ -3078,11 +3085,18 @@ class TranslationOptimization():
         else:
             kwargs['args'] = args
             result =  method_fun(obj_fun,**kwargs)
+            
+        self.chain.runtime = time.time()-starttime
         
         #result =  method_fun(obj_fun,**kwargs)
         
         self.chain.bestpar = result.x
         self.chain.besteval = result.fun
+        
+        self.chain.parchain = self.chain.parchain[1:,:]
+        self.chain.objfunchain = self.chain.objfunchain[1:,:]
+        self.chain.evalchain  = self.chain.evalchain[1:]
+        
         #return self.chain        
     
     # def run_optimization(self,  objective_fun, method ,model = None, data = None,**kwargs):
@@ -3119,7 +3133,10 @@ class TranslationOptimization():
 
         
         self.chain.parchain = np.vstack( (self.chain.parchain, pars) )
-        self.chain.evalchain = np.append(self.chain.evalchain,funeval)
+        
+        self.chain.evalchain = np.vstack((self.chain.evalchain,np.sum(funeval)))
+        self.chain.objfunchain  = np.vstack((self.chain.objfunchain,funeval))
+        
         self.chain.iterations = self.chain.iterations + 1
         
         
@@ -3322,6 +3339,7 @@ class OptChain():
         self.iterations = 0
         self.parnames = np.array([])
         self.evalchain  = np.array([])
+        self.objfunchain = np.array([])
         self.bestpar = None
         self.besteval = None
         self.opt_method = None
@@ -3341,9 +3359,66 @@ class OptChain():
         print('Best Parameter Set: %s, feval: %d'%  (''.join(str(self.bestpars.tolist())),self.besteval ) )
         print('=====================')
         
+    def check_parameter_convergence(self):
+        
+        def get_acc2(data, trunc=False):
+            '''
+            Get autocorrelation function
+    
+            *NOT* multi-tau
+            '''
+            N = len(data)
+            fvi = np.fft.fft(data, n=2*N)
+            acf = fvi*np.conjugate(fvi)
+            acf = np.fft.ifft(acf)
+            acf = np.real(acf[:N])/float(N)
+            if trunc:
+                acf[acf < 0]=0
+                for i in range(1, len(acf)):
+                    if acf[i] > acf[i-1]:
+                        acf[i] = acf[i-1]
+            return acf    
+        
+        for i in range(0,self.parchain.shape[1] ):
+            acc = get_acc2(self.parchain[:,i] )       
+            if i == 0:
+                self.par_acc = acc
+            else:
+                self.par_acc = np.vstack( (self.par_acc, acc))
+        self.par_acc = self.par_acc.T
+            
+    def check_objfun_convergence(self):
+        
+        def get_acc2(data, trunc=False):
+            '''
+            Get autocorrelation function
+    
+            *NOT* multi-tau
+            '''
+            N = len(data)
+            fvi = np.fft.fft(data, n=2*N)
+            acf = fvi*np.conjugate(fvi)
+            acf = np.fft.ifft(acf)
+            acf = np.real(acf[:N])/float(N)
+            if trunc:
+                acf[acf < 0]=0
+                for i in range(1, len(acf)):
+                    if acf[i] > acf[i-1]:
+                        acf[i] = acf[i-1]
+            return acf    
+        
+        for i in range(0,self.objfunchain.shape[1] ):
+            acc = get_acc2(self.objfunchain[:,i] )       
+            if i == 0:
+                self.objfun_acc = acc
+            else:
+                self.objfun_acc = np.vstack( (self.objfun_acc, acc))
+                
+        self.objfun_acc = self.objfun_acc.T
+        
     def parplot(self,ellipse=True):
         n_par = len(self.bestpar)
-        print(n_par)
+       
         fig, ax = plt.subplots( n_par,n_par,dpi=300)
         
         plotnum = np.arange(n_par**2).reshape((n_par,n_par)) + 1
@@ -3358,12 +3433,12 @@ class OptChain():
             for j in range(n_par-1,-1,-1):
                 if set([i,j]) not in used_pairs:
                     if i != j:
-                        a = ax[i][j].scatter(self.parchain[1:,i],self.parchain[1:,j], marker='.',c= colors)
+                        a = ax[i][j].scatter(self.parchain[:,i],self.parchain[:,j], marker='.',c= colors)
                         if ellipse == True:
-                            self.__get_ellipse([np.mean(self.parchain[1:,i]),np.mean(self.parchain[1:,j])], covariances,ax=ax[i][j] )
+                            self.__get_ellipse([np.mean(self.parchain[:,i]),np.mean(self.parchain[:,j])], covariances,ax=ax[i][j] )
                                          
                     else:
-                        b = ax[i][j].hist(self.parchain[1:,i],bins=40,density=True)
+                        b = ax[i][j].hist(self.parchain[:,i],bins=40,density=True)
                         
            
                     used_pairs.append(set([i,j]))
