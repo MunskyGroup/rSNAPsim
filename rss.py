@@ -2952,7 +2952,7 @@ class TranslationOptimization():
             initial_par = np.log10(self.initial_params)
         else:
             bounds = self.opts['bounds']
-            inital_par = self.initial_params
+            initial_par = self.initial_params
         
         if stepsize is None:
             stepsize = (initial_par/10).tolist()
