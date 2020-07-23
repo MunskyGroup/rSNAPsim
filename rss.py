@@ -2872,7 +2872,10 @@ class TranslationOptimization():
         self.last_run = None
         self.chain = None
         
+    def print_args(objfun):
+        x=1
         
+    
     def add_bounds(self,lower_bounds, upper_bounds):
         '''
         Adds bounds to the optimizer object
@@ -2912,9 +2915,9 @@ class TranslationOptimization():
         acorr,err_acorr = self._int_a.get_autocorr(acov,g0=g0)
         return acorr,err_acorr    
 
-    def intensity_distribution(self,intensity,bins =30,density=True,Norm=1):
+    def intensity_distribution(self,intensity,bins=None,density=True,norm=1):
         
-        int_dist = np.histogram(intensity/Norm, bins=bins, density=density,) 
+        int_dist = np.histogram(intensity/norm, bins=bins, density=density,) 
         int_dist_bins = int_dist[1]
         int_dist_heights = int_dist[0]
         return int_dist_heights,int_dist_bins
@@ -2956,6 +2959,15 @@ class TranslationOptimization():
         
         if stepsize is None:
             stepsize = (initial_par/10).tolist()
+            
+        '''
+        Lognormal prior
+        prior option
+        
+        TODO
+        
+        Multivariate gaussian proposal distb.
+        '''
         
         def evolvepars(p,stepsize):
             new=np.copy(p)
@@ -3073,7 +3085,7 @@ class TranslationOptimization():
         
 
         self.chain.evalchain  = np.array([11110])
-        self.chain.objfunchain = self.initial_params
+        self.chain.objfunchain = np.zeros((1,len(objective_fun_list)))
         
         starttime = time.time()
         
@@ -3135,7 +3147,8 @@ class TranslationOptimization():
         self.chain.parchain = np.vstack( (self.chain.parchain, pars) )
         
         self.chain.evalchain = np.vstack((self.chain.evalchain,np.sum(funeval)))
-        self.chain.objfunchain  = np.vstack((self.chain.objfunchain,funeval))
+        
+        self.chain.objfunchain  = np.vstack((self.chain.objfunchain,np.atleast_1d(funeval)))
         
         self.chain.iterations = self.chain.iterations + 1
         
@@ -3175,11 +3188,13 @@ class TranslationOptimization():
         
         return (np.mean(intensity) - np.mean(self.data_obj.I_mu))**2
     
-    def get_loglikelihood_intensity_distribution(self,intensity,bins,density):
+    def get_loglikelihood_intensity_distribution(self,intensity,norm):
         
-        dist_sim_data = self.intensity_distribution(intensity,bins=bins,density=density)[0]
+        dist_sim_data = self.intensity_distribution(intensity,bins=self.data_obj.histogram_bins,density=True,norm=norm)[0]
         LL = -np.dot(self.data_obj.histogram,np.log(dist_sim_data))
         
+        if LL == -np.inf:
+            LL = np.inf
         return LL
         
     @staticmethod
@@ -3425,6 +3440,9 @@ class OptChain():
         triangle_inds = np.tril(plotnum)[np.where(np.tril(plotnum) !=0 )]
         nplots = len(triangle_inds)
         
+        
+        evalchain = self.evalchain
+        evalchain[evalchain == np.inf]
         viridis = cm.get_cmap('viridis', int(np.ceil(np.max(self.evalchain))))
         colors = self.evalchain
         covariances = np.cov(self.parchain.T)
