@@ -4509,11 +4509,12 @@ class TranslationSolvers():
         N_rib = 200
         collisions = np.array([[]])
         all_results = np.zeros((n_traj, N_rib*len(t)), dtype=np.int32)
+        I_internal = np.zeros((colors,len(t), n_traj)) 
         all_col_points = []
         watched_ribs = []
         for i in range(n_traj):
             
-            soln,all_ribtimes,Ncol,col_points = self.__ssa_python(k, t, inhibit_time=intime+non_consider_time, FRAP=evf, Inhibitor=evi, flags=flags, kon=kon, kprobe=kprobe, koff=koff)
+            soln,all_ribtimes,Ncol,col_points,intensity = self.__ssa_python(k, t, inhibit_time=intime+non_consider_time, FRAP=evf, Inhibitor=evi, flags=flags, kon=kon, kprobe=kprobe, koff=koff, ssa_conditions=ssa_conditions)
             #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
             
             collisions = np.append(collisions,Ncol)
@@ -4531,6 +4532,7 @@ class TranslationSolvers():
         
             result = soln.reshape((1, (len(t)*N_rib)))
             all_results[i, :] = result
+            I_internal[:,:,i] = intensity
         
     
         # for i in range(n_traj):
@@ -4589,15 +4591,15 @@ class TranslationSolvers():
         
         #all_results = all_results[:,startindex*N_rib:]
         pv = self.protein.probe_vec
-        I = np.zeros((colors,len(t), n_traj))
+        # I = np.zeros((colors,len(t), n_traj))
         
-        for n in range(colors):
-            for i in range(n_traj):
-                traj = all_results[i,:].reshape((N_rib,len(t))).T
-                for j in range(len(t)):
-                    temp_output = traj[j,:]
+        # for n in range(colors):
+        #     for i in range(n_traj):
+        #         traj = all_results[i,:].reshape((N_rib,len(t))).T
+        #         for j in range(len(t)):
+        #             temp_output = traj[j,:]
     
-                    I[n,j,i] = np.sum(pv[n][temp_output[temp_output>0]-1]  )
+        #             I[n,j,i] = np.sum(pv[n][temp_output[temp_output>0]-1]  )
     
         for i in range(len(solutions)):
             for j in range(len(solutions[0][0][startindex:])):
@@ -4628,7 +4630,8 @@ class TranslationSolvers():
         ssa_obj.time_rec = t[startindex:]
         ssa_obj.start_time = non_consider_time
         ssa_obj.watched_ribs = watched_ribs
-        ssa_obj.intensity_vec = I
+        ssa_obj.intensity_vec = I_internal
+        ssa_obj.I = I_internal
         ssa_obj.solutions = solutionssave
         try:
             ssa_obj.col_points = all_col_points
@@ -5320,7 +5323,7 @@ class TranslationSolvers():
             raise ValueError('one or more model rates are negative, double check the provided rates')
        
 
-    def __ssa_python(self, k, t_array, inhibit_time=0, FRAP=False, Inhibitor=False, flags=None, kon=1, koff=1, kprobe=1):
+    def __ssa_python(self, k, t_array, inhibit_time=0, FRAP=False, Inhibitor=False, flags=None, kon=1, koff=1, kprobe=1, ssa_conditions=None):
         '''
         mRNA Translation simulation python implementation
 
@@ -5357,7 +5360,7 @@ class TranslationSolvers():
         bursting = flags[0]
         leaky = flags[1]
   
-
+        
         if bursting:
             burst = np.random.rand() < (kon/(kon+koff) )
         else:
@@ -5365,13 +5368,23 @@ class TranslationSolvers():
 
         Ncol = np.zeros((1,0))
         
+        N_rib = 200  #Maximum number of ribosomes on a single mRNA (hard limit for the simulation not a physical constant)
+        
+
+        colors = ssa_conditions['probe_loc'].shape[0]
+        if leaky:
+            leaky_probe_matrix = np.zeros((colors,N,N_rib))
+        intensity = np.zeros((colors,len(t_array)))
+        probe = np.array(np.where(ssa_conditions['probe_loc'] ==1))
+        probevec = ssa_conditions['probe_vec']
+        
+            
         #example X arrays and how its formatted:
         # X = [423 30 10 0 ]  read from left to right theres a ribosome in position 423 30 and 10, with a 0 kept as a buffer for simulation
 
         t = t_array[0]  #time point
         Nt = len(t_array)  #number of time points to record over
         tf = t_array[-1]  #final time point
-        N_rib = 200  #Maximum number of ribosomes on a single mRNA (hard limit for the simulation not a physical constant)
         col = np.zeros((1,N_rib))
         X_array = np.zeros((N_rib, Nt))  #recording array that records the ribosome posistions over time array points
         NR = 0  #number of ribosomes bound
@@ -5414,6 +5427,7 @@ class TranslationSolvers():
                 X = np.append(X, [0])
                 T = np.append(T, [0])
                 T[-2] = t
+                
 
 
             X[-1] = 0
@@ -5431,6 +5445,8 @@ class TranslationSolvers():
                     Sn_p = np.eye(max(NR+1, 2), dtype=int)
                     wn_p = np.zeros((X.shape[0]+1, 1))        
                     
+                if leaky:
+                    leaky_probe_matrix[ probe[0] , probe[1] ,NR-1 ] = (np.random.rand(len(probe[0])) < kprobe).astype(int)
                 
                     
                 wshape = len(wn_p)
@@ -5493,7 +5509,25 @@ class TranslationSolvers():
 
             while it < Nt and t > t_array[it]:  #record state if past timepoint
                 X_array[0:len(X), it] = X
+                
+                if leaky:
+                    int_tmp = np.zeros(colors)
+                    validx = X[X>0]
+                    c = leaky_probe_matrix[:,:,0]
+                    for ribind in validx:
+                        int_tmp += np.sum(c[:,:(ribind-1)],axis=1)
+                        
+                    intensity[:,it] = int_tmp
+                    
+                else:
+                    validx = X[X>0]
+                    int_tmp = np.zeros(colors)
+                    for ribind in validx:
+                        int_tmp += probevec[:,(ribind-1)]
+                    intensity[:,it] = int_tmp
+                    
                 it += 1
+                
 
      
             if t < tf:  #if still running simulation pick which reaction happened via random number and propensity sum
@@ -5538,6 +5572,10 @@ class TranslationSolvers():
                     Ncol = np.append(Ncol,col[0][0] )
                     col = np.atleast_2d(np.append(col[:,1:],[0]))
                     
+                    if leaky: #remove the leaky probes
+                        leaky_probe_matrix[ probe[0] , probe[1] ,0 ] = leaky_probe_matrix[ probe[0] , probe[1] ,1 ]
+                
+                    
                 else:
                     if X[event-1] == X[event] + R:
                         col[0][event] +=1
@@ -5545,7 +5583,7 @@ class TranslationSolvers():
                     
                 
             
-        return X_array,ribtimes[1:,:],Ncol,col_points  #return the completed simulation
+        return X_array,ribtimes[1:,:],Ncol,col_points,intensity  #return the completed simulation
 
 
 class suite():
