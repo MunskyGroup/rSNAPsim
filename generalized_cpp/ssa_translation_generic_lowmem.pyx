@@ -20,16 +20,16 @@ def run_SSA_generic(np.ndarray[int, ndim=2, mode="c"] result not None, np.ndarra
     cdef int Nt
     cdef int N
     
-
+    
     # subtract 2. 
-    N = len(kelong)/3
+    N = len(kelong+2)/3
     Nlocs = len(kelong)
     Nt = t_array.shape[0]
 
     fNt = t_array.shape[0]
 
     #inhibitors = [0,0,0]
-    
+ 
     translationSSA_generic (&kelong[0], &t_array[0], &result[0,0], N, Nt, &inhibitors[0], seed,fNt,&frap_result[0],  &k_add[0], n_enters, n_pauses,  n_stops, n_jumps, &probevec[0,0], Ncolor,Nlocs, watched_ribs)
 
     return None

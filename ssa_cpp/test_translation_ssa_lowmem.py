@@ -22,7 +22,7 @@ t_array = np.linspace(0,1000,1000,dtype=np.float64)
 N_rib = 200
 result = np.zeros((len(t_array)*ncolor),dtype=np.int32  )
 #kelong = np.array([3.1,3.2,3.3,3.4,3.5,3.1,3.2,3.3,3.4,3.5],dtype=np.float64)
-n_trajectories = 10
+n_trajectories = 1
 start = time.time()
 
 #preallocated arrays here
@@ -38,14 +38,14 @@ all_ribs = np.zeros((n_trajectories,1))
 seeds = np.random.randint(0,0x7FFFFFF,n_trajectories)
 x0 = np.zeros((N_rib),dtype=np.int32)
 
-pl = np.zeros((len(kelong),ncolor), dtype=np.int32)
+pl = np.zeros((2, len(kelong)), dtype=np.int32)
 
-pl[ [10,20,30,100,120,140],0  ] = 1
+pl[:,[5,8,10,20,30,100,120,140]] = 1
+
+pv = pl
 #pl[ [10,140],1  ] = 1
 
-pl = np.cumsum(pl,axis=0)
-pl = pl.T.copy(order='C')
-
+pl = np.cumsum(pl,axis=1)
 
 print(x0.shape)
 print(all_results.shape)
@@ -55,6 +55,16 @@ print(all_coltimes.shape)
 
 all_col_points = []
 
+
+
+kon = 3
+koff = 3
+
+k_probe = np.array([.8,.1],dtype=np.float64)
+
+
+flags = np.array([0,0,0])
+start = time.time()
 for i in range(n_trajectories):
     result = np.zeros((ncolor,len(t_array)),dtype=np.int32)    
     frapresult = np.zeros((len(t_array)*N_rib),dtype=np.int32)
@@ -64,8 +74,8 @@ for i in range(n_trajectories):
     
     colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
     colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
-    
-    ssa_translation_lowmem.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9, pl,2)
+
+    ssa_translation_lowmem.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9, pl, 2, kon, koff,k_probe,pv,flags)
     
 
   
@@ -80,30 +90,184 @@ for i in range(n_trajectories):
     
     colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
     all_col_points.append(colpoints.T)
+    
 print('time for {0} trajectories {1}'.format(n_trajectories,time.time()-start))
-#plt.hist(result[result>0])
-#plt.show()
-#traj = result.reshape((N_rib,len(t_array))).T
-##print('The result is \n {0}'.format(result.reshape((N_rib,len(t_array))).T))
-#plt.plot(traj[-1,:])
-#plt.show()
 
-# map to fluorescence.
-ntimes = len(t_array)
-intensity_vec = np.zeros(ntimes)
-pv = np.loadtxt('probe_design.txt')
-tstart = 0
-I = all_results
+plt.figure(dpi=300)
+plt.plot(all_results[0])
+plt.xlabel('time')
+plt.ylabel('intensity')
+plt.title('original lowmemory')
+plt.legend(['c1','c2'])
 
 
-# Plotting
-all_traj = np.loadtxt('ivec_1000t')
-#all_traj = ssa_obj_01.intensity_vec
-f,ax = plt.subplots(2,1)
-ax[0].plot(I[0:50,-500:].T)
-ax[1].plot(all_traj[0:50,-500:].T)
-f2,ax2 = plt.subplots(1,2)
-ax2[0].hist(I[:,-500:].ravel())
-ax2[1].hist(all_traj[:100,-500:].ravel())
-plt.show()
+
+# bursting, leaky, stats
+flags = np.array([1,0,0])
+start = time.time()
+for i in range(n_trajectories):
+    result = np.zeros((ncolor,len(t_array)),dtype=np.int32)    
+    frapresult = np.zeros((len(t_array)*N_rib),dtype=np.int32)
+    
+    ribtimes = np.zeros((400),dtype=np.float64)
+    coltimes = np.zeros((400),dtype=np.int32)
+    
+    colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
+    colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
+
+    ssa_translation_lowmem.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9, pl, 2, kon, koff,k_probe,pv,flags)
+    
+
+  
+    all_results[i,:,:] = result.T
+    
+    all_frapresults[i,:] = frapresult
+    all_coltimes[i,:] = coltimes
+    all_ribtimes[i,:] = ribtimes
+    all_ribs[i,:] = nribs[0]
+
+    endcolrec = np.where(colpointsx == 0)[0][0]
+    
+    colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+    all_col_points.append(colpoints.T)
+    
+print('time for {0} trajectories {1}'.format(n_trajectories,time.time()-start))
+
+plt.figure(dpi=300)
+plt.plot(all_results[0])
+plt.xlabel('time')
+plt.ylabel('intensity')
+plt.title('bursting kon/koff = 3/3,  lowmemory')
+plt.legend(['c1','c2'])
+
+
+
+
+flags = np.array([0,1,0])
+start = time.time()
+for i in range(n_trajectories):
+    result = np.zeros((ncolor,len(t_array)),dtype=np.int32)    
+    frapresult = np.zeros((len(t_array)*N_rib),dtype=np.int32)
+    
+    ribtimes = np.zeros((400),dtype=np.float64)
+    coltimes = np.zeros((400),dtype=np.int32)
+    
+    colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
+    colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
+
+    ssa_translation_lowmem.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9, pl, 2, kon, koff,k_probe,pv,flags)
+    
+
+  
+    all_results[i,:,:] = result.T
+    
+    all_frapresults[i,:] = frapresult
+    all_coltimes[i,:] = coltimes
+    all_ribtimes[i,:] = ribtimes
+    all_ribs[i,:] = nribs[0]
+
+    endcolrec = np.where(colpointsx == 0)[0][0]
+    
+    colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+    all_col_points.append(colpoints.T)
+    
+print('time for {0} trajectories {1}'.format(n_trajectories,time.time()-start))
+
+plt.figure(dpi=300)
+plt.plot(all_results[0])
+plt.xlabel('time')
+plt.ylabel('intensity')
+plt.title('leaky,  lowmemory')
+plt.legend(['c1','c2'])
+
+
+
+
+
+
+
+
+flags = np.array([1,1,0])
+start = time.time()
+for i in range(n_trajectories):
+    result = np.zeros((ncolor,len(t_array)),dtype=np.int32)    
+    frapresult = np.zeros((len(t_array)*N_rib),dtype=np.int32)
+    
+    ribtimes = np.zeros((400),dtype=np.float64)
+    coltimes = np.zeros((400),dtype=np.int32)
+    
+    colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
+    colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
+
+    ssa_translation_lowmem.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9, pl, 2, kon, koff,k_probe,pv,flags)
+    
+
+  
+    all_results[i,:,:] = result.T
+    
+    all_frapresults[i,:] = frapresult
+    all_coltimes[i,:] = coltimes
+    all_ribtimes[i,:] = ribtimes
+    all_ribs[i,:] = nribs[0]
+
+    endcolrec = np.where(colpointsx == 0)[0][0]
+    
+    colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+    all_col_points.append(colpoints.T)
+    
+print('time for {0} trajectories {1}'.format(n_trajectories,time.time()-start))
+
+plt.figure(dpi=300)
+plt.plot(all_results[0])
+plt.xlabel('time')
+plt.ylabel('intensity')
+plt.title('leaky and bursting,  lowmemory')
+plt.legend(['c1','c2'])
+
+
+
+
+
+
+
+
+
+
+
+flags = np.array([0,0,1])
+start = time.time()
+for i in range(n_trajectories):
+    result = np.zeros((ncolor,len(t_array)),dtype=np.int32)    
+    frapresult = np.zeros((len(t_array)*N_rib),dtype=np.int32)
+    
+    ribtimes = np.zeros((400),dtype=np.float64)
+    coltimes = np.zeros((400),dtype=np.int32)
+    
+    colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
+    colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
+
+    ssa_translation_lowmem.run_SSA(result,ribtimes,coltimes,colpointsx,colpointst, kelong,frapresult,t_array,.03,kcompl, 1,0,300, seeds[i],nribs,x0,9, pl, 2, kon, koff,k_probe,pv,flags)
+    
+
+  
+    all_results[i,:,:] = result.T
+    
+    all_frapresults[i,:] = frapresult
+    all_coltimes[i,:] = coltimes
+    all_ribtimes[i,:] = ribtimes
+    all_ribs[i,:] = nribs[0]
+
+    endcolrec = np.where(colpointsx == 0)[0][0]
+    
+    colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+    all_col_points.append(colpoints.T)
+    
+print('time for {0} trajectories {1}'.format(n_trajectories,time.time()-start))
+
+plt.figure(dpi=300)
+plt.hist(ribtimes[ribtimes > 0])
+plt.xlabel('time')
+plt.ylabel('intensity')
+plt.title('ribosometimes,  lowmemory')
+plt.legend(['c1','c2'])
 

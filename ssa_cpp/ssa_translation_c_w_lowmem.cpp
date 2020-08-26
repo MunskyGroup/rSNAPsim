@@ -13,7 +13,7 @@ using Eigen::MatrixXi;
 using Eigen::VectorXd;
 using Eigen::VectorXi;
 
-void translationSSA(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_intensity, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result, double* col_t, int* col_x, int colNp, int* x0, int r_footprint, int* SSA_probe, int Ncolor)
+void translationSSA_lowmem(double* kelong, double* t_array, int Nt, double kbind, double kcompl, int* SSA_intensity, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, double* SSA_ribtimes, int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result, double* col_t, int* col_x, int colNp, int* x0, int r_footprint, int* SSA_probe, int Ncolor, int* flags, double kon, double koff, double* k_probe,int* probe_loc,int* n_probes)
 {
     // Declare the variables
 	
@@ -64,12 +64,47 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
     int N_rib = 200; // maximum number of ribosomes. 
 	//std::cout << "-------nrib=" << N_rib << "-------" << std::endl;
 	
+	std::mt19937_64 rng; 
+	//INCLUDE <#chrono> to seed from computer clock
+    // initialize the random number generator with time-dependent seed
+    //uint64_t timeSeed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    //std::seed_seq ss{uint32_t(timeSeed & 0xffffffff), uint32_t(timeSeed>>32)};
+    rng.seed(seed);
+	std::uniform_real_distribution<double> unif(0, 1);
 	
-	srand(seed);
+	
+	
+	
+	MatrixXi leaky_probe_matrix(Ncolor*N_rib,N);	// setup stuff for flags may not be used
+	leaky_probe_matrix.setZero(Ncolor*N_rib,N);
+
+	
+	MatrixXi col(1,N_rib);
+	col.setZero(1,N_rib);
+	
+	MatrixXi T(1,N_rib); //ribosome travel time array
+	T.setZero(1,N_rib);
+	
+	//VectorXd T_array(200);
+	int t_counter = 0;
+	int col_counter = 0;
+	
+	// Create an eigen matrix that stores the results. 
+	Eigen::Map<Eigen::VectorXd> T_array(SSA_ribtimes,ribtimesize);  // this map function will fill the python allocated array
+	Eigen::Map<Eigen::VectorXi> col_array(col_result,cNt);
+	Eigen::Map<Eigen::VectorXd> colarrayt(col_t,colNp);
+	Eigen::Map<Eigen::VectorXi> colarrayx(col_x,colNp);
+	Eigen::Map<Eigen::VectorXi> n_ribs(nribs,1);
+	int tsize = T_array.size();
+	int col_size = colarrayt.size();		
+
     int it = 0;
 	int number_ribs = 0;
 	int fit = 0;
 	
+	int bursting = flags[0];
+	int leaky = flags[1];
+	int stats = flags[2];
 	
     // int N = 10; // gene length
     //bool Inhibitor = 0;
@@ -94,51 +129,38 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
     t=t_array[0];
     tf = t_array[Nt-1];
     int ind = 0;
-    //srand (1537478928);  
-	//std::cout << time(NULL) << std::endl;
-    // print a test random number
-    // Define the state vector
+	
+	int burst = 1;
+	if (bursting){
+		
+		r1 = unif(rng);
+		int burst = 0; // is the system bursting on or off_type with proprotion to kon / koff
+		if (r1 < kon / (kon+koff)){
+			int burst = 1;
+		}
+	}
+	// predefine stuff that may remain blank
+	int total_probes = 0;
+	for (int i = 0; i < Ncolor; i++){
+		total_probes += n_probes[i];
+	}
+	
+	//std::cout << "--------n_probes=" << n_probes << "--------" << std::endl;
+	//std::cout << "-------totalprobes=" << total_probes << "-------" << std::endl;
+	
+	
     MatrixXi X(1,N_rib);	
-	
-	
+
     X.setZero(1,N_rib);
 	for(int i=0; i <= N_rib; i++)	{
 		X(0,i) = x0[i];
 	}
 	
 	
-	MatrixXi col(1,N_rib);
-	col.setZero(1,N_rib);
-	
-    MatrixXi T(1,N_rib); //ribosome travel time array
-    T.setZero(1,N_rib);
-	
-	//VectorXd T_array(200);
-	int t_counter = 0;
-	int col_counter = 0;
-	
-    // Create an eigen matrix that stores the results. 
-    Eigen::Map<Eigen::VectorXi> X_array(SSA_intensity,Nt,Ncolor);
-
-	
-	
-	
+	Eigen::Map<Eigen::VectorXi> X_array(SSA_intensity,Nt,Ncolor);
 	Eigen::Map<Eigen::MatrixXi> frap_array(frap_result,fNt,N_rib);
 	
 	
-	
-	
-	Eigen::Map<Eigen::VectorXd> T_array(SSA_ribtimes,ribtimesize);  // this map function will fill the python allocated array
-	Eigen::Map<Eigen::VectorXi> col_array(col_result,cNt);
-	
-	
-	Eigen::Map<Eigen::VectorXd> colarrayt(col_t,colNp);
-	Eigen::Map<Eigen::VectorXi> colarrayx(col_x,colNp);
-	
-	Eigen::Map<Eigen::VectorXi> n_ribs(nribs,1);
-
-	int tsize = T_array.size();
-	int col_size = colarrayt.size();
 	
 	MatrixXi probe(Ncolor,N);
 	probe.setZero(Ncolor,N);
@@ -148,6 +170,8 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 			//std::cout << i << "," << j << " " << i*N + j << " " << SSA_probe[i*N + j ]  << std::endl;
 		}
 	}
+	
+	
 
     while( t < tf)
     {
@@ -175,15 +199,27 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
             NR+=1;
         }
 		
+		if (stats){
+			if (NR > old_NR){
 
+				T(0,NR-1) = t;
+				number_ribs +=1;
+				
+			}
+		}
 		
 		
-		if (NR > old_NR){
-
-			T(0,NR-1) = t;
-			number_ribs +=1;
-			
-			
+		if (leaky){
+			if (NR> old_NR){
+				for (int k=0; k < total_probes*2; k+=2){
+					
+					r1 = unif(rng);
+					if ( r1 > 1-k_probe[probe_loc[k]]  ){
+						leaky_probe_matrix(Ncolor*(NR-1) + probe_loc[k] ,probe_loc[k+1]) = 1;
+					}
+				}
+			}
+			//std::cout << "adding probes: " << leaky_probe_matrix.block(0,0,NR+3,25)  << std::endl;
 		}
 
 
@@ -200,8 +236,13 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
         Sn.setIdentity(NR+1,NR+1);
         //std::cout << "Stoichiometry Matrix: \n" << Sn << std::endl;
         Eigen::VectorXd wn;
-        wn.setZero(NR+1);
-        // for loop instead of "where"       
+		if (bursting){
+			wn.setZero(NR+2);
+		}
+		else{
+			wn.setZero(NR+1);
+		}
+		// for loop instead of "where"       
         // also, account for the exclusion here.
         for(int i=0; i <= NR; i++)
         {
@@ -215,6 +256,15 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
                 }
             }
         }
+		
+		if (bursting){
+			if (burst == 1){	
+				wn(NR+1) = koff;	
+			}
+			else{
+				wn(NR+1) = kon;
+			}
+		}
 
         // If a nascent protein reaches full length
         // add in the completion rate
@@ -233,41 +283,27 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 
         // include the initiation condition
         if( (NR==0) || ( X(0,NR-1)>R) ){
-            wn(NR) = kbind*Inhibit_condition;
+            wn(NR) = kbind*Inhibit_condition*burst;
         }
         // Update the propensity
         a0 = wn.sum();
 
         // Generate some random numbers.
 		
-        r1 =  ((double) rand()/ (RAND_MAX));
-        r2 =  ((double) rand() / (RAND_MAX));
-		
+        r1 =  unif(rng);
+        r2 =  unif(rng);
 		
 		// if rand() gets a 0 resample, since ln(0) = -inf 
 		if((r1==0)){
-			//std::cout << r1 << " " << r1a << " " << t <<  std::endl;
-			
-			r1 =  ((double) rand() / (RAND_MAX));			
+			r1 = unif(rng);			
 		}
 		
+		
+        t -= log(r1)/a0; // time of next reaction
+
 		
 
-        // Update the time vector
-//        std::cout << "TIME " << t << std::endl;
-        t -= log(r1)/a0;
-		//std::cout << t << std::endl;
-/* 		if((t > inhibit_time) && (t < inhibit_time+30)){
-			std::cout << "TIME " << t << std::endl;
-			std::cout << wn << std::endl;
-			std::cout << X << std::endl;
-		}
-		 */
 		
-        //std::cout << "TIME " << t << std::endl;
-  //      std::cout << "-------------" << std::endl;
-        // Store the X vector
-        //while( ((it<=Nt-1) || (t>t_array[it])) ){
         while( (it<=Nt-1) && (t>t_array[it])) {
 
 			for(int j = 0; j < Ncolor; j++){
@@ -275,9 +311,15 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 				int intensity = 0;
 				for(int i=0; i < NR; i++){
 
-
-					
-					intensity += probe(j,X(0,i)-1);
+					if (leaky){
+						intensity += leaky_probe_matrix.block( Ncolor*i  +j,0,1,X(0,i)-1).sum();
+						//std::cout << "intensity: " << intensity << std::endl;
+						//std::cout << "current matrix: " << leaky_probe_matrix.block(0,0,NR+3,25)  << std::endl;
+					}
+					else{
+						//std::cout << "intensity: " << intensity << std::endl;
+						intensity += probe(j,X(0,i)-1);
+					}
 
 				}
 
@@ -306,44 +348,64 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
             ind +=1;
         }
 		
-        //std::cout << "Stoichiometry of reaction: " << Sn.row(ind-1) << std::endl;
-        
-		
-		
-        X.topLeftCorner(1,NR+1) = X.topLeftCorner(1,NR+1) + Sn.row(ind-1);
-		//std::cout << "rxn "<< Sn.row(ind-1).sum() << std::endl;
-		if (Sn.row(ind-1).sum() < 0){
-
-			if (t_counter < tsize){
-				T_array(t_counter) = t - T(0,0);
-						
-				T.block(0,0,1,NR) = T.block(0,1,1,NR);
-				T(0,NR) = 0;	
-				
-				col_array(t_counter) = col(0,0);	
-				col.block(0,0,1,NR) = col.block(0,1,1,NR);	
-				col(0,NR)= 0;
-				t_counter +=1;		
-				
+		if (bursting){
+			if (ind == NR+2){
+				burst+=1; // flip the bursting state
+				burst = burst%2;
+			}
+			else{
+				X.topLeftCorner(1,NR+1) = X.topLeftCorner(1,NR+1) + Sn.row(ind-1);
 			}
 		}
-		else {
-			if (X(0,ind-2) == X(0,ind-1) + R){
-				col(0,ind-1) +=1;
-				if (col_counter < col_size){
-					colarrayt(col_counter) = t;
-					colarrayx(col_counter) = X(0,ind-1);
-					col_counter+=1;
+		else{
+			X.topLeftCorner(1,NR+1) = X.topLeftCorner(1,NR+1) + Sn.row(ind-1);
+		}
+		
+		if (leaky){
+			if ( (Sn.row(ind-1).sum() < 0) && (ind != NR+2)){
+				//std::cout << "removing row: " << leaky_probe_matrix.block(0,0,NR+3,25)  << std::endl;
+				leaky_probe_matrix.block(0,0,NR*Ncolor,N) = leaky_probe_matrix.block(Ncolor,0,Ncolor*NR+Ncolor,N);
+				//std::cout << "removing row: " << leaky_probe_matrix.block(0,0,NR+3,25)  << std::endl;
+			}
+		}
+		
+		if (stats){
+			if (Sn.row(ind-1).sum() < 0){
+
+				if (t_counter < tsize){
+					T_array(t_counter) = t - T(0,0);
+							
+					T.block(0,0,1,NR) = T.block(0,1,1,NR);
+					T(0,NR) = 0;	
+					
+					col_array(t_counter) = col(0,0);	
+					col.block(0,0,1,NR) = col.block(0,1,1,NR);	
+					col(0,NR)= 0;
+					t_counter +=1;		
+					
+				}
+			}
+			else {
+				
+				
+				if (X(0,ind-2) == X(0,ind-1) + R){
+					col(0,ind-1) +=1;
+					if (col_counter < col_size){
+						colarrayt(col_counter) = t;
+						colarrayx(col_counter) = X(0,ind-1);
+						col_counter+=1;
+					}
+					
 				}
 				
 			}
-
-
 		}
 		//std::cout << "oneiter" << std::endl;
 
     }
-	n_ribs(0) = number_ribs;
+	if (stats){
+		n_ribs(0) = number_ribs;
+	}
 	
         
 }

@@ -31,23 +31,20 @@ if path_to_cpp != '':
         
         import ssa_translation
         import ssa_translation_lowmem
-        import ssa_translation_lowmem_leaky
-        import ssa_translation_lowmem_nostats
-        import ssa_translation_lowmem_leaky_nostats
         os.chdir(cwd)
     except:
         os.chdir(cwd)
     
-print(path_to_gen)
+
 if path_to_gen != '':
     try:
         cwd = os.getcwd()
         
         os.chdir(path_to_gen)
-        print('importing models')
+        print('importing C++ models')
         import ssa_translation_generic
         import ssa_translation_generic_lowmem
-    
+        print('c++ models loaded successfully')
         os.chdir(cwd)
     except:
         os.chdir(cwd)
@@ -1478,7 +1475,7 @@ class SequenceManipMethods():
         codons = []
         for i in range(0, len(nt_seq), 3):
             codons.append(nt_seq[i:i+3])
-        POI.codons = codons
+        #POI.codons = codons
 
         POI.codon_sensitivity, POI.CAI, POI.CAI_codons = self.codon_usage(POI.nt_seq)   
         POI.ki = .03
@@ -1529,6 +1526,14 @@ class PropensityFactory():
         for i in range(0,len(inds)-1):            
             k_binned[i] = 1/ np.sum( 1/np.array(binned_ks[i]))
         return k_binned
+
+
+    def get_trna_ids(self,nt_seq):
+        codons = nt_seq.upper()
+        seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] 
+        return [self.codon_dicts.trna_dict[x] for x in seperated_codons]
+        
+        
 
     def get_k(self, nt_seq, k_init, k_elong_mean,k_end):
         '''
@@ -1815,7 +1820,42 @@ class ProbeVectorFactory():
         inds = np.hstack(([0.], np.cumsum(k_lens))).astype(int)     
         
         return inds            
+
+
+class CodonOptimizer():
+    def __init__(self):
+        self.codon_dict = CodonDictionaries()
     
+    def optimize_ntseq(self,nt_seq,dictionary = None):
+        if dictionary == None:
+            dictionary = self.codon_dict.strGeneCopy
+            
+        codons = nt_seq.upper()
+        seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3    
+        aa = [ self.codon_dict.aa_table[x] for x in seperated_codons ]     
+        opt_seq = ''
+        for i in range(0,len(aa)):
+            ind = np.argmax([self.codon_dict.strGeneCopy[x] for x in self.codon_dict.aa_table_r[aa[i]]])
+            opt_codon = self.codon_dict.aa_table_r[aa[i]][ind]
+            opt_seq = opt_seq + opt_codon
+        return opt_seq
+            
+        
+    def deoptimize_ntseq(self,nt_seq,dictionary = None):
+        if dictionary == None:
+            dictionary = self.codon_dict.strGeneCopy
+        codons = nt_seq.upper()
+        seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3    
+        aa = [ self.codon_dict.aa_table[x] for x in seperated_codons ]     
+        opt_seq = ''
+        for i in range(0,len(aa)):
+            ind = np.argmin([self.codon_dict.strGeneCopy[x] for x in self.codon_dict.aa_table_r[aa[i]]])
+            opt_codon = self.codon_dict.aa_table_r[aa[i]][ind]
+            opt_seq = opt_seq + opt_codon
+        return opt_seq        
+
+
+
 class CodonDictionaries():
     
     def __init__(self):
@@ -1938,6 +1978,29 @@ class CodonDictionaries():
                             'GGC': 22.2, 'GTA':  7.1, 'GCA': 15.8, 'GAA': 29.0, 'GGA': 16.5,
                             'GTG': 28.1, 'GCG': 7.4, 'GAG': 39.6, 'GGG': 16.5}
 
+        
+        self.trna_ids = ['TTT','TCT','TAT','TGT','TTC','TCC','TAC','TGC','TTA','TCA','TAA','TGA','TTG',
+                        'TCG','TAG','TGG', 'CTT', 'CCT', 'CAT', 'CGT', 'CTC', 'CCC', 'CAC', 'CGC', 'CTA',
+                        'CCA', 'CAA', 'CGA', 'CTG', 'CCG', 'CAG', 'CGG', 'ATT', 'ACT', 'AAT', 'AGT', 'ATC',
+                        'ACC', 'AAC', 'AGC', 'ATA', 'ACA', 'AAA', 'AGA', 'ATG', 'ACG', 'AAG', 'AGG', 'GTT',
+                        'GCT', 'GAT', 'GGT', 'GTC', 'GCC', 'GAC', 'GGC', 'GTA', 'GCA', 'GAA', 'GGA', 'GTG',
+                        'GCG', 'GAG', 'GGG']
+        
+        self.trna_ids.remove('TAG')
+        self.trna_ids.remove('TAA')
+        self.trna_ids.remove('TGA')
+        
+        trna_temp = [x.replace('T','U') for x in self.trna_ids]
+        self.trna_ids = self.trna_ids + trna_temp
+        
+        
+        
+        
+        self.trna_ids_vals = np.linspace(0,60,61).astype(int).tolist() +  np.linspace(0,60,61).astype(int).tolist()
+        
+        self.trna_dict = dict(zip(self.trna_ids, self.trna_ids_vals))
+        
+        
         
         # add the U codons
         for key in list(self.strGeneCopy.keys()):
@@ -2103,6 +2166,166 @@ class CodonDictionaries():
         f.close()    
     
     
+class FragmentSeperator():
+    def __init__(self):
+        pass
+    
+    
+    
+class IntensityAnalysesRagged():
+    def __init__(self):
+        pass
+    
+    @staticmethod
+    def get_acc2(data, trunc=False):
+        '''
+        Get autocorrelation function
+
+        *NOT* multi-tau
+        '''
+        N = len(data)
+        fvi = np.fft.fft(data, n=2*N)
+        acf = fvi*np.conjugate(fvi)
+        acf = np.fft.ifft(acf)
+        acf = np.real(acf[:N])/float(N)
+        if trunc:
+            acf[acf < 0]=0
+            for i in range(1, len(acf)):
+                if acf[i] > acf[i-1]:
+                    acf[i] = acf[i-1]
+        return acf       
+    
+    def get_g0(self,covariance, mode = 'interp'):
+        '''
+        
+        '''
+        if mode.lower() in ['interp','inter','extrapolate','interpolate']:
+            X = [1,2,3,4]
+            G0 = np.zeros((covariance.shape[0], covariance.shape[2]))
+            for i in range(covariance.shape[0]):
+                for n in range(covariance.shape[0]):
+                    V = covariance[i,X,n]
+                    print(V.shape)
+                    G0[i,n] = np.interp(0,X,V)
+           
+            
+        if mode.lower() in ['g1','1']:
+            G0 = covariance[:,1,:]
+            
+        if mode.lower() in ['g0','0']:
+            G0 = covariance[:,0,:]
+
+        if mode.lower() in ['max','maximum']:
+            G0 = np.max(covariance,axis=1)
+            
+        return G0
+    
+    def get_autocorr(self,autocov,g0='G0'):
+        '''
+        normalize the autocovariance over g0
+        '''
+        autocorr = np.copy(autocov)
+        n_traj = autocorr.shape[-1]
+        autocov_error =  1.0/np.sqrt(n_traj)*np.std(autocov,ddof=1,axis=2)
+        
+        g0 = self.get_g0(autocov,g0)
+        for n in range(autocov.shape[0]):
+            autocorr[n] = autocorr[n]/g0[n]
+        
+        err_autocorr =  1.0/np.sqrt(n_traj)*np.std(autocorr,ddof=1,axis=2)
+        return autocorr,err_autocorr
+                
+
+    def get_autocov(self,intensity_vec,max_lag,norm='raw'):
+        
+        colors, n_traj = self.__get_ivec_dims(intensity_vec)
+        
+        autocorr_vec = np.zeros((colors, max_lag, n_traj    ) )
+        autocorr_err = np.zeros((colors, max_lag, n_traj  ) )
+        
+
+        
+        
+        for n in range(colors):
+            if norm in [ 'Individual','I','individual','ind']:
+                for i in range(n_traj):
+                    ivec = intensity_vec[i][n]
+                    print(ivec.shape)
+                    trace_len = min(max_lag, len(ivec) )
+                    autocorr_vec[n,:trace_len,i] = self.get_acc2( (ivec-np.mean(ivec))/np.var(ivec)  )[:trace_len]
+                    
+            elif norm in ['global','Global','g','G']:
+                means = []
+                var = []
+                for i in range(n_traj):
+                    ivec = intensity_vec[i][n]
+                    means.append( np.mean(ivec) )
+                    var.append(np.var(ivec))         
+                    
+                global_mean = np.mean(means)
+                global_var = np.var(var)
+                
+                for i in range(n_traj):
+                    ivec = intensity_vec[i][n]
+                    trace_len = min(max_lag, len(ivec) )
+                    autocorr_vec[n,:trace_len,i] = self.get_acc2((ivec-global_mean)/global_var )[:trace_len]
+            elif norm in ['raw','Raw']:
+                for i in range(n_traj):
+                    ivec = intensity_vec[i][n]
+                    trace_len = min(max_lag, len(ivec) )
+                    autocorr_vec[n,:trace_len,i] = self.get_acc2(ivec)[:trace_len]  
+                    
+            # elif norm in ['max_ind','Max','maximum','Maximum','max']:
+            #     for i in range(n_traj):
+            #         ivec = intensity_vec[i][n]
+            #         trace_len = min(max_lag, len(ivec) )
+            #         autocorr_vec[n,:trace_len,i] = self.get_acc2(ivec)[:trace_len]
+            #         autocorr_vec[n,:trace_len,i] = autocorr_vec[n,:trace_len,i]/np.max(autocorr_vec[n,:trace_len,i])
+                    
+            else:
+                print('unrecognized normalization, please use individual, global, or none')
+                return
+
+        autocorr_err =  1.0/np.sqrt(n_traj)*np.std(autocorr_vec,ddof=1,axis=2)
+                
+        return autocorr_vec, autocorr_err
+    
+    
+    def get_intensity_histogram(self,intensity_vec,n_bins,scale_factor,time_slice=1):
+        colors, n_traj = self.__get_ivec_dims(intensity_vec)
+        hist_list = []
+        hist_edges_list = []
+        for n in range(colors):
+            for i in range(n_traj):
+                if i == 0:
+                    ivec = intensity_vec[i][n][::time_slice]
+                    
+                else:
+                    tmp_vec = intensity_vec[i][n][::time_slice]
+                    
+                    ivec = np.hstack((ivec, tmp_vec))
+                    
+                    
+            exp_int_dist_ump = np.divide(ivec,scale_factor)
+            exp_int_dist_ump[exp_int_dist_ump<0] = 0
+            exp_int_dist_ump[np.isnan(exp_int_dist_ump)] = 0
+            
+            temp_hist = np.histogram(exp_int_dist_ump, bins=n_bins)
+            hist_list.append(temp_hist[1])
+            hist_edges_list.append(temp_hist[0])
+            
+        hist_data = np.array(hist_list)
+        hist_bins = np.array(hist_edges_list)   
+        
+        return hist_bins, hist_data
+            
+    
+    def __get_ivec_dims(self,ivec):
+        colors = ivec[0].shape[0]
+        n_traj = len(ivec)           
+        return colors,n_traj
+     
+        
     
 class IntensityAnalyses():
     def __init__(self):
@@ -2142,7 +2365,9 @@ class IntensityAnalyses():
             
         if mode.lower() in ['g0','0']:
             G0 = correlation[:,0,:]
-
+            
+        if mode.lower() in ['max','maximum']:
+            G0 = np.max(correlation,axis=1)
         return G0
     
     def normalize_cc(self, correlation,mode='max'):
@@ -2917,6 +3142,7 @@ class TranslationOptimization():
 
     def intensity_distribution(self,intensity,bins=None,density=True,norm=1):
         
+       
         int_dist = np.histogram(intensity/norm, bins=bins, density=density,) 
         int_dist_bins = int_dist[1]
         int_dist_heights = int_dist[0]
@@ -2948,8 +3174,36 @@ class TranslationOptimization():
         return sci.optimize.basinhopping(objfun,self.initial_params,minimizer_kwargs =minimizer_kwargs,**kwargs)
     
     
-    def methast(self, optfun, optfun_type, niter=1000, burnin=100, stepsize=None,mut_rate=.3, disp=False, logspace=True):
-        
+    def methast(self, optfun, optfun_type, niter=1000, burnin=100, stepsize=None,mut_rate=.3, disp=False, logspace=True, proposal = None):
+        '''
+
+        Parameters
+        ----------
+        optfun : function
+            objective function to optimize.
+        optfun_type : str
+            the name of the objective function for __.args to access its arguments
+        niter : int, optional
+            Number of iterations. The default is 1000.
+        burnin : int, optional
+            Number of iterations to burn (disregard from the final chain). The default is 100.
+        stepsize : list, ndarray, optional
+            The stepsize of the proposal distribution. The default is None.
+        mut_rate : float 0-1, optional
+            mutation probability. The default is .3.
+        disp : boolean, optional
+            return a display of the current progress. The default is False.
+        logspace : boolean, optional
+            use logspace to search. The default is True.
+        proposal : function, optional
+            function to draw proposal distributions from. The default is None.
+
+        Returns
+        -------
+        OptimizeResult
+            scipy result object.
+
+        '''
         if logspace:
             bounds = tuple([np.log10(x).tolist() for x in self.opts['bounds']])
             initial_par = np.log10(self.initial_params)
@@ -2960,21 +3214,16 @@ class TranslationOptimization():
         if stepsize is None:
             stepsize = (initial_par/10).tolist()
             
-        '''
-        Lognormal prior
-        prior option
-        
-        TODO
-        
-        Multivariate gaussian proposal distb.
-        '''
+        if proposal is None:
+            proposal = np.random.normal
+            
         
         def evolvepars(p,stepsize):
             new=np.copy(p)
             for j in range(len(new)):
                     if np.random.rand() < mut_rate:
                         while 1:
-                            new[j]=p[j]+np.random.normal(0,stepsize[j])
+                            new[j]=p[j]+proposal(0,stepsize[j])
                     #print p
                     #print new
                             if (bounds[j][0]<new[j]<bounds[j][1]):
@@ -2993,6 +3242,11 @@ class TranslationOptimization():
             f_old=f_best=optfun(oldpars, *objective_fun_args) 
             bestpars=initial_par
             
+        if np.isnan(f_old):
+            f_old = np.inf
+        
+        
+    
         if disp:
             print('Burning in....')
         
@@ -3010,11 +3264,16 @@ class TranslationOptimization():
                 f_new=optfun(newpars,*objective_fun_args)
             #print("newpars = "+str(newpars)+ "     oldpars = "+str(oldpars))
             #print("fnew="+str(f_new)+", fold="+str(f_old))
+            
+            if np.isnan(f_new):
+                f_new = np.inf
+     
             if f_new<f_old or np.random.rand()<np.exp(f_old-f_new):
 
                 #raw_input("Press Enter to continue...")
                 f_old=f_new
                 oldpars=newpars
+                self.__update_mh_chain(newpars,f_new)
                 if f_new<f_best:
                     f_best=f_new
                     bestpars=newpars
@@ -3035,7 +3294,15 @@ class TranslationOptimization():
     def __mh_print_report(self,iteration,bestpars,fbest,niter):
         print('current iteration: %d out of %d | best_parameters: %s | best evaulation: %f' % (iteration,niter,''.join(str(bestpars.tolist())),fbest )  )
     
-    
+    def __update_mh_chain(self,pars,funeval):
+       
+        self.chain.accepted_parchain = np.vstack( (self.chain.accepted_parchain, pars) )
+        self.chain.accepted_evalchain = np.vstack((self.chain.accepted_evalchain,np.sum(funeval)))
+        #self.chain.accepted_objfunchain  = np.vstack((self.chain.accepted_objfunchain,np.atleast_1d(funeval)))
+        self.chain.accepted = self.chain.accepted + 1
+        
+
+            
     def lin_opt(self):
         return 1
     
@@ -3093,7 +3360,15 @@ class TranslationOptimization():
         
         if method in ['met_haste','methaste','MH']:
             self.args['combined_objective'] = [objective_fun_list,intensity_fun]
+            self.chain.accepted = 0
+            self.chain.accepted_evalchain = np.array([11110])
+            self.chain.accepted_objfunchain =  np.zeros((1,len(objective_fun_list)))
+            self.chain.accepted_parchain = self.initial_params
             result = method_fun(obj_fun,'combined_objective', **kwargs)
+            self.chain.accepted_evalchain = self.chain.accepted_evalchain[1:]
+            #self.chain.accepted_objfunchain =  self.chain.accepted_objfunchain[1:,:]
+            self.chain.accepted_parchain = self.chain.accepted_parchain[1:,:]     
+            
         else:
             kwargs['args'] = args
             result =  method_fun(obj_fun,**kwargs)
@@ -3109,47 +3384,14 @@ class TranslationOptimization():
         self.chain.objfunchain = self.chain.objfunchain[1:,:]
         self.chain.evalchain  = self.chain.evalchain[1:]
         
-        #return self.chain        
-    
-    # def run_optimization(self,  objective_fun, method ,model = None, data = None,**kwargs):
-    #     if model == None:
-    #         model = self.solver_obj
-    #     if data == None:
-    #         data = self.data_obj
-                        
-    #     obj_fun = self.objective_funs[objective_fun]    
-                
-    #     method_fun = self.methods[method]
-        
-    #     self.chain = OptChain()
-        
-    #     self.chain.parchain = self.initial_params
-    #     self.chain.iterations = 0
-    #     self.chain.parnames = self.parnames
-    #     self.chain.evalchain  = np.array([])
-    #     self.chain.bestpar = None
-    #     self.chain.besteval = None
-    #     self.chain.opt_method = method
-    
-    #     if method in ['met_haste','methaste','MH']:
-    #         result = method_fun(obj_fun,objective_fun, **kwargs)
-    #     else:
-    #         result =  method_fun(obj_fun,**kwargs)
-        
-    #     self.chain.bestpar = result.x
-    #     self.chain.besteval = result.fun
-    #     #return self.chain
-        
-        
+
     def __update_chain(self,pars, funeval):   
 
-        
+  
         self.chain.parchain = np.vstack( (self.chain.parchain, pars) )
-        
+
         self.chain.evalchain = np.vstack((self.chain.evalchain,np.sum(funeval)))
-        
         self.chain.objfunchain  = np.vstack((self.chain.objfunchain,np.atleast_1d(funeval)))
-        
         self.chain.iterations = self.chain.iterations + 1
         
         
@@ -3191,6 +3433,8 @@ class TranslationOptimization():
     def get_loglikelihood_intensity_distribution(self,intensity,norm):
         
         dist_sim_data = self.intensity_distribution(intensity,bins=self.data_obj.histogram_bins,density=True,norm=norm)[0]
+        dist_sim_data[dist_sim_data==0] = 1e-7
+        
         LL = -np.dot(self.data_obj.histogram,np.log(dist_sim_data))
         
         if LL == -np.inf:
@@ -3231,6 +3475,7 @@ class TranslationOptimization():
         
         d = np.mean(data,axis=-1)
         m = np.mean(model,axis=-1)
+       
 
     
         return (nspots/2) * np.sum(( d[:,2:] - m[:,2:])**2/ data_err[:,2:])
@@ -3290,8 +3535,42 @@ class IntensityData():
         
          
     def get_stats(self):
-        self.I_mu = np.mean(self.intensity_vec,axis=2)
-        self.I_var = np.mean(self.intensity_vec,axis=2)
+        if self.ragged == False:
+            self.I_mu = np.mean(self.intensity_vec,axis=2)
+            self.I_var = np.mean(self.intensity_vec,axis=2)
+        else:
+            spot_no = len(self.intensity_vec)
+            def autocorr(x):
+                result = np.correlate(x, x, mode='full')
+                return result[result.size // 2:]        
+            # Calculating the autocovariance
+            n_lags = 300
+            n_selected_Particles = np.max(spot_no)
+            ac_array = np.zeros((n_selected_Particles , n_lags ))
+            norm_ac_array = np.zeros((n_selected_Particles , n_lags ))
+            counter = 0
+            # Calculating Autocorrelation.
+            for i in range(1,n_selected_Particles+1):
+                intensity_green = self.intensity_vec[i][0]
+                temp_ac = autocorr(intensity_green)
+                size_ac_temp  = len(temp_ac)
+                ac_array[counter, 0:size_ac_temp] = autocorr(intensity_green)
+                norm_ac_array[counter, 0:size_ac_temp] = autocorr(intensity_green)/ float(ac_array[counter, :] .max())
+                counter += 1
+            # Plotting mean autocovariance
+            lag_time = [*range(0, self.max_lag_output, 1)]
+            lag_time = [element * self.sampling_rate for element in lag_time]
+            mean_ac_data = norm_ac_array.mean(0)
+            std_ac_data = norm_ac_array.std(0)
+            # normalized autocovariance, removing shot noise
+            
+            if self.remove_shotnoise ==1:
+                #mean_ac_data_norm = mean_ac_data[1:-1]/mean_ac_data[1]
+                return lag_time[1:self.max_lag_output], mean_ac_data[1:self.max_lag_output], std_ac_data[1:self.max_lag_output]
+            else:
+                #mean_ac_data_norm = mean_ac_data[1:-1]/mean_ac_data[0]
+                return lag_time[0:self.max_lag_output], mean_ac_data[0:self.max_lag_output], std_ac_data[0:self.max_lag_output]
+            
         
     def load_data(self, file):
         extension = file.split('.')[-1]
@@ -3342,7 +3621,94 @@ class IntensityData():
             self.intensity_vec = intensitys
             self.times = time_arrays
             self.cells = cells
-                
+            
+            
+    def __guess_headers(self,dataframe):
+        columns = dataframe.columns.tolist()
+        
+        cell_header = None; spot_header = None; time_header = None;
+        R_header=None; G_header = None; B_header=None;
+    
+        kwargs = {}
+        for col in columns:
+            if 'spot' in col.lower():
+                spot_header = col
+                kwargs['spot_header'] = spot_header
+            if np.sum([x in col.lower() for x in ['green','g_']]) >0:
+                green_header = col
+                kwargs['green_header'] = green_header
+            if np.sum([x in col.lower() for x in ['red','r_']]) >0:
+                red_header = col
+                kwargs['red_header'] = red_header
+            if np.sum([x in col.lower() for x in ['blue','b_']]) >0:
+                blue_header = col  
+                kwargs['blue_header'] = blue_header
+            if 'cell' in col.lower():
+                cell_header = col
+                kwargs['cell_header'] = cell_header
+            if np.sum([x in col.lower() for x in ['time','sec']]) >0:
+                time_header = col   
+                kwargs['time_header'] = time_header
+        
+        return kwargs
+        
+    
+    def load_dataframe(self,dataframe):
+        kwargs = self.__guess_headers(dataframe)
+        print(kwargs)
+        self.__load_dataframe(dataframe, **kwargs)
+        
+            
+    def __load_dataframe(self, dataframe, cell_header = 'Cell_No', spot_header = 'Spot_No',time_header = 'Time_sec', red_header='Red_Int', green_header = 'Green_int', blue_header='Blue_int' ):
+            df = dataframe
+            
+            self.head = df.head()
+            n_cells = max(df[cell_header])+1
+            max_spots =  max(df[spot_header])+1
+            total_n_spots = 0
+            data_struct = []
+            
+
+            for i in range(0,n_cells):
+                i_g = []
+                i_r = []
+                i_b = []
+                intensitys = []
+                times = []
+                for j in range(0,max_spots):
+                    temp_len_spot =  df[(df[cell_header] == i) & (df[spot_header] ==j) ]
+    
+                    if len(temp_len_spot) >0:
+                        time = df[(df[cell_header] ==i) & (df[spot_header] ==j)][time_header].values
+                        intensity_red = df[(df[cell_header] ==i) & (df[spot_header] ==j)][red_header].values
+                        intensity_green = df[(df[cell_header] ==i) & (df[spot_header] ==j)][green_header].values
+                        intensity_blue = df[(df[cell_header] ==i) & (df[spot_header] ==j)][blue_header].values
+                        i_g.append(intensity_green)
+                        i_r.append(intensity_red)
+                        i_b.append(intensity_blue)
+                        
+                        intensity = np.vstack((intensity_red,intensity_green,intensity_blue))
+                        intensitys.append(intensity)
+                        times.append(time)
+                data_struct.append([i_r,i_g,i_b,intensitys,times ])
+         
+            time_arrays = []
+            intensity_arrays = []
+            cells = []
+            for n in range(len(data_struct)):
+                cells = cells + [n for x in range( len(data_struct[n][4])  )]
+                time_arrays = time_arrays + data_struct[n][4]
+
+            len_t = len(time_arrays[0])
+            self.ragged = False
+            for n in range(len(time_arrays)):
+                if len(time_arrays[n]) != len_t:
+                    self.ragged = True
+                    
+            self.intensity_vec = intensitys
+            self.data_struct = data_struct
+            self.times = time_arrays
+            self.cells = cells               
 
 
 class OptChain():
@@ -3371,7 +3737,7 @@ class OptChain():
         print('Objective function: ' + str(self.objective_fun_list))
         print('Objective arguments: ' + str(self.objective_args))
         print('_____________________')
-        print('Best Parameter Set: %s, feval: %d'%  (''.join(str(self.bestpars.tolist())),self.besteval ) )
+        print('Best Parameter Set: %s, feval: %d'%  (''.join(str(self.bestpar.tolist())),self.besteval ) )
         print('=====================')
         
     def check_parameter_convergence(self):
@@ -3431,7 +3797,20 @@ class OptChain():
                 
         self.objfun_acc = self.objfun_acc.T
         
-    def parplot(self,ellipse=True):
+    
+    def __clear_invalid_values(self):
+        evalchain = self.evalchain
+        parchain = self.parchain
+        trimmed_evals = evalchain[~np.isnan(evalchain)]        
+        final_evals = trimmed_evals[np.isfinite(trimmed_evals)]
+        trimmed_parchains = parchain[~np.isnan(evalchain)]
+        final_parchains = trimmed_parchains[np.isfinite(trimmed_evals)]
+        
+        
+        return final_evals, final_parchains
+        
+        
+    def parplot(self,ellipse=True,logspace=False):
         n_par = len(self.bestpar)
        
         fig, ax = plt.subplots( n_par,n_par,dpi=300)
@@ -3441,22 +3820,25 @@ class OptChain():
         nplots = len(triangle_inds)
         
         
-        evalchain = self.evalchain
-        evalchain[evalchain == np.inf]
-        viridis = cm.get_cmap('viridis', int(np.ceil(np.max(self.evalchain))))
-        colors = self.evalchain
-        covariances = np.cov(self.parchain.T)
+        if np.sum(np.isnan(self.evalchain))>0 or np.sum(~np.isfinite(self.evalchain)) >0 :
+            print('Warning: NaN or Infinite values detected within function evaluation chain, these parameter sets are left out of the plot ')
+        eval_chain,par_chain = self.__clear_invalid_values()
+         
+        
+        viridis = cm.get_cmap('viridis', int(np.ceil(np.max(eval_chain))))
+        colors = eval_chain
+        covariances = np.cov(par_chain.T)
         used_pairs = []
         for i in range(n_par-1,-1,-1):
             for j in range(n_par-1,-1,-1):
                 if set([i,j]) not in used_pairs:
                     if i != j:
-                        a = ax[i][j].scatter(self.parchain[:,i],self.parchain[:,j], marker='.',c= colors)
+                        a = ax[i][j].scatter(par_chain[:,i],par_chain[:,j], marker='.',c= colors)
                         if ellipse == True:
-                            self.__get_ellipse([np.mean(self.parchain[:,i]),np.mean(self.parchain[:,j])], covariances,ax=ax[i][j] )
+                            self.__get_ellipse([np.mean(par_chain[:,i]),np.mean(par_chain[:,j])], covariances,ax=ax[i][j] )
                                          
                     else:
-                        b = ax[i][j].hist(self.parchain[:,i],bins=40,density=True)
+                        b = ax[i][j].hist(par_chain[:,i],bins=40,density=True)
                         
            
                     used_pairs.append(set([i,j]))
@@ -3468,6 +3850,11 @@ class OptChain():
                         ax[i][j].set_xlabel(self.parnames[i])
                     if j == 0:
                         ax[i][j].set_ylabel(self.parnames[j])
+                        
+                if logspace:
+                    if i != j:
+                        ax[i][j].set_yscale('log')
+                    ax[i][j].set_xscale('log')
  
         fig.tight_layout()
         fig.colorbar(a, ax=ax)
@@ -3537,6 +3924,13 @@ class TranslationSolvers():
         self.probe_locations = None
         self.colors = 1
         
+        try:
+            ssa_translation_lowmem.np
+            self.cython_available = True
+        except:
+            self.cython_available = False
+        
+        
         self.default_conditions = {'low_mem':True,
                                    'perturb':[0,0,0],
                                    'leaky_probes':False,
@@ -3547,6 +3941,7 @@ class TranslationSolvers():
                                    'record_stats':False,
                                    'k_probe':1,
                                    'n_traj':30,
+                                   'bursting':False,
                                    }
         
         self.t = np.linspace(0,1000,1001)
@@ -3712,9 +4107,11 @@ class TranslationSolvers():
     def solve_ssa_set_conditions(self):
         
         ssa_conditions = self.default_conditions
-        k_probe = self.default_conditions['k_probe']
+        kprobe = self.default_conditions['k_probe']
+        kon = self.default_conditions['kon']
+        koff = self.default_conditions['off']
         
-        if k_probe != 1:
+        if kprobe != 1:
             ssa_conditions['leaky_probes'] = True
             leaky_probes = True
         
@@ -3725,6 +4122,7 @@ class TranslationSolvers():
         bins = ssa_conditions['bins']
         n_traj = ssa_conditions['n_traj']
         
+        
         probe_vec = self.protein.probe_vec.astype(np.int32)
         t = self.t
         
@@ -3732,57 +4130,41 @@ class TranslationSolvers():
         self.__check_rates(k)
         x0 = self.x0
         
-        # provided_probe = False
-        # try:
-        #     probe_vec[0]
-        #     provided_probe = True
-        # except:
-        #     pass
         
-        # provided_protein = False
-        # try:
-        #     self.protein.kelong[0]
-        #     provided_protein = True
-        # except:
-        #     pass       
-            
-            
-        # if not provided_probe:
-        #     if provided_protein:
-        #         probe_vec = self.protein.probe_vec.astype(np.int32)
-        #     else:
-        #         print("no provided probe vector, please set the solver.protein with a protein object or provide a probe vector")
-        #         raise 
-        # else:
-        #     probe_vec = probe_vec
-            
-        
-        if record_stats:
-        
-            if leaky_probes == False:
-                if low_memory:
-                    ssa_obj = self.__solve_ssa_lowmem(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
-                else:
-                    ssa_obj = self.__solve_ssa(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
+        if self.cython_available:
+            if low_memory:
+                ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
             else:
-                if low_memory:
-                    ssa_obj = self.__solve_ssa_lowmem_leaky(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+            
+                if record_stats:
+                
+                    if leaky_probes == False:
+                        # if low_memory:
+                        #     ssa_obj = self.__solve_ssa_lowmem(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
+                        # else:
+                        ssa_obj = self.__solve_ssa(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
+                    else:
+                        # if low_memory:
+                        #     ssa_obj = self.__solve_ssa_lowmem_leaky(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+                        # else:
+                        ssa_obj = self.__solve_ssa_leaky(k,t,x0,kprobe,n_traj,ssa_conditions = ssa_conditions)         
+                   
                 else:
-                    ssa_obj = self.__solve_ssa_leaky(k,t,x0,k_probe,n_traj,ssa_conditions = ssa_conditions)         
-           
+                    if leaky_probes == False:
+                        # if low_memory:
+                        #     ssa_obj = self.__solve_ssa_lowmem_nostats(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
+                        # else:
+                        ssa_obj = self.__solve_ssa_nostats(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
+                    else:
+                        # if low_memory:
+                        #     ssa_obj = self.__solve_ssa_lowmem_leaky_nostats(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+                        # else:
+                        ssa_obj = self.__solve_ssa_leaky_nostats(k,t,x0,kprobe,n_traj,ssa_conditions = ssa_conditions)         
+                           
         else:
-            if leaky_probes == False:
-                if low_memory:
-                    ssa_obj = self.__solve_ssa_lowmem_nostats(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
-                else:
-                    ssa_obj = self.__solve_ssa_nostats(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
-            else:
-                if low_memory:
-                    ssa_obj = self.__solve_ssa_lowmem_leaky_nostats(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
-                else:
-                    ssa_obj = self.__solve_ssa_leaky_nostats(k,t,x0,k_probe,n_traj,ssa_conditions = ssa_conditions)         
-                       
-       
+            ssa_obj = self.__solve_ssa_python(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
+
+
         
        
         return ssa_obj
@@ -3790,12 +4172,12 @@ class TranslationSolvers():
 
     
     
-    def solve_ssa(self,k,t,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,k_probe=1,record_stats=False,probe_vec = None):
+    def solve_ssa(self,k,t,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,kprobe=np.ones(1),record_stats=False,probe_vec = None, probe_loc=None, kon=1,koff=1,bursting=False):
         
         self.__check_rates(k)
         
         ssa_conditions = self.default_conditions
-        if k_probe != 1:
+        if np.sum(kprobe != 1) !=0:
             ssa_conditions['leaky_probes'] = True
             leaky_probes = True
         
@@ -3804,6 +4186,7 @@ class TranslationSolvers():
         ssa_conditions['low_mem'] = low_memory
         ssa_conditions['record_stats'] = record_stats
         ssa_conditions['bins'] = bins
+        ssa_conditions['bursting'] = bursting
         
         provided_probe = False
         try:
@@ -3823,6 +4206,7 @@ class TranslationSolvers():
         if not provided_probe:
             if provided_protein:
                 probe_vec = self.protein.probe_vec.astype(np.int32)
+                probe_loc = self.protein.probe_loc.astype(np.int32)
             else:
                 print("no provided probe vector, please set the solver.protein with a protein object or provide a probe vector")
                 raise 
@@ -3831,36 +4215,42 @@ class TranslationSolvers():
             
             
         ssa_conditions['probe_vec'] = probe_vec
+        ssa_conditions['probe_loc'] = probe_loc
         
-        
-        if record_stats:
-        
-            if leaky_probes == False:
-                if low_memory:
-                    ssa_obj = self.__solve_ssa_lowmem(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
-                else:
-                    ssa_obj = self.__solve_ssa(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
+        if self.cython_available:
+            if low_memory:
+                ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
             else:
-                if low_memory:
-                    ssa_obj = self.__solve_ssa_lowmem_leaky(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+            
+                if record_stats:
+                
+                    if leaky_probes == False:
+                        # if low_memory:
+                        #     ssa_obj = self.__solve_ssa_lowmem(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
+                        # else:
+                        ssa_obj = self.__solve_ssa(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
+                    else:
+                        # if low_memory:
+                        #     ssa_obj = self.__solve_ssa_lowmem_leaky(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+                        # else:
+                        ssa_obj = self.__solve_ssa_leaky(k,t,x0,kprobe,n_traj,ssa_conditions = ssa_conditions)         
+                   
                 else:
-                    ssa_obj = self.__solve_ssa_leaky(k,t,x0,k_probe,n_traj,ssa_conditions = ssa_conditions)         
-           
+                    if leaky_probes == False:
+                        # if low_memory:
+                        #     ssa_obj = self.__solve_ssa_lowmem_nostats(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
+                        # else:
+                        ssa_obj = self.__solve_ssa_nostats(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
+                    else:
+                        # if low_memory:
+                        #     ssa_obj = self.__solve_ssa_lowmem_leaky_nostats(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+                        # else:
+                        ssa_obj = self.__solve_ssa_leaky_nostats(k,t,x0,kprobe,n_traj,ssa_conditions = ssa_conditions)         
+                           
         else:
-            if leaky_probes == False:
-                if low_memory:
-                    ssa_obj = self.__solve_ssa_lowmem_nostats(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
-                else:
-                    ssa_obj = self.__solve_ssa_nostats(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
-            else:
-                if low_memory:
-                    ssa_obj = self.__solve_ssa_lowmem_leaky_nostats(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
-                else:
-                    ssa_obj = self.__solve_ssa_leaky_nostats(k,t,x0,k_probe,n_traj,ssa_conditions = ssa_conditions)         
-                       
-       
-        
-       
+            ssa_obj = self.__solve_ssa_python(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
+
+
         return ssa_obj
     
     
@@ -4077,17 +4467,177 @@ class TranslationSolvers():
         
         return ssa_obj
     
+
+    
                 
     def __map_to_intensity(self): 
         
         return 1           
-     
-    def __solve_ssa_leaky(self):
-        return 1
+
+    def __solve_ssa_python(self,k,t,x0,n_traj,ssa_conditions=None, kprobe=None, kon=None, koff=None, flags=[0,0,0]):
+        
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+        
+        if ssa_conditions == None:
+            ssa_conditions = self.default_conditions
+        
+        x0 = self.__check_x0(x0)
+   
+        flags = [int(ssa_conditions['bursting']), int(ssa_conditions['leaky_probes']), int(ssa_conditions['record_stats'])]
+
+        rib_vec = []
+        solutions = []            
+        solutionssave = []       
+        N_rib = 200
+        colors = self.colors
+        
+        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats(n_traj,k[0],t,N_rib,colors)
+        footprint = ssa_conditions['footprint']
+        evf = ssa_conditions['perturb'][0]
+        evi = ssa_conditions['perturb'][1]
+        intime = ssa_conditions['perturb'][2]
+        non_consider_time = ssa_conditions['burnin']
+        
+        st = time.time()
+        
+        
+        print('C++ library failed, Using Python Implementation')
+        rib_vec = []
+
+        solutions = []            
+        solutionssave = []
+        N_rib = 200
+        collisions = np.array([[]])
+        all_results = np.zeros((n_traj, N_rib*len(t)), dtype=np.int32)
+        all_col_points = []
+        watched_ribs = []
+        for i in range(n_traj):
+            
+            soln,all_ribtimes,Ncol,col_points = self.__ssa_python(k, t, inhibit_time=intime+non_consider_time, FRAP=evf, Inhibitor=evi, flags=flags, kon=kon, kprobe=kprobe, koff=koff)
+            #soln = soln.reshape((1, (len(time_vec_fixed)*N_rib)))
+            
+            collisions = np.append(collisions,Ncol)
+            watched_ribs.append(int(len(collisions)))
+            validind = np.where(np.sum(soln,axis=1)!=0)[0]
+            all_col_points.append(np.array(col_points))
+            if np.max(validind) != N_rib-1:
+                validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+            
+            so = soln[(validind,)]
+          
+            solutionssave.append(so)
+
+            solutions.append(soln)
+        
+            result = soln.reshape((1, (len(t)*N_rib)))
+            all_results[i, :] = result
+        
     
-    def __solve_ssa_leaky_nostats(self):
-        return 1
- 
+        # for i in range(n_traj):
+        #     # result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib,colors)
+        #     # nribs = np.array([0],dtype=np.int32)
+        #     # kelong = np.array(k[1:-1]).flatten()
+            
+        #     soln,all_ribtimes,Ncol,col_points  = self.__ssa_python(k,t,inhibit_time=intime+non_consider_time,FRAP=evf,Inhibitor=evi,flags=flags)
+              
+        #     all_results[i, :] = result.T
+        #     all_frapresults[i,:] = frapresult
+        #     all_ribtimes[i,:] = ribtimes
+        #     all_collisions[i,:] = coltimes
+        #     all_nribs[i,:] = nribs
+            
+        #     endcolrec = np.where(colpointsx == 0)[0][0]
+            
+        #     colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+        #     all_col_points.append(colpoints.T)
+                
+            
+        # for i in range(n_traj):
+        #     soln = all_results[i, :].reshape((N_rib, len(t)))
+       
+
+        #     validind = np.where(np.sum(soln,axis=1)!=0)[0]
+
+        #     if np.max(validind) != N_rib-1:
+        #         validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+        
+        #     so = soln[(validind,)]
+            
+        #     solutionssave.append(so)
+        #     solutions.append(soln)
+        
+        collisions = np.array([[]])
+        watched_ribs = []
+        for i in range(n_traj):
+            totalrib = all_nribs[i]
+        
+            if totalrib > all_collisions.shape[1]:
+                collisions = np.append(collisions, all_collisions[i][:])
+                watched_ribs.append(int(all_collisions.shape[1]))
+        
+            else:
+               
+                collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+                watched_ribs.append(int(totalrib[0]))
+        
+        sttime = time.time() - st
+
+
+        no_ribosomes = np.zeros((n_traj, (len(k)+1)))
+        
+        startindex = np.where(t >= non_consider_time)[0][0]
+        
+        #all_results = all_results[:,startindex*N_rib:]
+        pv = self.protein.probe_vec
+        I = np.zeros((colors,len(t), n_traj))
+        
+        for n in range(colors):
+            for i in range(n_traj):
+                traj = all_results[i,:].reshape((N_rib,len(t))).T
+                for j in range(len(t)):
+                    temp_output = traj[j,:]
+    
+                    I[n,j,i] = np.sum(pv[n][temp_output[temp_output>0]-1]  )
+    
+        for i in range(len(solutions)):
+            for j in range(len(solutions[0][0][startindex:])):
+                
+                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+                if len(rib_pos.astype(int)) > 0:
+                    no_ribosomes[i, rib_pos.astype(int)] += 1
+                
+                    
+        no_ribosomes = no_ribosomes[:, 1:]
+
+        ribosome_means = np.mean(no_ribosomes, axis=0)
+        ribosome_density = ribosome_means/len(k)
+
+        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+        ssa_obj = SSA_Soln()
+        ssa_obj.no_ribosomes = no_ribosomes
+        ssa_obj.n_traj = n_traj
+        ssa_obj.k = k
+        ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+        ssa_obj.rib_density = ribosome_density
+        ssa_obj.rib_means = ribosome_means
+        ssa_obj.rib_vec = rib_vec
+        #ssa_obj.intensity_vec = intensity_vec
+        ssa_obj.time_vec_fixed = t
+        ssa_obj.time = t
+        ssa_obj.time_rec = t[startindex:]
+        ssa_obj.start_time = non_consider_time
+        ssa_obj.watched_ribs = watched_ribs
+        ssa_obj.intensity_vec = I
+        ssa_obj.solutions = solutionssave
+        try:
+            ssa_obj.col_points = all_col_points
+        except:
+            pass
+        
+        
+        
+        return ssa_obj
         
     def __solve_ssa_lowmem_nostats(self,k,t,x0,n_traj,ssa_conditions=None):
         seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
@@ -4194,7 +4744,7 @@ class TranslationSolvers():
         return ssa_obj
     
  
-    def __solve_ssa_lowmem(self,k,t,x0,n_traj,ssa_conditions=None):
+    def __solve_ssa_lowmem_combined(self,k,t,x0,n_traj,ssa_conditions=None, kon=1, koff=1, kprobe=[] ):
         seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
         
         if isinstance(k,list):
@@ -4202,15 +4752,31 @@ class TranslationSolvers():
         
         k = k.flatten()
 
+        if kprobe == []:
+            kprobe = np.ones(self.color)
         
+     
         
         if ssa_conditions == None:
             ssa_conditions = self.default_conditions
         
         x0 = self.__check_x0(x0)
         
-        pl = ssa_conditions['probe_vec']
+        probe_vec = ssa_conditions['probe_vec']
+       
         colors = self.colors
+        
+        
+        if ssa_conditions['bursting'] == False:
+            kon = 1
+            koff = 1
+        else:
+            kon = kon
+            koff = koff
+            
+        flags = np.array([int(ssa_conditions['bursting']), int(ssa_conditions['leaky_probes']), int(ssa_conditions['record_stats'])])
+        probe_loc = ssa_conditions['probe_loc']
+        
         
         rib_vec = []
         solutions = []            
@@ -4229,8 +4795,9 @@ class TranslationSolvers():
             
             result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
             nribs = np.array([0],dtype=np.int32)
-
-            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), evf, evi, float(intime), seeds[i],nribs,x0,footprint, pl,colors)
+            
+            
+            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), evf, evi, float(intime), seeds[i],nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
             all_results[i, :] = result.T
             all_frapresults[i,:] = frapresult
@@ -4313,219 +4880,341 @@ class TranslationSolvers():
         
         ssa_obj.eval_time = sttime
         
-        return ssa_obj
-            
-
-    def __solve_ssa_lowmem_leaky_nostats(self,k,t,x0,k_probe,n_traj,ssa_conditions=None):
-        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
-        k = np.array(k).astype(np.float64)
-        if ssa_conditions == None:
-            ssa_conditions = self.default_conditions
-        
-        x0 = self.__check_x0(x0)
-        
-        pl = self.protein.probe_loc.astype(int)
-        
-        
-        if isinstance(k_probe,list):
-            k_probe = np.array(k_probe)
-        
-        pv = ssa_conditions['probe_vec']
-        colors = self.colors
-        
-        rib_vec = []
-        solutions = []            
-        solutionssave = []       
-        N_rib = 1
-        all_results,all_frapresults = self.__generate_mats_lowmem_nostats(n_traj,k[0],t,N_rib,colors)
-        footprint = ssa_conditions['footprint']
-        evf = ssa_conditions['perturb'][0]
-        evi = ssa_conditions['perturb'][1]
-        intime = ssa_conditions['perturb'][2]
-        non_consider_time = ssa_conditions['burnin']
-        
-        st = time.time()
-        
-        for i in range(n_traj):
-            
-            result,frapresult = self.__generate_vecs_lowmem_nostats(k,t,N_rib,colors)
-            nribs = np.array([0],dtype=np.int32)
-
-            ssa_translation_lowmem_leaky.run_SSA(result, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],x0,footprint, pv,k_probe,pl, colors)
-            #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-            all_results[i, :] = result.T
-            all_frapresults[i,:] = frapresult
-
-
-            for i in range(n_traj):
-                soln = all_results[i, :].reshape((N_rib, len(t),colors))
-
-                so = soln
-                solutionssave.append(so)
-                solutions.append(soln)
-            
-            collisions = np.array([[]])
-            watched_ribs = []
-
-            
-            sttime = time.time() - st
-
-
-        no_ribosomes = np.zeros((n_traj, (len(k)+1)))
-        
-        startindex = np.where(t >= non_consider_time)[0][0]
-        
-        #all_results = all_results[:,startindex*N_rib:]
-
-#        for i in range(len(solutions)):
-#            for j in range(len(solutions[0][0][startindex:])):
-#                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
-#                print(rib_pos)
-#               
-#                no_ribosomes[i, rib_pos.astype(int)] += 1
-#        no_ribosomes = no_ribosomes[:, 1:]
-#
-#        ribosome_means = np.mean(no_ribosomes, axis=0)
-#        ribosome_density = ribosome_means/len(k)
-#
-#        no_ribosomes_per_mrna = np.mean(no_ribosomes)
-        
-        ssa_obj = SSA_Soln()
-        ssa_obj.no_ribosomes = no_ribosomes
-        ssa_obj.n_traj = n_traj
-        ssa_obj.k = k
-        #ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
-        #ssa_obj.rib_density = ribosome_density
-        #ssa_obj.rib_means = ribosome_means
-        ssa_obj.rib_vec = rib_vec
-        ssa_obj.intensity_vec = all_results.T
-        ssa_obj.I = all_results.T
-        ssa_obj.time_vec_fixed = t
-        ssa_obj.time = t
-        ssa_obj.time_rec = t[startindex:]
-        ssa_obj.start_time = non_consider_time
-        ssa_obj.watched_ribs = watched_ribs
-
-        ssa_obj.eval_time = sttime
-        return ssa_obj       
+        return ssa_obj        
+ 
     
+#     def __solve_ssa_lowmem(self,k,t,x0,n_traj,ssa_conditions=None):
+#         seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+        
+#         if isinstance(k,list):
+#             k = np.array(k).astype(np.float64)
+        
+#         k = k.flatten()
 
+        
+        
+#         if ssa_conditions == None:
+#             ssa_conditions = self.default_conditions
+        
+#         x0 = self.__check_x0(x0)
+        
+#         pl = ssa_conditions['probe_vec']
+#         colors = self.colors
+        
+#         rib_vec = []
+#         solutions = []            
+#         solutionssave = []       
+#         N_rib = 1
+#         all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats_lowmem(n_traj,k[0],t,N_rib,colors)
+#         footprint = ssa_conditions['footprint']
+#         evf = ssa_conditions['perturb'][0]
+#         evi = ssa_conditions['perturb'][1]
+#         intime = ssa_conditions['perturb'][2]
+#         non_consider_time = ssa_conditions['burnin']
+        
+#         st = time.time()
+        
+#         for i in range(n_traj):
+            
+#             result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
+#             nribs = np.array([0],dtype=np.int32)
 
-    def __solve_ssa_lowmem_leaky(self,k,t,x0,k_probe,n_traj,ssa_conditions=None):
-        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
-        k = np.array(k).astype(np.float64)
-        if ssa_conditions == None:
-            ssa_conditions = self.default_conditions
-        
-        x0 = self.__check_x0(x0)
-        
-        pl = self.protein.probe_loc.astype(int)
-        
-        
-        if isinstance(k_probe,list):
-            k_probe = np.array(k_probe)
-        
-        pv = ssa_conditions['probe_vec']
-        colors = self.colors
-        
-        rib_vec = []
-        solutions = []            
-        solutionssave = []       
-        N_rib = 1
-        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats_lowmem(n_traj,k[0],t,N_rib,colors)
-        footprint = ssa_conditions['footprint']
-        evf = ssa_conditions['perturb'][0]
-        evi = ssa_conditions['perturb'][1]
-        intime = ssa_conditions['perturb'][2]
-        non_consider_time = ssa_conditions['burnin']
-        
-        st = time.time()
-        
-        for i in range(n_traj):
+#             ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), evf, evi, float(intime), seeds[i],nribs,x0,footprint, pl,colors)
+#             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+#             all_results[i, :] = result.T
+#             all_frapresults[i,:] = frapresult
+#             all_ribtimes[i,:] = ribtimes
+#             all_collisions[i,:] = coltimes
+#             all_nribs[i,:] = nribs
             
-            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
-            nribs = np.array([0],dtype=np.int32)
-
-            ssa_translation_lowmem_leaky.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint, pv,k_probe,pl, colors)
-            #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
-            all_results[i, :] = result.T
-            all_frapresults[i,:] = frapresult
-            all_ribtimes[i,:] = ribtimes
-            all_collisions[i,:] = coltimes
-            all_nribs[i,:] = nribs
+#             endcolrec = np.where(colpointsx == 0)[0][0]
             
-            endcolrec = np.where(colpointsx == 0)[0][0]
-            
-            colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
-            all_col_points.append(colpoints.T)
+#             colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+#             all_col_points.append(colpoints.T)
                 
     
-            for i in range(n_traj):
-                soln = all_results[i, :].reshape((N_rib, len(t),colors))
+#             for i in range(n_traj):
+#                 soln = all_results[i, :].reshape((N_rib, len(t),colors))
 
-                so = soln
-                solutionssave.append(so)
-                solutions.append(soln)
+#                 so = soln
+#                 solutionssave.append(so)
+#                 solutions.append(soln)
             
-            collisions = np.array([[]])
-            watched_ribs = []
-            for i in range(n_traj):
-                totalrib = all_nribs[i]
+#             collisions = np.array([[]])
+#             watched_ribs = []
+#             for i in range(n_traj):
+#                 totalrib = all_nribs[i]
             
-                if totalrib > all_collisions.shape[1]:
-                    collisions = np.append(collisions, all_collisions[i][:])
-                    watched_ribs.append(int(all_collisions.shape[1]))
+#                 if totalrib > all_collisions.shape[1]:
+#                     collisions = np.append(collisions, all_collisions[i][:])
+#                     watched_ribs.append(int(all_collisions.shape[1]))
             
-                else:
+#                 else:
                    
-                    collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
-                    watched_ribs.append(int(totalrib[0]))
+#                     collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+#                     watched_ribs.append(int(totalrib[0]))
             
-            sttime = time.time() - st
+#             sttime = time.time() - st
 
 
-        no_ribosomes = np.zeros((n_traj, (len(k)+1)))
+#         no_ribosomes = np.zeros((n_traj, (len(k)+1)))
         
-        startindex = np.where(t >= non_consider_time)[0][0]
+#         startindex = np.where(t >= non_consider_time)[0][0]
         
-        #all_results = all_results[:,startindex*N_rib:]
+#         #all_results = all_results[:,startindex*N_rib:]
 
-#        for i in range(len(solutions)):
-#            for j in range(len(solutions[0][0][startindex:])):
-#                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
-#                print(rib_pos)
-#               
-#                no_ribosomes[i, rib_pos.astype(int)] += 1
-#        no_ribosomes = no_ribosomes[:, 1:]
-#
-#        ribosome_means = np.mean(no_ribosomes, axis=0)
-#        ribosome_density = ribosome_means/len(k)
-#
-#        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+# #        for i in range(len(solutions)):
+# #            for j in range(len(solutions[0][0][startindex:])):
+# #                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+# #                print(rib_pos)
+# #               
+# #                no_ribosomes[i, rib_pos.astype(int)] += 1
+# #        no_ribosomes = no_ribosomes[:, 1:]
+# #
+# #        ribosome_means = np.mean(no_ribosomes, axis=0)
+# #        ribosome_density = ribosome_means/len(k)
+# #
+# #        no_ribosomes_per_mrna = np.mean(no_ribosomes)
         
-        ssa_obj = SSA_Soln()
-        ssa_obj.no_ribosomes = no_ribosomes
-        ssa_obj.n_traj = n_traj
-        ssa_obj.k = k
-        #ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
-        #ssa_obj.rib_density = ribosome_density
-        #ssa_obj.rib_means = ribosome_means
-        ssa_obj.rib_vec = rib_vec
-        ssa_obj.intensity_vec = all_results.T
-        ssa_obj.I = all_results.T
-        ssa_obj.time_vec_fixed = t
-        ssa_obj.time = t
-        ssa_obj.time_rec = t[startindex:]
-        ssa_obj.start_time = non_consider_time
-        ssa_obj.watched_ribs = watched_ribs
-        try:
-            ssa_obj.col_points = all_col_points
-        except:
-            pass
+#         ssa_obj = SSA_Soln()
+#         ssa_obj.no_ribosomes = no_ribosomes
+#         ssa_obj.n_traj = n_traj
+#         ssa_obj.k = k
+#         #ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+#         #ssa_obj.rib_density = ribosome_density
+#         #ssa_obj.rib_means = ribosome_means
+#         ssa_obj.rib_vec = rib_vec
+#         ssa_obj.intensity_vec = all_results.T
+#         ssa_obj.I = all_results.T
+#         ssa_obj.time_vec_fixed = t
+#         ssa_obj.time = t
+#         ssa_obj.time_rec = t[startindex:]
+#         ssa_obj.start_time = non_consider_time
+#         ssa_obj.watched_ribs = watched_ribs
+#         ssa_obj.collisions = collisions
         
         
-        ssa_obj.eval_time = sttime
-        return ssa_obj       
+#         try:
+#             ssa_obj.col_points = all_col_points
+#         except:
+#             pass
+        
+        
+#         ssa_obj.eval_time = sttime
+        
+#         return ssa_obj
+            
+
+#     def __solve_ssa_lowmem_leaky_nostats(self,k,t,x0,k_probe,n_traj,ssa_conditions=None):
+#         seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+#         k = np.array(k).astype(np.float64)
+#         if ssa_conditions == None:
+#             ssa_conditions = self.default_conditions
+        
+#         x0 = self.__check_x0(x0)
+        
+#         pl = self.protein.probe_loc.astype(int)
+        
+        
+#         if isinstance(k_probe,list):
+#             k_probe = np.array(k_probe)
+        
+#         pv = ssa_conditions['probe_vec']
+#         colors = self.colors
+        
+#         rib_vec = []
+#         solutions = []            
+#         solutionssave = []       
+#         N_rib = 1
+#         all_results,all_frapresults = self.__generate_mats_lowmem_nostats(n_traj,k[0],t,N_rib,colors)
+#         footprint = ssa_conditions['footprint']
+#         evf = ssa_conditions['perturb'][0]
+#         evi = ssa_conditions['perturb'][1]
+#         intime = ssa_conditions['perturb'][2]
+#         non_consider_time = ssa_conditions['burnin']
+        
+#         st = time.time()
+        
+#         for i in range(n_traj):
+            
+#             result,frapresult = self.__generate_vecs_lowmem_nostats(k,t,N_rib,colors)
+#             nribs = np.array([0],dtype=np.int32)
+
+#             ssa_translation_lowmem_leaky.run_SSA(result, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],x0,footprint, pv,k_probe,pl, colors)
+#             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+#             all_results[i, :] = result.T
+#             all_frapresults[i,:] = frapresult
+
+
+#             for i in range(n_traj):
+#                 soln = all_results[i, :].reshape((N_rib, len(t),colors))
+
+#                 so = soln
+#                 solutionssave.append(so)
+#                 solutions.append(soln)
+            
+#             collisions = np.array([[]])
+#             watched_ribs = []
+
+            
+#             sttime = time.time() - st
+
+
+#         no_ribosomes = np.zeros((n_traj, (len(k)+1)))
+        
+#         startindex = np.where(t >= non_consider_time)[0][0]
+        
+#         #all_results = all_results[:,startindex*N_rib:]
+
+# #        for i in range(len(solutions)):
+# #            for j in range(len(solutions[0][0][startindex:])):
+# #                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+# #                print(rib_pos)
+# #               
+# #                no_ribosomes[i, rib_pos.astype(int)] += 1
+# #        no_ribosomes = no_ribosomes[:, 1:]
+# #
+# #        ribosome_means = np.mean(no_ribosomes, axis=0)
+# #        ribosome_density = ribosome_means/len(k)
+# #
+# #        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+#         ssa_obj = SSA_Soln()
+#         ssa_obj.no_ribosomes = no_ribosomes
+#         ssa_obj.n_traj = n_traj
+#         ssa_obj.k = k
+#         #ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+#         #ssa_obj.rib_density = ribosome_density
+#         #ssa_obj.rib_means = ribosome_means
+#         ssa_obj.rib_vec = rib_vec
+#         ssa_obj.intensity_vec = all_results.T
+#         ssa_obj.I = all_results.T
+#         ssa_obj.time_vec_fixed = t
+#         ssa_obj.time = t
+#         ssa_obj.time_rec = t[startindex:]
+#         ssa_obj.start_time = non_consider_time
+#         ssa_obj.watched_ribs = watched_ribs
+
+#         ssa_obj.eval_time = sttime
+#         return ssa_obj       
+    
+
+
+#     def __solve_ssa_lowmem_leaky(self,k,t,x0,k_probe,n_traj,ssa_conditions=None):
+#         seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+#         k = np.array(k).astype(np.float64)
+#         if ssa_conditions == None:
+#             ssa_conditions = self.default_conditions
+        
+#         x0 = self.__check_x0(x0)
+        
+#         pl = self.protein.probe_loc.astype(int)
+        
+        
+#         if isinstance(k_probe,list):
+#             k_probe = np.array(k_probe)
+        
+#         pv = ssa_conditions['probe_vec']
+#         colors = self.colors
+        
+#         rib_vec = []
+#         solutions = []            
+#         solutionssave = []       
+#         N_rib = 1
+#         all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats_lowmem(n_traj,k[0],t,N_rib,colors)
+#         footprint = ssa_conditions['footprint']
+#         evf = ssa_conditions['perturb'][0]
+#         evi = ssa_conditions['perturb'][1]
+#         intime = ssa_conditions['perturb'][2]
+#         non_consider_time = ssa_conditions['burnin']
+        
+#         st = time.time()
+        
+#         for i in range(n_traj):
+            
+#             result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
+#             nribs = np.array([0],dtype=np.int32)
+
+#             ssa_translation_lowmem_leaky.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], k[-1], evf, evi, intime, seeds[i],nribs,x0,footprint, pv,k_probe,pl, colors)
+#             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+#             all_results[i, :] = result.T
+#             all_frapresults[i,:] = frapresult
+#             all_ribtimes[i,:] = ribtimes
+#             all_collisions[i,:] = coltimes
+#             all_nribs[i,:] = nribs
+            
+#             endcolrec = np.where(colpointsx == 0)[0][0]
+            
+#             colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+#             all_col_points.append(colpoints.T)
+                
+    
+#             for i in range(n_traj):
+#                 soln = all_results[i, :].reshape((N_rib, len(t),colors))
+
+#                 so = soln
+#                 solutionssave.append(so)
+#                 solutions.append(soln)
+            
+#             collisions = np.array([[]])
+#             watched_ribs = []
+#             for i in range(n_traj):
+#                 totalrib = all_nribs[i]
+            
+#                 if totalrib > all_collisions.shape[1]:
+#                     collisions = np.append(collisions, all_collisions[i][:])
+#                     watched_ribs.append(int(all_collisions.shape[1]))
+            
+#                 else:
+                   
+#                     collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+#                     watched_ribs.append(int(totalrib[0]))
+            
+#             sttime = time.time() - st
+
+
+#         no_ribosomes = np.zeros((n_traj, (len(k)+1)))
+        
+#         startindex = np.where(t >= non_consider_time)[0][0]
+        
+#         #all_results = all_results[:,startindex*N_rib:]
+
+# #        for i in range(len(solutions)):
+# #            for j in range(len(solutions[0][0][startindex:])):
+# #                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+# #                print(rib_pos)
+# #               
+# #                no_ribosomes[i, rib_pos.astype(int)] += 1
+# #        no_ribosomes = no_ribosomes[:, 1:]
+# #
+# #        ribosome_means = np.mean(no_ribosomes, axis=0)
+# #        ribosome_density = ribosome_means/len(k)
+# #
+# #        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+#         ssa_obj = SSA_Soln()
+#         ssa_obj.no_ribosomes = no_ribosomes
+#         ssa_obj.n_traj = n_traj
+#         ssa_obj.k = k
+#         #ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+#         #ssa_obj.rib_density = ribosome_density
+#         #ssa_obj.rib_means = ribosome_means
+#         ssa_obj.rib_vec = rib_vec
+#         ssa_obj.intensity_vec = all_results.T
+#         ssa_obj.I = all_results.T
+#         ssa_obj.time_vec_fixed = t
+#         ssa_obj.time = t
+#         ssa_obj.time_rec = t[startindex:]
+#         ssa_obj.start_time = non_consider_time
+#         ssa_obj.watched_ribs = watched_ribs
+#         try:
+#             ssa_obj.col_points = all_col_points
+#         except:
+#             pass
+        
+        
+#         ssa_obj.eval_time = sttime
+#         return ssa_obj       
     
     
     @classmethod
@@ -4631,7 +5320,7 @@ class TranslationSolvers():
             raise ValueError('one or more model rates are negative, double check the provided rates')
        
 
-    def __ssa_python(self, k, t_array, inhibit_time=0, FRAP=False, Inhibitor=False):
+    def __ssa_python(self, k, t_array, inhibit_time=0, FRAP=False, Inhibitor=False, flags=None, kon=1, koff=1, kprobe=1):
         '''
         mRNA Translation simulation python implementation
 
@@ -4657,14 +5346,22 @@ class TranslationSolvers():
         '''
 
         #SSA params and propensities
-        R = 10 #exclusion volume (ribosome footprint), ribosomes cant be less than 10 codons apart because of their physical size
+        R = self.default_conditions['footprint'] #exclusion volume (ribosome footprint), ribosomes cant be less than 10 codons apart because of their physical size
         kelong = np.array([k[1:-1]]).T  #rates for ribosomes moving to the next codon, based on tRNA concentrations
 
         N = len(kelong)  #Number of codons in the mRNA
         kbind = k[0]   #rate for a ribosome to bind and start translation
         kcompl = k[-1]     #rate for a ribosome at the end of the mRNA to unbind
         X = np.array([0, 0], dtype=int)   #the updating ribosome posistion vector that is changed in the simulation
+            
+        bursting = flags[0]
+        leaky = flags[1]
+  
 
+        if bursting:
+            burst = np.random.rand() < (kon/(kon+koff) )
+        else:
+            burst = 1
 
         Ncol = np.zeros((1,0))
         
@@ -4680,7 +5377,10 @@ class TranslationSolvers():
         NR = 0  #number of ribosomes bound
         it = 1  #number of iterations
         Sn_p = np.eye(max(NR+1, 2), dtype=int) #stoichiometry for the SSA
-        wn_p = np.zeros((X.shape[0], 1)) # propensities for the SSA
+        if bursting:
+            wn_p = np.zeros((X.shape[0]+1, 1)) # propensities for the SSA
+        else:
+            wn_p = np.zeros((X.shape[0], 1)) # propensities for the SSA
         
         T = np.array([0, 0], dtype=float)
         ribtimes = np.array([[0,0]],dtype=float)
@@ -4708,7 +5408,7 @@ class TranslationSolvers():
                     
             oldNR = NR
             NR = len(np.flatnonzero(X)) #each iteration get the number of ribosomes on the mRNA
-            
+
             if X.shape[0] < NR+1:  #if the last reaction added a ribosome put a 0 on the end of X vec
 
                 X = np.append(X, [0])
@@ -4723,22 +5423,34 @@ class TranslationSolvers():
             T = T[0:max(NR, 1)+1]
 
             if oldNR != NR:     #if the number of ribosomes has changed reallocate the sizes of stoich and propensities
-                Sn_p = np.eye(max(NR+1, 2), dtype=int)
-                wn_p = np.zeros((X.shape[0], 1))
-
+                
+                if not bursting:    
+                    Sn_p = np.eye(max(NR+1, 2), dtype=int)
+                    wn_p = np.zeros((X.shape[0], 1))
+                else:
+                    Sn_p = np.eye(max(NR+1, 2), dtype=int)
+                    wn_p = np.zeros((X.shape[0]+1, 1))        
+                    
+                
+                    
                 wshape = len(wn_p)
                 
 
             Sn = Sn_p
             wn = wn_p
 
-
+            
             #get indices of where X vecs are > 0 ie where the ribosome values are
             inds = X > 0
 
-
-            wn[inds] = kelong[X[inds]-1]  #update propensities
-
+            if bursting:
+                
+                    wn[:-1][inds] = kelong[X[inds]-1]  #update propensities
+                
+                    
+                
+            else:
+                wn[inds] = kelong[X[inds]-1] 
 
 
             if X[0] == N:  #if the ribosome in the 0 position is at the end of the mRNA set propensities to the reaction for completion
@@ -4752,18 +5464,28 @@ class TranslationSolvers():
             #if there are no ribosomes or when there is enough room for a new ribosome to bind add the propensity for binding
             if NR == 0:
 
-                wn[NR] = kbind*Inhibit_condition
-                
-                
+                wn[NR] = kbind*Inhibit_condition*burst
+
                 
 
             if NR > 0 and X[NR-1] > R:
-                wn[NR] = kbind*Inhibit_condition
+                wn[NR] = kbind*Inhibit_condition*burst
 
             REST = np.less(X[1:]+10, X[0:-1])  #apply the footprint condition ie set any propensities where it violates the > 10 codons apart rule to 0
 
-
-            wn[1:] = (wn[1:].T*REST).T  #apply that logical^ to propensities
+            if bursting:
+                if NR > 1:
+                    wn[1:-1] = (wn[1:-1].T*REST).T 
+                else:
+                    wn[1:] = (wn[1:].T*REST).T 
+            else:
+                wn[1:] = (wn[1:].T*REST).T  #apply that logical^ to propensities
+            
+            if bursting:
+                if burst:
+                    wn[-1] = koff
+                else:
+                    wn[-1] = kon
 
             w0 = sum(wn.flat)  #get the sum of propensities
             randnum = np.random.random_sample(2) #update time to point of next reaction (exponential waiting time distb)
@@ -4773,28 +5495,53 @@ class TranslationSolvers():
                 X_array[0:len(X), it] = X
                 it += 1
 
+     
             if t < tf:  #if still running simulation pick which reaction happened via random number and propensity sum
                 r2 = w0*randnum[1]
                 tmp = 0
-
+                
                 for i in range(wshape):
+                    
                     tmp = tmp + wn[i]
                     if tmp >= r2:
                         event = i
                         break
+                    
 
-            X = (X + Sn[:, event].T)  #update X vector for new ribosome state
-            if np.sum(Sn[:,event]) < 0 :
-                
-                ribtimes = np.vstack((ribtimes,[T[0],t]))
-                T[:-1] = T[1:]
-                Ncol = np.append(Ncol,col[0][0] )
-                col = np.atleast_2d(np.append(col[:,1:],[0]))
-                
+            if bursting:
+                if event >= NR+1:
+                    burst+=1
+                    burst = burst%2
+                else:
+                    X = (X + Sn[:, event].T)
+            
+                    if np.sum(Sn[:,event]) < 0 :
+                        
+                        ribtimes = np.vstack((ribtimes,[T[0],t]))
+                        T[:-1] = T[1:]
+                        Ncol = np.append(Ncol,col[0][0] )
+                        col = np.atleast_2d(np.append(col[:,1:],[0]))
+                        
+                    else:
+                        if X[event-1] == X[event] + R:
+                            col[0][event] +=1
+                            col_points.append( (X[event],t) )                   
+
             else:
-                if X[event-1] == X[event] + R:
-                    col[0][event] +=1
-                    col_points.append( (X[event],t) )
+                X = (X + Sn[:, event].T)  #update X vector for new ribosome state
+            
+            
+                if np.sum(Sn[:,event]) < 0 :
+                    
+                    ribtimes = np.vstack((ribtimes,[T[0],t]))
+                    T[:-1] = T[1:]
+                    Ncol = np.append(Ncol,col[0][0] )
+                    col = np.atleast_2d(np.append(col[:,1:],[0]))
+                    
+                else:
+                    if X[event-1] == X[event] + R:
+                        col[0][event] +=1
+                        col_points.append( (X[event],t) )
                     
                 
             
@@ -4834,6 +5581,15 @@ class poi():
         self.ke_mu = 10
         self.kt = 10
 
+
+    @property
+    def codons(self):
+        codons = self.nt_seq.upper()
+        return [codons[i:i+3] for i in range(0, len(codons), 3)]
+
+    @property
+    def ktrna_id(self):
+        return PropensityFactory().get_trna_ids(self.nt_seq)
         
     @property    
     def kelong(self):

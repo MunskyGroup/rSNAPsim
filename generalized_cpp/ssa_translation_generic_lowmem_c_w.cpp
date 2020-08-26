@@ -17,6 +17,9 @@ using Eigen::VectorXd;
 void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, int N, int Nt, double* inhibitors, int seed, int fNt, int* frap_result, double* k_add, int n_enters,int n_pauses,int n_stops, int n_jumps,int* SSA_probe, int Ncolor, int Nlocs, int watched_ribs )
 {
     // Declare the variables
+	
+	//std::cout << "init"  << "-------" << std::endl;
+	
     int R = 9; // ribosome exclusion.
     int N_rib = 200; // maximum number of ribosomes. 
 	srand(seed);
@@ -37,12 +40,16 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 	//std::cout << Nlocs << std::endl;
 	MatrixXi probe(Ncolor,Nlocs);
 	probe.setZero(Ncolor,Nlocs);
+	//std::cout << "seting up probe"  << Nlocs << std::endl;
+	//std::cout << "seting up probe"  << Ncolor << std::endl;
+	
 	for (int i=0; i < Ncolor; i++){
 		for (int j=0; j < Nlocs; j++){
 			probe(i,j) = SSA_probe[i*Nlocs + j ]; 
 			//std::cout << i << "," << j << " " << i*Nlocs + j << " " << SSA_probe[i*Nlocs + j ]  << std::endl;
 		}
 	}
+	//std::cout << "finished probe"  << Ncolor << std::endl;
 	int nprobes = 0;
 	for (int i=0; i < Ncolor; i++){
 		nprobes += probe.row(i).sum();
@@ -70,10 +77,11 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 	
 	
 	//std::cout << "probe " << probe_locs << "-------" << std::endl;
-	//std::cout << "im " << intensity_mat << "-------" << std::endl;
+	////std::cout << "im " << intensity_mat << "-------" << std::endl;
 	//std::cout << "n_pauses" << n_pauses << "-------" << std::endl;
 	//std::cout << "n_stops" << n_stops << "-------" << std::endl;
 	//std::cout << "n_enters" << n_enters << "-------" << std::endl;
+	//std::cout << "n_enters" << n_jumps << "-------" << std::endl;
 	
 	Eigen::MatrixXd jumps(n_jumps,3);  // set up matrices of these reactions 
 	Eigen::MatrixXd pauses(n_pauses,2);
@@ -247,9 +255,10 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 	//std::cout << t_array << std::endl;
 	//std::cout << sizeof(t_array) << std::endl;
     while( t < tf)
-    {
+    {   //std::cout << "new iteration" << "-------" << std::endl;
         //std::cout << "-------t=" << t << "-------" << std::endl;
-		//std::cout << "x=" << X << "-------" << std::endl;
+		//std::cout << "-------tf=" << tf << "-------" << std::endl;
+		//std::cout << "x=" << X.topLeftCorner(1,5) << "-------" << std::endl;
 		
         // Determine inhibitor stuff
         if (inhibitor_pres) {
@@ -298,7 +307,7 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 			spatial_X(0,i) = (X(0,i) + (X(0,i)>N) + (X(0,i) > (2*N-1)) )%N; 
 			
 		}
-		
+		//std::cout << "spatial_X " << spatial_X << "-------" << std::endl;
 		//spatial_X.topLeftCorner(1,NR+1) == (X.array() - (X.array()>N)-(X.array() > (2*N-1)) )%N; // convert to spatial locs
 		
 		// parse the binds first because they change the stoich column count
@@ -323,9 +332,13 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 			//bool loc_free = spatial_X.head(NR).array()- enters(i,0)
 			int j = enters(i,0);
 			int enter_loc = (j + (j>N) + (j > (2*N-1)) )%N;
+			//std::cout  << enter_loc << "----" <<std::endl;
 			//std::cout  << j << "----"<<std::endl;
 			
 			bool loc_not_free = (((spatial_X.block(0,0,1,NR).array())-enter_loc).abs() < R).any();
+			
+			//std::cout  << " check "<< ((spatial_X.block(0,0,1,NR).array())-enter_loc).abs() << "----" <<std::endl;
+			
 			
 			//std::cout << (((spatial_X.block(0,0,1,NR).array())-enter_loc).abs() < R) << std::endl;
 			//std::cout  << loc_not_free << "----"<<std::endl;
@@ -365,6 +378,8 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 			}
 		}
 		
+		//std::cout  << bind_events << "----"<<std::endl;
+		
 		extra_reactions = false;
 		for (int i = 0; i <= n_jumps+n_pauses+n_stops; i++){
 			if ((X.block(0,0,1,NR).array()== important_locs(i)).any()){
@@ -374,11 +389,25 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 		}
 		
 		
-		
+		bool rib_on_pause = false;
 		if (extra_reactions == true){ 
 			//handle the pauses now
-			add_index = 0;
+			
+			
+			for (int i = 0; i <n_pauses; i++){
+				bool pause_check = (X.block(0,0,1,NR).array()== pauses(i,0)).any(); 
+				if (pause_check){
+					rib_on_pause = true;
+				}
+				//std::cout  <<"pause check "<< pause_check << "----"<<std::endl;	
+				//std::cout  <<"on pause "<< rib_on_pause << "----"<<std::endl;	
+			}
+			
+			
+			
+/* 			add_index = 0;
 			add_index_2 = 0;
+			
 			
 		
 			
@@ -421,7 +450,7 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 				
 				
 			}
-
+ */
 
 			// handle jumps
 			add_index = 0;
@@ -551,25 +580,52 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 		//std::cout << "wn stops " << wn_stops << "----"<<std::endl;
 				
         //std::cout << "X: " << X << std::endl;
+		
+		//std::cout << "making sn_elong " << "----"<<std::endl;
         MatrixXi Sn_elong(NR,NR+(binds>0));
 		Sn_elong.setZero();
         Sn_elong.topLeftCorner(NR,NR).setIdentity();
         
         Eigen::VectorXd wn;
         wn.setZero(NR);
+		
+		//std::cout << "sn_elong" << Sn_elong << "----"<<std::endl;
+		
+		//std::cout << "making sn_elong done " << "----"<<std::endl;
+		
         // for loop instead of "where"       
         // also, account for the exclusion here.
-        for(int i=0; i <= NR; i++)
+		
+		//std::cout << "NR " << NR << "----"<<std::endl;
+
+		
+        for(int i=0; i < NR; i++)
         {
+			
+			
             if( X(0,i) > 0 ){
                 wn(i) = kelong[X(0,i)-1];
             }
             if( i>0){
-                if( X(0,i-1)%N-X(0,i)%N<=R ){
+                if( X(0,i-1)%N-X(0,i)%N<R ){
                     wn(i) = 0;
                 }
                 
             }
+			
+			if (rib_on_pause){  // if previously detected that a ribosome is on a pause, check location, if its a pause multiply by rate
+				
+				//std::cout << "rib_on_pause " << rib_on_pause << "----"<<std::endl;
+				for (int j = 0; j <n_pauses; j++){
+					if (X(0,i) == pauses(j,0)){
+						//std::cout << " old wn(i) " << wn(i) << "----"<<std::endl;
+						wn(i) = kelong[X(0,i)-1]*pauses(j,1);
+						//std::cout << "wn(i) " << wn(i) << "----"<<std::endl;
+					}
+				}
+			}
+			
+			//std::cout << "wn(i) " << wn(i) << "----"<<std::endl;
         }
 		
 		Eigen::VectorXd wn_all_rxns(wn.size() + wn_bind.size() + wn_pauses.size()+ wn_jumps.size()+ wn_stops.size());
@@ -578,7 +634,7 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 		
 		Eigen::MatrixXi Sn(Sn_elong.rows()+additional_rxns_cnt,Sn_elong.cols());
 		Sn.setZero();
-		
+		//std::cout  <<"all b4 "<< Sn << "----"<<std::endl;
 		Sn << Sn_elong,bind_events,pause_events,jump_events,stop_events;
 		
 		//std::cout  <<"X "<< X << "----"<<std::endl;
@@ -587,7 +643,7 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 		
 		//std::cout  <<"all "<< Sn << "----"<<std::endl;
 		//std::cout << "seed" << seed << "-------" << std::endl;
-		// std::cout << "Elong S" << Sn_elong << "----"<<std::endl;
+		//std::cout << "Elong S" << Sn_elong << "----"<<std::endl;
 		
 		
 		//std::cout << "bindsS " << bind_events << "----"<<std::endl;
@@ -662,7 +718,7 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
         //while( ((it<=Nt-1) || (t>t_array[it])) ){
         while( (it<=Nt-1) && (t>t_array[it])) {
 			//std::cout << t << std::endl;
-			//std::cout << t_array[it] << std::endl;
+			//std::cout << "starting intensity" << std::endl;
            
 			
 			
@@ -678,7 +734,8 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
     			}
     			 */
 				int intensity = 0;
-				//std::cout << "-------sum=" << intensity_mat<< "-------" << std::endl;
+				//std::cout << "-------sum=" << intensity_mat.topLeftCorner(3,5)<< "-------" << std::endl;
+				//std::cout << "----- Ncolor" << Ncolor << std::endl;
 				//std::cout << "-------sum=" << intensity_mat.row(j).sum()<< "-------" << std::endl;
 
 				intensity = intensity_mat.row(j).sum();
@@ -710,7 +767,8 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
         }
 		
         //std::cout << "Stoichiometry of reaction: " << Sn.row(ind-1) << std::endl;
-        
+        //std::cout << "Stoichiometry: " << Sn << std::endl;
+		//std::cout << "X: " << X.topLeftCorner(1,5) << std::endl;
 
 
 		//Sn.row(ind-1).size();
@@ -755,11 +813,13 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 				
 				//std::cout  <<"removed_rib  " << removed_rib << "----"<<std::endl;
 				//std::cout  <<"num_ribs  " << NR << "----"<<std::endl;
+				
+				intensity_mat.block(0,removed_rib,Ncolor,NR) = intensity_mat.block(0,removed_rib+1,Ncolor,NR);
 				for(int i=removed_rib; i <= NR; i++){// shift everyone if completing
 					
 					X(0,i) = X(0,i+1); 
 					//std::cout  <<"removed_im before  " << intensity_mat << "----"<<std::endl;
-					intensity_mat.block(0,i,Ncolor,NR) = intensity_mat.block(0,i+1,Ncolor,NR);
+					//intensity_mat.block(0,i,Ncolor,NR) = intensity_mat.block(0,i+1,Ncolor,NR);
 					//std::cout  <<"removed_im  " << intensity_mat << "----"<<std::endl;
 				}
 				//std::cout  <<"new X " << X<< "----"<<std::endl;
@@ -775,8 +835,10 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 				} 
 				//std::cout << "NR "  << NR << "-------" << std::endl;
 			} */
-			for (int j = 0; j <= nprobes; j++){ 
+			for (int j = 0; j < nprobes; j++){ 
 				//std::cout << "j "  << j << "-------" << std::endl;
+				//std::cout << "probespot "  << X(0, x_changed) << " " << probe_locs(1,j) << "-------" << std::endl;
+				
 				if (X(0, x_changed) == probe_locs(1,j)){
 					
 					//std::cout << "xchange " << x_changed << "-------" << std::endl;
@@ -792,6 +854,7 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 					
 			
 			}
+			//std::cout << "done with probe "  << "-------" << std::endl;
 			
 		}
 		
@@ -902,7 +965,8 @@ void translationSSA_generic(double* kelong, double* t_array, int* SSA_result, in
 		
     
 	
-	
+		
+
 		} 
 	//n_ribs(0) = number_ribs;		
 	}	

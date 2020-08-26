@@ -64,8 +64,14 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
     int N_rib = rib_max; // maximum number of ribosomes. 
 	//std::cout << "-------nrib=" << N_rib << "-------" << std::endl;
 	
+	std::mt19937_64 rng; 
+	//INCLUDE <#chrono> to seed from computer clock
+    // initialize the random number generator with time-dependent seed
+    //uint64_t timeSeed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    //std::seed_seq ss{uint32_t(timeSeed & 0xffffffff), uint32_t(timeSeed>>32)};
+    rng.seed(seed);
+	std::uniform_real_distribution<double> unif(0, 1);
 	
-	srand(seed);
     int it = 0;
 	int number_ribs = 0;
 	int fit = 0;
@@ -228,15 +234,15 @@ void translationSSA(double* kelong, double* t_array, int Nt, double kbind, doubl
 
         // Generate some random numbers.
 		
-        r1 =  ((double) rand()/ (RAND_MAX));
-        r2 =  ((double) rand() / (RAND_MAX));
+        r1 =  unif(rng);
+        r2 =  unif(rng);
 		
 		
 		// if rand() gets a 0 resample, since ln(0) = -inf 
 		if((r1==0)){
 			//std::cout << r1 << " " << r1a << " " << t <<  std::endl;
 			
-			r1 =  ((double) rand() / (RAND_MAX));			
+			r1 =  unif(rng);			
 		}
 		
 		
