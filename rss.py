@@ -4516,7 +4516,25 @@ class TranslationSolvers():
         else:
             ssa_obj = self.__solve_ssa_python(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
 
-
+       
+        
+        colors = ssa_obj.intensity_vec.shape[0]
+        st = ssa_obj.start_time
+        ft = ssa_obj.time_rec[-1]
+        lt = len(ssa_obj.time_rec)
+        if bins == None:
+            bstr = 0
+        else:
+            bstr=1
+        sid = 'L' + str(len(k)) + 'N' + str(n_traj) + 'T' + str(st) + '_' + str(ft) + '_' + str(lt) 
+        fstr = '-F' + str(int(self.cython_available)) + str(int(sum(perturb))) + str(int(leaky_probes)) + str(int(low_memory))  + str(int(record_stats))  +  str(int(bstr)) + str(int(bursting)) 
+        cstr = 'C' + str(int(colors))
+        nprobe = np.sum(probe_loc,axis=1)
+        for value in nprobe:
+            cstr = cstr+ 'P' + str(int(value))
+        sid = sid + cstr + fstr
+        ssa_obj._SSA_Soln__meta['id'] = sid
+        
         return ssa_obj
     
     
@@ -6209,6 +6227,7 @@ class SSA_Soln():
                     np.savetxt(f, np.atleast_2d(self.__dict__[key]), delimiter=',', fmt='%s')
                     f.write(('\r\n'))
         f.close()
+        
 
     def __load_from_txt(self, filename):
         if '.txt' in filename:
