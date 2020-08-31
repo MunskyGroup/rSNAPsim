@@ -2167,6 +2167,9 @@ class CodonDictionaries():
     
     
 class FragmentSeperator():
+    '''
+    Class to manage ribosomal movement and kymograph seperation
+    '''
     def __init__(self):
         pass
     
@@ -2989,7 +2992,7 @@ class ModelBuilder():
         else:
             all_results = np.zeros((n_trajectories,ncolors,len(t_array)),dtype=np.int32)
         
-        seeds = np.random.randint(0,0x7FFFFFF,n_trajectories)
+        seeds = np.random.randint(0,0x7FFFFFF,n_trajectories, dtype= np.int32)
         
         k_enters,k_pauses,k_stops,k_jumps,frames_used = self.__generate_additional_ks(self.k_enters,self.k_pauses,self.k_jumps,self.k_stops,self._poi.total_length)
         
@@ -3935,11 +3938,12 @@ class TranslationSolvers():
                                    'perturb':[0,0,0],
                                    'leaky_probes':False,
                                    'bins':None,
-                                   'k_probe':0,
+                                   'kprobe':1,
                                    'footprint':9,
                                    'burnin':0,
                                    'record_stats':False,
-                                   'k_probe':1,
+                                   'kon':1.,
+                                   'koff':1.,
                                    'n_traj':30,
                                    'bursting':False,
                                    }
@@ -4107,9 +4111,9 @@ class TranslationSolvers():
     def solve_ssa_set_conditions(self):
         
         ssa_conditions = self.default_conditions
-        kprobe = self.default_conditions['k_probe']
+        kprobe = self.default_conditions['kprobe']
         kon = self.default_conditions['kon']
-        koff = self.default_conditions['off']
+        koff = self.default_conditions['koff']
         
         if kprobe != 1:
             ssa_conditions['leaky_probes'] = True
@@ -4337,7 +4341,7 @@ class TranslationSolvers():
     
     def __solve_ssa(self,k,t,x0,n_traj,ssa_conditions=None):
         
-        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj, dtype = np.int32)
         
         if ssa_conditions == None:
             ssa_conditions = self.default_conditions
@@ -4476,7 +4480,7 @@ class TranslationSolvers():
 
     def __solve_ssa_python(self,k,t,x0,n_traj,ssa_conditions=None, kprobe=None, kon=None, koff=None, flags=[0,0,0]):
         
-        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj, dtype=np.int32)
         
         if ssa_conditions == None:
             ssa_conditions = self.default_conditions
@@ -4643,7 +4647,7 @@ class TranslationSolvers():
         return ssa_obj
         
     def __solve_ssa_lowmem_nostats(self,k,t,x0,n_traj,ssa_conditions=None):
-        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj, dtype=np.int32)
         
         if isinstance(k,list):
             k = np.array(k).astype(np.float64)
@@ -4748,7 +4752,7 @@ class TranslationSolvers():
     
  
     def __solve_ssa_lowmem_combined(self,k,t,x0,n_traj,ssa_conditions=None, kon=1, koff=1, kprobe=[] ):
-        seeds = np.random.randint(0, 0x7FFFFFF, n_traj)
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj, dtype=np.int32)
         
         if isinstance(k,list):
             k = np.array(k).astype(np.float64)
@@ -4757,7 +4761,13 @@ class TranslationSolvers():
 
         if kprobe == []:
             kprobe = np.ones(self.color)
-        
+            
+        if isinstance(kprobe,list):
+            kprobe = np.array(kprobe,dtype=np.float64)
+        if isinstance(kprobe,int):
+            kprobe = np.array([kprobe],dtype=np.float64)
+        if isinstance(kprobe,float):
+            kprobe = np.array([kprobe],dtype=np.float64)
      
         
         if ssa_conditions == None:
@@ -4799,8 +4809,7 @@ class TranslationSolvers():
             result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
             nribs = np.array([0],dtype=np.int32)
             
-            
-            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), evf, evi, float(intime), seeds[i],nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags)
+            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), int(evf), int(evi), float(intime), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
             all_results[i, :] = result.T
             all_frapresults[i,:] = frapresult
