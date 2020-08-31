@@ -35,7 +35,7 @@ all_ribtimes = np.zeros((n_trajectories,400),dtype=np.float64)
 all_coltimes = np.zeros((n_trajectories,400),dtype=np.int32)
 nribs = np.array([0],dtype=np.int32)
 all_ribs = np.zeros((n_trajectories,1))
-seeds = np.random.randint(0,0x7FFFFFF,n_trajectories)
+seeds = np.random.randint(0,0x7FFFFFF,n_trajectories,dtype=np.int32)
 x0 = np.zeros((N_rib),dtype=np.int32)
 
 pl = np.zeros((2, len(kelong)), dtype=np.int32)
@@ -63,7 +63,7 @@ koff = 3
 k_probe = np.array([.8,.1],dtype=np.float64)
 
 
-flags = np.array([0,0,0])
+flags = np.array([0,0,0],dtype=np.int32)
 start = time.time()
 for i in range(n_trajectories):
     result = np.zeros((ncolor,len(t_array)),dtype=np.int32)    
@@ -103,7 +103,7 @@ plt.legend(['c1','c2'])
 
 
 # bursting, leaky, stats
-flags = np.array([1,0,0])
+flags = np.array([1,0,0],dtype=np.int32)
 start = time.time()
 for i in range(n_trajectories):
     result = np.zeros((ncolor,len(t_array)),dtype=np.int32)    
@@ -143,7 +143,7 @@ plt.legend(['c1','c2'])
 
 
 
-flags = np.array([0,1,0])
+flags = np.array([0,1,0],dtype=np.int32)
 start = time.time()
 for i in range(n_trajectories):
     result = np.zeros((ncolor,len(t_array)),dtype=np.int32)    
@@ -187,7 +187,7 @@ plt.legend(['c1','c2'])
 
 
 
-flags = np.array([1,1,0])
+flags = np.array([1,1,0],dtype=np.int32)
 start = time.time()
 for i in range(n_trajectories):
     result = np.zeros((ncolor,len(t_array)),dtype=np.int32)    
@@ -234,7 +234,7 @@ plt.legend(['c1','c2'])
 
 
 
-flags = np.array([0,0,1])
+flags = np.array([0,0,1],dtype=np.int32)
 start = time.time()
 for i in range(n_trajectories):
     result = np.zeros((ncolor,len(t_array)),dtype=np.int32)    
