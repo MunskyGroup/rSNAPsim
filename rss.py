@@ -13,9 +13,11 @@ import sys
 import os
 sys.path.append("C:\\Users\\willi\\Documents\\Github\\rSNAPsim\\generalized_cpp")
 sys.path.append("C:\\Users\\willi\\Documents\\Github\\rSNAPsim\\ssa_cpp")
+sys.path.append("C:\\Users\\willi\\Documents\\Github\\rSNAPsim\\trna_ssa")
 
 path_to_cpp = ''
 path_to_gen = ''
+path_to_trna =''
 #OS walk to find the cpp compilation
 for root, dirs, files in os.walk(".", topdown=False):
    for branch in dirs:
@@ -23,7 +25,8 @@ for root, dirs, files in os.walk(".", topdown=False):
            path_to_cpp = os.path.join(root, branch)
        if 'generalized_cpp' in branch:
            path_to_gen = os.path.join(root, branch)
-
+       if 'trna_ssa' in branch:
+           path_to_trna = os.path.join(root, branch)
 if path_to_cpp != '':
     try:
         cwd = os.getcwd()
@@ -49,6 +52,17 @@ if path_to_gen != '':
     except:
         os.chdir(cwd)
 
+if path_to_trna !='':
+    try:
+        cwd = os.getcwd()
+        
+        os.chdir(path_to_gen)
+        print('importing C++ tRNA models')
+        import ssa_trna
+        print('c++ models loaded successfully')
+        os.chdir(cwd)
+    except:
+        os.chdir(cwd)   
     
     
 try:
@@ -492,6 +506,16 @@ class rSNAPsim():
             self.pois = pois_s
             self.pois_seq = pois_nt
 
+
+    def seq_to_protein_obj(self, sequence_str, min_codons=80):
+        
+        smm = SequenceManipMethods(sequence_str)
+        
+        orfs = smm.get_orfs(sequence_str,min_codons=min_codons)
+        protein_strs,proteins, tagged_proteins  = smm.get_proteins(orfs,sequence_str)
+        
+        return proteins
+                
 
     def open_seq_file(self, seqfile,min_codons=80):
         
@@ -1477,7 +1501,7 @@ class SequenceManipMethods():
             codons.append(nt_seq[i:i+3])
         #POI.codons = codons
 
-        POI.codon_sensitivity, POI.CAI, POI.CAI_codons = self.codon_usage(POI.nt_seq)   
+        #POI.codon_sensitivity, POI.CAI, POI.CAI_codons = self.codon_usage(POI.nt_seq)   
         POI.ki = .03
         POI.ke = 10
         POI.kt = 10
@@ -1999,7 +2023,8 @@ class CodonDictionaries():
         self.trna_ids_vals = np.linspace(0,60,61).astype(int).tolist() +  np.linspace(0,60,61).astype(int).tolist()
         
         self.trna_dict = dict(zip(self.trna_ids, self.trna_ids_vals))
-        
+        self.id_to_trna = dict(map(reversed, self.trna_dict.items()))
+
         
         
         # add the U codons
@@ -4208,6 +4233,7 @@ class TranslationSolvers():
                                    'koff':1.,
                                    'n_traj':30,
                                    'bursting':False,
+                                   'tRNA':False
                                    }
         
         self.t = np.linspace(0,1000,1001)
@@ -4436,7 +4462,65 @@ class TranslationSolvers():
         return ssa_obj
             
 
-    
+    def solve_ssa_trna(self,k_index, k_diffusion, k_bind, k_compl,t,x0=[], k_trna = None, perturb=[0,0,0],leaky_probes=False,kprobe=np.ones(1),probe_vec = None, probe_loc=None, kon=1,koff=1,bursting=False,n_traj=10   ):
+        self.__check_rates_trna(k_index)
+        
+        ssa_conditions = self.default_conditions
+        if np.sum(kprobe != 1) !=0:
+            ssa_conditions['leaky_probes'] = True
+            leaky_probes = True
+        
+        ssa_conditions['perturb'] = perturb
+        ssa_conditions['leaky_probes'] = leaky_probes
+
+        
+        ssa_conditions['bursting'] = bursting
+        
+        provided_probe = False
+        try:
+            probe_vec[0]
+            provided_probe = True
+        except:
+            pass
+        
+        provided_protein = False
+        try:
+            self.protein.kelong[0]
+            provided_protein = True
+        except:
+            pass       
+            
+        try:
+            k_trna[0]
+        except:
+            
+            strGeneCopy = CodonDictionaries().strGeneCopy
+            strGeneCopy.pop('TAG')
+            strGeneCopy.pop('TAA')
+            strGeneCopy.pop('TGA')
+
+            k_trna = np.array(list(strGeneCopy.values()))
+        
+        
+        if not provided_probe:
+            if provided_protein:
+                probe_vec = self.protein.probe_vec.astype(np.int32)
+                probe_loc = self.protein.probe_loc.astype(np.int32)
+            else:
+                print("no provided probe vector, please set the solver.protein with a protein object or provide a probe vector")
+                raise 
+        else:
+            probe_vec = probe_vec
+            
+            
+        ssa_conditions['probe_vec'] = probe_vec
+        ssa_conditions['probe_loc'] = probe_loc
+        
+        
+     
+        ssa_obj = self.__solve_ssa_trna(k_index,k_trna, k_diffusion,k_bind,k_compl,t,x0,n_traj,ssa_conditions = ssa_conditions)
+                        
+        return ssa_obj
     
     def solve_ssa(self,k,t,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,kprobe=np.ones(1),record_stats=False,probe_vec = None, probe_loc=None, kon=1,koff=1,bursting=False):
         
@@ -4483,35 +4567,49 @@ class TranslationSolvers():
         ssa_conditions['probe_vec'] = probe_vec
         ssa_conditions['probe_loc'] = probe_loc
         
+        
         if self.cython_available:
             if low_memory:
                 ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
             else:
-            
-                if record_stats:
+                ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
+ 
                 
-                    if leaky_probes == False:
-                        # if low_memory:
-                        #     ssa_obj = self.__solve_ssa_lowmem(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
-                        # else:
-                        ssa_obj = self.__solve_ssa(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
-                    else:
-                        # if low_memory:
-                        #     ssa_obj = self.__solve_ssa_lowmem_leaky(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
-                        # else:
-                        ssa_obj = self.__solve_ssa_leaky(k,t,x0,kprobe,n_traj,ssa_conditions = ssa_conditions)         
+                # if record_stats:
+                
+                #     if leaky_probes == False:
+                #         # if low_memory:
+                #         #     ssa_obj = self.__solve_ssa_lowmem(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
+                #         # else:
+                #         ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
+
+                #         #ssa_obj = self.__solve_ssa(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
+                #     else:
+                #         # if low_memory:
+                #         #     ssa_obj = self.__solve_ssa_lowmem_leaky(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+                #         # else:
+                #         ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
+
+
+                #         #ssa_obj = self.__solve_ssa_leaky(k,t,x0,kprobe,n_traj,ssa_conditions = ssa_conditions)         
                    
-                else:
-                    if leaky_probes == False:
-                        # if low_memory:
-                        #     ssa_obj = self.__solve_ssa_lowmem_nostats(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
-                        # else:
-                        ssa_obj = self.__solve_ssa_nostats(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
-                    else:
-                        # if low_memory:
-                        #     ssa_obj = self.__solve_ssa_lowmem_leaky_nostats(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
-                        # else:
-                        ssa_obj = self.__solve_ssa_leaky_nostats(k,t,x0,kprobe,n_traj,ssa_conditions = ssa_conditions)         
+                # else:
+                #     if leaky_probes == False:
+                #         # if low_memory:
+                #         #     ssa_obj = self.__solve_ssa_lowmem_nostats(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
+                #         # else:
+                            
+                #         ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
+
+                #         #ssa_obj = self.__solve_ssa_nostats(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
+                #     else:
+                #         # if low_memory:
+                #         #     ssa_obj = self.__solve_ssa_lowmem_leaky_nostats(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
+                #         # else:
+                #         ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
+
+
+                #         #ssa_obj = self.__solve_ssa_leaky_nostats(k,t,x0,kprobe,n_traj,ssa_conditions = ssa_conditions)         
                            
         else:
             ssa_obj = self.__solve_ssa_python(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
@@ -4641,6 +4739,8 @@ class TranslationSolvers():
         intime = ssa_conditions['perturb'][2]
         non_consider_time = ssa_conditions['burnin']
         
+        print(t)
+        
         st = time.time()
         
         for i in range(n_traj):
@@ -4757,6 +4857,161 @@ class TranslationSolvers():
     def __map_to_intensity(self): 
         
         return 1           
+
+
+    def __solve_ssa_trna(self,kindex,ktrna,kdiffusion,kbind,kcompl, t, x0, n_traj, ssa_conditions=None ):
+
+        
+
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj, dtype = np.int32)
+    
+        if ssa_conditions == None:
+            ssa_conditions = self.default_conditions
+        
+        x0 = self.__check_x0(x0)
+   
+       
+        rib_vec = []
+        solutions = []            
+        solutionssave = []       
+        N_rib = 200
+        colors = self.colors
+        
+        n_trajectories = n_traj
+        
+
+        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats(n_traj,kbind,t,N_rib,colors)
+        all_trna_results = np.zeros((n_trajectories,61*len(t)),dtype=np.int32)
+        
+        footprint = ssa_conditions['footprint']
+        evf = ssa_conditions['perturb'][0]
+        evi = ssa_conditions['perturb'][1]
+        intime = ssa_conditions['perturb'][2]
+        non_consider_time = ssa_conditions['burnin']
+        
+        st = time.time()
+        
+        N_rib = 200
+        
+       
+        result = np.zeros((len(t)*N_rib),dtype=np.int32  )
+        
+        #lenfrap = len(np.intersect1d(np.where(t_array>0)[0],np.where(t<20)[0]))
+        #all_frapresults = np.zeros((n_trajectories,N_rib*len(t_array)),dtype=np.int32)
+
+        all_ribs = np.zeros((n_trajectories,1))
+        all_col_points = []
+    
+        #seeds = np.random.randint(0,0x7FFFFFF,n_trajectories)
+        x0 = np.zeros((N_rib),dtype=np.int32)
+     
+        
+        for i in range(n_trajectories):
+            
+            trna_result = np.zeros((len(t)*61),dtype=np.int32)    
+            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_trna(kbind,kindex,t,N_rib,colors)
+
+            nribs = np.array([0],dtype=np.int32)
+            
+            ssa_trna.run_SSA(result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, 0,0,0, seeds[i],nribs,x0,n_traj)
+                  
+            all_results[i, :] = result.T
+            all_trna_results[i,:] = trna_result
+            all_frapresults[i,:] = frapresult
+            all_ribtimes[i,:] = ribtimes
+            all_collisions[i,:] = coltimes
+            all_nribs[i,:] = nribs[0]
+         
+            endcolrec = np.where(colpointsx == 0)[0][0]
+            
+            colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
+            all_col_points.append(colpoints.T)
+                
+            
+        for i in range(n_traj):
+            soln = all_results[i, :].reshape((N_rib, len(t)))
+       
+
+            validind = np.where(np.sum(soln,axis=1)!=0)[0]
+
+            if np.max(validind) != N_rib-1:
+                validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+        
+            so = soln[(validind,)]
+            
+            solutionssave.append(so)
+            solutions.append(soln)
+        
+        collisions = np.array([[]])
+        watched_ribs = []
+        for i in range(n_traj):
+            totalrib = all_nribs[i]
+        
+            if totalrib > all_collisions.shape[1]:
+                collisions = np.append(collisions, all_collisions[i][:])
+                watched_ribs.append(int(all_collisions.shape[1]))
+        
+            else:
+               
+                collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+                watched_ribs.append(int(totalrib[0]))
+        
+        sttime = time.time() - st
+
+
+        no_ribosomes = np.zeros((n_traj, (len(kindex)+1)))
+        
+        startindex = np.where(t >= non_consider_time)[0][0]
+        
+        #all_results = all_results[:,startindex*N_rib:]
+        pv = self.protein.probe_vec
+        I = np.zeros((colors,len(t), n_traj))
+        
+        for n in range(colors):
+            for i in range(n_traj):
+                traj = all_results[i,:].reshape((N_rib,len(t))).T
+                for j in range(len(t)):
+                    temp_output = traj[j,:]
+    
+                    I[n,j,i] = np.sum(pv[n][temp_output[temp_output>0]-1]  )
+
+        for i in range(len(solutions)):
+            for j in range(len(solutions[0][0][startindex:])):
+                rib_pos = solutions[i][startindex:, j][np.nonzero(solutions[i][startindex:, j])]
+               
+                no_ribosomes[i, rib_pos.astype(int)] += 1
+        no_ribosomes = no_ribosomes[:, 1:]
+
+        ribosome_means = np.mean(no_ribosomes, axis=0)
+        ribosome_density = ribosome_means/len(kindex)
+
+        no_ribosomes_per_mrna = np.mean(no_ribosomes)
+        
+        ssa_obj = SSA_Soln()
+        ssa_obj.no_ribosomes = no_ribosomes
+        ssa_obj.n_traj = n_traj
+        ssa_obj.k = kindex
+        ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+        ssa_obj.rib_density = ribosome_density
+        ssa_obj.rib_means = ribosome_means
+        ssa_obj.rib_vec = rib_vec
+        #ssa_obj.intensity_vec = intensity_vec
+        ssa_obj.time_vec_fixed = t
+        ssa_obj.time = t
+        ssa_obj.time_rec = t[startindex:]
+        ssa_obj.start_time = non_consider_time
+        ssa_obj.watched_ribs = watched_ribs
+        ssa_obj.intensity_vec = I
+        ssa_obj.solutions = solutionssave
+        ssa_obj.all_trna_results = all_trna_results
+        try:
+            ssa_obj.col_points = all_col_points
+        except:
+            pass
+        
+        
+        
+        return ssa_obj                
 
     def __solve_ssa_python(self,k,t,x0,n_traj,ssa_conditions=None, kprobe=None, kon=None, koff=None, flags=[0,0,0]):
         
@@ -5529,7 +5784,20 @@ class TranslationSolvers():
         colpointsx = np.zeros(len(k[1:-1])*(guessed_no_ribosomes),dtype=np.int32)
         colpointst = np.zeros(len(k[1:-1])*(guessed_no_ribosomes),dtype=np.float64)
         return result,ribtimes,frapresult,coltimes,colpointsx,colpointst
-    
+
+    @classmethod
+    def __generate_vecs_trna(cls,kbind,kind,t,N_rib,ncolor):
+        tf = t[-1]
+        ki = kbind
+        
+        guessed_no_ribosomes = int(1.3*ki*tf)
+        result = np.zeros((len(t)*N_rib), dtype=np.int32)
+        ribtimes = np.zeros((guessed_no_ribosomes),dtype=np.float64)
+        frapresult = np.zeros((len(t)*N_rib),dtype=np.int32)
+        coltimes = np.zeros((guessed_no_ribosomes),dtype=np.int32)
+        colpointsx = np.zeros(len(kind)*(guessed_no_ribosomes),dtype=np.int32)
+        colpointst = np.zeros(len(kind)*(guessed_no_ribosomes),dtype=np.float64)
+        return result,ribtimes,frapresult,coltimes,colpointsx,colpointst
     
     @classmethod
     def __generate_vecs_lowmem(cls,k,t,N_rib,ncolor):
@@ -5602,6 +5870,16 @@ class TranslationSolvers():
             x0_clean = np.zeros((200),dtype=np.int32)  
             x0_clean[:len(x0)] = x0
         return x0_clean
+
+    def __check_rates_trna(self,rates):
+        if isinstance(rates,np.ndarray):
+            pass
+        else:
+            rates = np.array(rates,dtype=np.int32)
+        if rates.dtype !=int:
+            raise ValueError('trna ID values are not integers, to run the trna ssa version, k_index needs to be an ID of 0-60 integer values')
+        if len(np.where(rates < 0)[0]) or len(np.where(rates > 60)[0]):
+            raise ValueError('trna ID values are out of bounds, the IDs are 0-60 for tRNA species')             
         
     def __check_rates(self,rates):
         if isinstance(rates,np.ndarray):
@@ -5908,6 +6186,17 @@ class poi():
         self.ke_mu = 10
         self.kt = 10
 
+    @property
+    def CAI(self):
+        cs, CAI, cc = SequenceManipMethods().codon_usage(self.nt_seq)
+        return CAI
+    
+    @property
+    def codon_sensitivity(self):
+        cs, CAI, cc = SequenceManipMethods().codon_usage(self.nt_seq)
+        return cs
+       
+        
 
     @property
     def codons(self):
@@ -5936,6 +6225,7 @@ class poi():
         for i in range(len(list(self.tag_epitopes))):
             pv[i,[self.tag_epitopes[list(self.tag_epitopes.keys())[i]]]] = 1      
         return pv        
+
 
     
     @property
