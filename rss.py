@@ -4462,7 +4462,7 @@ class TranslationSolvers():
         return ssa_obj
             
 
-    def solve_ssa_trna(self,k_index, k_diffusion, k_bind, k_compl,t,x0=[], k_trna = None, perturb=[0,0,0],leaky_probes=False,kprobe=np.ones(1),probe_vec = None, probe_loc=None, kon=1,koff=1,bursting=False,n_traj=10   ):
+    def solve_ssa_trna(self,k_index, k_diffusion, k_bind, kelong, k_compl, t,x0=[], k_trna = None, perturb=[0,0,0],leaky_probes=False,kprobe=np.ones(1),probe_vec = None, probe_loc=None, kon=1,koff=1,bursting=False,n_traj=10   ):
         self.__check_rates_trna(k_index)
         
         ssa_conditions = self.default_conditions
@@ -4518,7 +4518,7 @@ class TranslationSolvers():
         
         
      
-        ssa_obj = self.__solve_ssa_trna(k_index,k_trna, k_diffusion,k_bind,k_compl,t,x0,n_traj,ssa_conditions = ssa_conditions)
+        ssa_obj = self.__solve_ssa_trna(k_index,k_trna, k_diffusion,k_bind,kelong, k_compl,t,x0,n_traj,ssa_conditions = ssa_conditions)
                         
         return ssa_obj
     
@@ -4859,7 +4859,7 @@ class TranslationSolvers():
         return 1           
 
 
-    def __solve_ssa_trna(self,kindex,ktrna,kdiffusion,kbind,kcompl, t, x0, n_traj, ssa_conditions=None ):
+    def __solve_ssa_trna(self,kindex,ktrna,kdiffusion,kbind,kelong,kcompl, t, x0, n_traj, ssa_conditions=None ):
 
         
 
@@ -4913,7 +4913,7 @@ class TranslationSolvers():
 
             nribs = np.array([0],dtype=np.int32)
             
-            ssa_trna.run_SSA(result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, 0,0,0, seeds[i],nribs,x0,n_traj)
+            ssa_trna.run_SSA(result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, 0,0,0, seeds[i],nribs,x0,kelong)
                   
             all_results[i, :] = result.T
             all_trna_results[i,:] = trna_result

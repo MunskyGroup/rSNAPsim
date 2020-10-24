@@ -175,7 +175,6 @@ void translationSSA_trna(int* k_index, double* k_trna, double k_diffusion, doubl
 
     while( t < tf)
     {
-	
         // Determine inhibitor stuff
         if (inhibitor_pres) {
             if (t>=inhibit_time){
@@ -228,9 +227,10 @@ void translationSSA_trna(int* k_index, double* k_trna, double k_diffusion, doubl
         // for loop instead of "where"       
         // also, account for the exclusion here.
         for(int i=0; i <= NR; i++)
-        {
+        {	
+	
             if( X(0,i) > 0 ){
-                rib_wn(i) = kelong* trna_pool(k_index[X(0,i)]);  //kelong here
+                rib_wn(i) = kelong* trna_pool(k_index[X(0,i) - 1]);  //kelong here
 				
             }
             if( i>0){
@@ -242,6 +242,11 @@ void translationSSA_trna(int* k_index, double* k_trna, double k_diffusion, doubl
 				
             }
         }
+		
+		//if (ind == 123){
+			//std::cout << "calculating ribwin"  << std::endl;
+			//std::cout << "N" << N << std::endl;
+		//}
 
         // If a nascent protein reaches full length
         // add in the completion rate
@@ -333,15 +338,17 @@ void translationSSA_trna(int* k_index, double* k_trna, double k_diffusion, doubl
             ind +=1;
         }
 		
-        //std::cout << "current_rxn: " << wn(ind-1) << std::endl;
-        
+		
+
 		
 		if (ind <= 122){
-			
+			//std::cout << "current_prop trna: " << trna_S.row(ind-1) << std::endl;
 			trna_pool.topLeftCorner(1,61) = trna_pool.topLeftCorner(1,61) + trna_S.row(ind-1);
-
-			
-			
+			//bool f  = (trna_pool.topLeftCorner(1,61).array() < 0.0).any();
+			//if (f == true){
+				//std::cout << "current_rxn: " << ind-1 << std::endl;
+				//std::cout << "current_trna_pool: " << trna_pool.topLeftCorner(1,61) << std::endl;
+			//}
 		}
 		else{
 			
@@ -367,7 +374,7 @@ void translationSSA_trna(int* k_index, double* k_trna, double k_diffusion, doubl
 			}
 			else {
 				if(X(rib_ind) != 0){          // if elongating forward, eat a tRNA ignore when its binding
-					trna_pool(k_index[X(rib_ind)]) = trna_pool(k_index[X(rib_ind)])-1;
+					trna_pool(k_index[X(rib_ind) - 1]) = trna_pool(k_index[X(rib_ind) - 1])-1;
 					
 
 				}

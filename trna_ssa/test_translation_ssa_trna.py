@@ -22,7 +22,7 @@ t_array = np.linspace(0,1000,1000,dtype=np.float64)
 N_rib = 200
 result = np.zeros((len(t_array)*N_rib),dtype=np.int32  )
 #kelong = np.array([3.1,3.2,3.3,3.4,3.5,3.1,3.2,3.3,3.4,3.5],dtype=np.float64)
-n_trajectories = 25
+n_trajectories = 1
 start = time.time()
 
 
@@ -89,7 +89,7 @@ for i in range(n_trajectories):
     colpointsx = np.zeros(len(kelong)*400,dtype=np.int32)
     colpointst = np.zeros(len(kelong)*400,dtype=np.float64)
     
-    ssa_trna.run_SSA(result,trna_result,ribtimes,coltimes,colpointsx,colpointst, k_index,k_trna,k_diffusion,frapresult,t_array,.1,kcompl, 0,0,0, seeds[i],nribs,x0,10)
+    ssa_trna.run_SSA(result,trna_result,ribtimes,coltimes,colpointsx,colpointst, k_index,k_trna,k_diffusion,frapresult,t_array,.1,kcompl, 0,0,0, seeds[i],nribs,x0,1)
     
     
 
