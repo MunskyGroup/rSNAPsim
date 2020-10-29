@@ -424,7 +424,7 @@ class rSNAPsim():
 
 
 
-        mean_tRNA_copynumber = np.mean(list(self.strGeneCopy.values()))
+        mean_tRNA_copynumber = np.mean(list(self.strGeneCopy_single.values()))
 
 
 
@@ -1584,7 +1584,7 @@ class PropensityFactory():
         for i in range(len(seperated_codons)):
             tRNA_copynumber[0, i] = self.codon_dicts.strGeneCopy[seperated_codons[i]]
 
-        mean_tRNA_copynumber = np.mean(list(self.codon_dicts.strGeneCopy.values()))
+        mean_tRNA_copynumber = np.mean(list(self.codon_dicts.strGeneCopy_single.values()))
 
         k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
         all_k = [k_init] + k_elongation.flatten().tolist() + [k_end]
@@ -1624,7 +1624,7 @@ class PropensityFactory():
             for i in range(len(seperated_codons)):
                 tRNA_copynumber[0, i] = self.codon_dicts.strGeneCopy[seperated_codons[i]]
     
-            mean_tRNA_copynumber = np.mean(list(self.codon_dicts.strGeneCopy.values()))
+            mean_tRNA_copynumber = np.mean(list(self.codon_dicts.strGeneCopy_single.values()))
     
             k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
         
@@ -2001,7 +2001,20 @@ class CodonDictionaries():
                             'GAT': 21.8, 'GGT': 10.8, 'GTC': 14.5, 'GCC': 27.7, 'GAC': 25.1,
                             'GGC': 22.2, 'GTA':  7.1, 'GCA': 15.8, 'GAA': 29.0, 'GGA': 16.5,
                             'GTG': 28.1, 'GCG': 7.4, 'GAG': 39.6, 'GGG': 16.5}
-
+        
+        self.strGeneCopy_single = {'TTT': 17.6, 'TCT': 15.2, 'TAT': 12.2, 'TGT': 10.6, 'TTC': 20.3,
+                            'TCC': 17.7, 'TAC': 15.3, 'TGC': 12.6, 'TTA': 7.7, 'TCA': 12.2,
+                            'TAA': 1.0, 'TGA': 1.6, 'TTG': 12.9, 'TCG':  4.4, 'TAG': 0.8,
+                            'TGG': 13.2, 'CTT': 13.2, 'CCT': 17.5, 'CAT': 10.9, 'CGT': 4.5,
+                            'CTC': 19.6, 'CCC': 19.8, 'CAC': 15.1, 'CGC': 10.4, 'CTA':  7.2,
+                            'CCA': 16.9, 'CAA': 12.3, 'CGA':  6.2, 'CTG': 39.6, 'CCG':  6.9,
+                            'CAG': 34.2, 'CGG': 11.4, 'ATT': 16.0, 'ACT': 13.1, 'AAT': 17.0,
+                            'AGT': 12.1, 'ATC': 20.8, 'ACC': 18.9, 'AAC': 19.1, 'AGC': 19.5,
+                            'ATA':  7.5, 'ACA': 15.1, 'AAA': 24.4, 'AGA': 12.2, 'ATG': 22.0,
+                            'ACG': 6.1, 'AAG': 31.9, 'AGG': 12.0, 'GTT': 11.0, 'GCT': 18.4,
+                            'GAT': 21.8, 'GGT': 10.8, 'GTC': 14.5, 'GCC': 27.7, 'GAC': 25.1,
+                            'GGC': 22.2, 'GTA':  7.1, 'GCA': 15.8, 'GAA': 29.0, 'GGA': 16.5,
+                            'GTG': 28.1, 'GCG': 7.4, 'GAG': 39.6, 'GGG': 16.5}
         
         self.trna_ids = ['TTT','TCT','TAT','TGT','TTC','TCC','TAC','TGC','TTA','TCA','TAA','TGA','TTG',
                         'TCG','TAG','TGG', 'CTT', 'CCT', 'CAT', 'CGT', 'CTC', 'CCC', 'CAC', 'CGC', 'CTA',
@@ -4389,10 +4402,10 @@ class TranslationSolvers():
         '''
         
         codon_dict = CodonDictionaries()
-        mean_u = np.mean(list(codon_dict.strGeneCopy.values()) )
+        mean_u = np.mean(list(codon_dict.strGeneCopy_single.values()) )
         ui = []
         for i in range(0, len(nt_seq), 3):
-            ui.append(mean_u/ codon_dict.strGeneCopy[nt_seq[i:i+3]])
+            ui.append(mean_u/ codon_dict.strGeneCopy_single[nt_seq[i:i+3]])
         return ui
         
 
@@ -4494,12 +4507,12 @@ class TranslationSolvers():
             k_trna[0]
         except:
             
-            strGeneCopy = CodonDictionaries().strGeneCopy
+            strGeneCopy = CodonDictionaries().strGeneCopy_single
             strGeneCopy.pop('TAG')
             strGeneCopy.pop('TAA')
             strGeneCopy.pop('TGA')
 
-            k_trna = np.array(list(strGeneCopy.values()))
+            k_trna = np.array(list(CodonDictionaries().strGeneCopy_single.values()))
         
         
         if not provided_probe:
@@ -4767,19 +4780,36 @@ class TranslationSolvers():
             all_col_points.append(colpoints.T)
                 
             
+                
+        maxso = 0    
         for i in range(n_traj):
             soln = all_results[i, :].reshape((N_rib, len(t)))
        
 
             validind = np.where(np.sum(soln,axis=1)!=0)[0]
+            
 
             if np.max(validind) != N_rib-1:
                 validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
-        
+                
             so = soln[(validind,)]
+            if so.shape[0] > maxso:
+                maxso = so.shape[0]
+                
+                
+                
+        for i in range(n_traj):
+            soln = all_results[i, :].reshape((N_rib, len(t)))
+       
+
+            validind = tuple([x for x in range(0,maxso)])
             
+
+            so = soln[(validind,)]
+                
             solutionssave.append(so)
             solutions.append(soln)
+            
         
         collisions = np.array([[]])
         watched_ribs = []
@@ -4841,7 +4871,7 @@ class TranslationSolvers():
         ssa_obj.start_time = non_consider_time
         ssa_obj.watched_ribs = watched_ribs
         ssa_obj.intensity_vec = I
-        ssa_obj.solutions = solutionssave
+        ssa_obj.solutions = np.array(solutionssave)
         try:
             ssa_obj.col_points = all_col_points
         except:
@@ -4927,20 +4957,37 @@ class TranslationSolvers():
             colpoints = np.vstack((colpointsx[:endcolrec],colpointst[:endcolrec]))
             all_col_points.append(colpoints.T)
                 
-            
+        maxso = 0    
         for i in range(n_traj):
             soln = all_results[i, :].reshape((N_rib, len(t)))
        
 
             validind = np.where(np.sum(soln,axis=1)!=0)[0]
+            
 
             if np.max(validind) != N_rib-1:
                 validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
-        
+                
             so = soln[(validind,)]
+            if so.shape[0] > maxso:
+                maxso = so.shape[0]
+                
+                
+                
+        for i in range(n_traj):
+            soln = all_results[i, :].reshape((N_rib, len(t)))
+       
+
+            validind = tuple([x for x in range(0,maxso)])
             
+
+            so = soln[(validind,)]
+                
             solutionssave.append(so)
             solutions.append(soln)
+            
+            
+        
         
         collisions = np.array([[]])
         watched_ribs = []
@@ -4995,14 +5042,15 @@ class TranslationSolvers():
         ssa_obj.rib_density = ribosome_density
         ssa_obj.rib_means = ribosome_means
         ssa_obj.rib_vec = rib_vec
-        #ssa_obj.intensity_vec = intensity_vec
+        ssa_obj.I = I
+        ssa_obj.eval_time = sttime
         ssa_obj.time_vec_fixed = t
         ssa_obj.time = t
         ssa_obj.time_rec = t[startindex:]
         ssa_obj.start_time = non_consider_time
         ssa_obj.watched_ribs = watched_ribs
         ssa_obj.intensity_vec = I
-        ssa_obj.solutions = solutionssave
+        ssa_obj.solutions = np.array(solutionssave)
         ssa_obj.all_trna_results = all_trna_results
         try:
             ssa_obj.col_points = all_col_points
@@ -5065,7 +5113,7 @@ class TranslationSolvers():
             
             so = soln[(validind,)]
           
-            solutionssave.append(so)
+            #solutionssave.append(so)
 
             solutions.append(soln)
         
@@ -5073,7 +5121,28 @@ class TranslationSolvers():
             all_results[i, :] = result
             I_internal[:,:,i] = intensity
         
-    
+                        
+        maxso = 0    
+        for i in range(n_traj):
+            soln = all_results[i, :].reshape((N_rib, len(t)))
+      
+            validind = np.where(np.sum(soln,axis=1)!=0)[0]
+            if np.max(validind) != N_rib-1:
+                validind = np.append(np.where(np.sum(soln,axis=1)!=0)[0],np.max(validind)+1)
+                
+            so = soln[(validind,)]
+            if so.shape[0] > maxso:
+                maxso = so.shape[0]
+                     
+        for i in range(n_traj):
+            soln = all_results[i, :].reshape((N_rib, len(t)))
+       
+            validind = tuple([x for x in range(0,maxso)])
+            so = soln[(validind,)]
+                
+            solutionssave.append(so)
+            
+            
         # for i in range(n_traj):
         #     # result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs(k,t,N_rib,colors)
         #     # nribs = np.array([0],dtype=np.int32)
@@ -5171,7 +5240,7 @@ class TranslationSolvers():
         ssa_obj.watched_ribs = watched_ribs
         ssa_obj.intensity_vec = I_internal
         ssa_obj.I = I_internal
-        ssa_obj.solutions = solutionssave
+        ssa_obj.solutions = np.array(solutionssave)
         try:
             ssa_obj.col_points = all_col_points
         except:
@@ -6589,22 +6658,42 @@ class SSA_Soln():
                   
                     
                     
-                     
+    def make_dict(self):
+        ssadict = {}
+        for key in self.__dict__.keys():
+            print(key)
+            if key != 'rib_vec' and key != 'ribosome_means':
+                try:
+                    ssadict[key] = self.__dict__[key].tolist()
+                except:
+                    ssadict[key] = self.__dict__[key]
+                
+            if key == 'col_points':
+                col_pt = [x.tolist() for x in self.__dict__[key] ] 
+                ssadict[key] = col_pt                
+                    
+                    
+        return ssadict          
                      
                      
 
-    def __save_from_json(self, filename):
+    def __save_json(self, filename):
 
         if '.json' in filename:
 
             ssadict = {}
             for key in self.__dict__.keys():
-                if key != 'rib_vec' and key != 'ribosome_means':
-                    try:
-                        ssadict[key] = self.ssa_harr.__dict__[key].tolist()
-                    except:
-                        ssadict[key] = self.ssa_harr.__dict__[key]
-
+               
+                #if key != 'rib_vec' and key != 'ribosome_means':
+                try:
+                    ssadict[key] = self.__dict__[key].tolist()
+                except:
+                    ssadict[key] = self.__dict__[key]
+                    
+                if key == 'col_points':
+                    col_pt = [x.tolist() for x in self.__dict__[key] ] 
+                    ssadict[key] = col_pt
+                    
             json.dump(ssadict, codecs.open(filename, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
 
         else:
@@ -6621,16 +6710,21 @@ class SSA_Soln():
             json.dump(ssadict, codecs.open(filename, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
 
 
-    def __load_json(self,filename):
+    def __load_from_json(self,filename):
         if '.json' in filename:
 
             obj_text = codecs.open(filename, 'r', encoding='utf-8').read()
             ssadict = json.loads(obj_text)
 
             for key in ssadict.keys():
-                if key in ['rib_means','time_vec_fixed','intensity_vec','mean_autocorr','autocorr_vec','error_autocorr','rib_density']:
+                if key in ['all_trna_results','rib_means','time_vec_fixed','mean_autocorr','autocorr_vec','error_autocorr','rib_density','intensity_vec','I']:
 
                     self.__dict__[key] = np.array(ssadict[key])
+                    
+                elif key in ['colpoints']: 
+                    
+                    cpts = [np.array(x) for x in ssadict[key]]
+                    self.__dict__[key] = cpts
                 else:
                     self.__dict__[key] = ssadict[key]
 
