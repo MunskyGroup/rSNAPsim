@@ -6717,7 +6717,7 @@ class SSA_Soln():
             ssadict = json.loads(obj_text)
 
             for key in ssadict.keys():
-                if key in ['all_trna_results','rib_means','time_vec_fixed','mean_autocorr','autocorr_vec','error_autocorr','rib_density','intensity_vec','I']:
+                if key in ['solutions','all_trna_results','rib_means','time_vec_fixed','mean_autocorr','autocorr_vec','error_autocorr','rib_density','intensity_vec','I']:
 
                     self.__dict__[key] = np.array(ssadict[key])
                     
