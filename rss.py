@@ -1199,7 +1199,7 @@ class SequenceManipMethods():
     '''
     class that handles anything dealing with sequences
     '''
-    def __init__(self,sequence):
+    def __init__(self,sequence=''):
         self.sequence = sequence
         self.codon_dicts = CodonDictionaries()
         pass    
@@ -1269,7 +1269,7 @@ class SequenceManipMethods():
         orfs = {'1':[], '2':[], '3':[]}
         laststop = 0
         for start in orf1_starts:
-            nextstop = orf1_stops[np.where(orf1_stops > start)[0][0]]
+            nextstop = orf1_stops[np.where(orf1_stops > start)[0][0]]+3
             if (nextstop - start) > min_len:
                 if nextstop != laststop:
                     orfs['1'].append((start, nextstop))
@@ -1278,7 +1278,7 @@ class SequenceManipMethods():
 
         laststop = 0
         for start in orf2_starts:
-            nextstop = orf2_stops[np.where(orf2_stops > start)[0][0]]
+            nextstop = orf2_stops[np.where(orf2_stops > start)[0][0]]+3
             if (nextstop - start) > min_len:
                 if nextstop != laststop:
                     orfs['2'].append((start, nextstop))
@@ -1286,7 +1286,7 @@ class SequenceManipMethods():
 
         laststop = 0
         for start in orf3_starts:
-            nextstop = orf3_stops[np.where(orf3_stops > start)[0][0]]
+            nextstop = orf3_stops[np.where(orf3_stops > start)[0][0]]+3
 
             if (nextstop - start) > min_len:
                 if nextstop != laststop:
@@ -1369,11 +1369,11 @@ class SequenceManipMethods():
                 
                 protein = poi()
                 
-                pro = self.nt2aa(seq[orfs[str(i+1)][j][0]:orfs[str(i+1)][j][1]+3])
-                nt_seq = seq[orfs[str(i+1)][j][0]:orfs[str(i+1)][j][1]+3]
-                if pro[-1] == '*':
-                    pro = pro[:-1]
-                    nt_seq = nt_seq[:-3]
+                pro = self.nt2aa(seq[orfs[str(i+1)][j][0]:orfs[str(i+1)][j][1]])
+                nt_seq = seq[orfs[str(i+1)][j][0]:orfs[str(i+1)][j][1]]
+                # if pro[-1] == '*':
+                #     pro = pro[:-1]
+                #     nt_seq = nt_seq[:-3]
                 
                 
                 
@@ -2015,6 +2015,8 @@ class CodonDictionaries():
                             'GAT': 21.8, 'GGT': 10.8, 'GTC': 14.5, 'GCC': 27.7, 'GAC': 25.1,
                             'GGC': 22.2, 'GTA':  7.1, 'GCA': 15.8, 'GAA': 29.0, 'GGA': 16.5,
                             'GTG': 28.1, 'GCG': 7.4, 'GAG': 39.6, 'GGG': 16.5}
+
+
         
         self.trna_ids = ['TTT','TCT','TAT','TGT','TTC','TCC','TAC','TGC','TTA','TCA','TAA','TGA','TTG',
                         'TCG','TAG','TGG', 'CTT', 'CCT', 'CAT', 'CGT', 'CTC', 'CCC', 'CAC', 'CGC', 'CTA',
@@ -3123,8 +3125,8 @@ class ModelBuilder():
             ax.plot([loc2,loc2],[yloc2, yloc2+.8],color = jump_color,lw=2  )
             
             if yloc2 == yloc1:
-                ax.plot([loc1,loc1],[yloc1, yloc1-.3],color='k')
-                ax.plot([loc1,loc2],[yloc1-.3, yloc1-.3],color='k')
+                ax.plot([loc1,loc1],[yloc1, yloc1-.3],color=plt.rcParams['axes.edgecolor'])
+                ax.plot([loc1,loc2],[yloc1-.3, yloc1-.3],color=plt.rcParams['axes.edgecolor'])
                 
                 ax.annotate("",
                         xy=(loc2, yloc2), xycoords='data',
@@ -3264,8 +3266,11 @@ class ModelBuilder():
 
     def run_ssa(self,t, n_traj=10,low_mem = True ):
         
-        if self.probe == None:
+        try: 
+            self.probe.shape
+        except:
             self.probe = self.generate_probe()
+        
         
         probe = self.probe.astype(int).copy(order='C')
         t_array = t
@@ -4405,7 +4410,7 @@ class TranslationSolvers():
         mean_u = np.mean(list(codon_dict.strGeneCopy_single.values()) )
         ui = []
         for i in range(0, len(nt_seq), 3):
-            ui.append(mean_u/ codon_dict.strGeneCopy_single[nt_seq[i:i+3]])
+            ui.append(mean_u/ codon_dict.strGeneCopy[nt_seq[i:i+3]])
         return ui
         
 
@@ -4514,7 +4519,7 @@ class TranslationSolvers():
 
             k_trna = np.array(list(CodonDictionaries().strGeneCopy_single.values()))
         
-        
+        print(k_trna)
         if not provided_probe:
             if provided_protein:
                 probe_vec = self.protein.probe_vec.astype(np.int32)
@@ -4535,9 +4540,9 @@ class TranslationSolvers():
                         
         return ssa_obj
     
-    def solve_ssa(self,k,t,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,kprobe=np.ones(1),record_stats=False,probe_vec = None, probe_loc=None, kon=1,koff=1,bursting=False):
+    def solve_ssa(self,ke,t,ki=.33,kt = 10,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,kprobe=np.ones(1),record_stats=False,probe_vec = None, probe_loc=None, kon=1,koff=1,bursting=False):
         
-        self.__check_rates(k)
+        self.__check_rates(ke)
         
         ssa_conditions = self.default_conditions
         if np.sum(kprobe != 1) !=0:
@@ -4551,6 +4556,7 @@ class TranslationSolvers():
         ssa_conditions['bins'] = bins
         ssa_conditions['bursting'] = bursting
         
+
         provided_probe = False
         try:
             probe_vec[0]
@@ -4562,14 +4568,27 @@ class TranslationSolvers():
         try:
             self.protein.kelong[0]
             provided_protein = True
+            
         except:
             pass       
+        
+        if provided_protein: #parse out stop codons if they are included
+            includes_stop = False
+            if self.protein.aa_seq[-1] == '*' or self.protein.nt_seq[-1].upper() in ['UAA','TAA','TAG','UAG', 'UGA','TGA']:
+                if len(self.protein.aa_seq) == len(ke):
+                    includes_stop = True
+
             
-            
+
         if not provided_probe:
             if provided_protein:
-                probe_vec = self.protein.probe_vec.astype(np.int32)
-                probe_loc = self.protein.probe_loc.astype(np.int32)
+                if includes_stop:
+                    probe_vec = np.require(self.protein.probe_vec.astype(np.int32)[:,:-1],requirements=['C'])
+                    probe_loc = np.require(self.protein.probe_loc.astype(np.int32)[:,:-1],requirements=['C'])
+                    ke = ke[:-1]
+                else:
+                    probe_vec = self.protein.probe_vec.astype(np.int32)
+                    probe_loc = self.protein.probe_loc.astype(np.int32)
             else:
                 print("no provided probe vector, please set the solver.protein with a protein object or provide a probe vector")
                 raise 
@@ -4579,56 +4598,20 @@ class TranslationSolvers():
             
         ssa_conditions['probe_vec'] = probe_vec
         ssa_conditions['probe_loc'] = probe_loc
-        
-        
+   
+        k = [ki,] + ke + [kt,]
         if self.cython_available:
             if low_memory:
                 ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
             else:
                 ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
  
-                
-                # if record_stats:
-                
-                #     if leaky_probes == False:
-                #         # if low_memory:
-                #         #     ssa_obj = self.__solve_ssa_lowmem(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
-                #         # else:
-                #         ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
-
-                #         #ssa_obj = self.__solve_ssa(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
-                #     else:
-                #         # if low_memory:
-                #         #     ssa_obj = self.__solve_ssa_lowmem_leaky(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
-                #         # else:
-                #         ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
-
-
-                #         #ssa_obj = self.__solve_ssa_leaky(k,t,x0,kprobe,n_traj,ssa_conditions = ssa_conditions)         
-                   
-                # else:
-                #     if leaky_probes == False:
-                #         # if low_memory:
-                #         #     ssa_obj = self.__solve_ssa_lowmem_nostats(k,t,x0,n_traj, ssa_conditions = ssa_conditions)
-                #         # else:
-                            
-                #         ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
-
-                #         #ssa_obj = self.__solve_ssa_nostats(k,t,x0,n_traj,ssa_conditions = ssa_conditions)
-                #     else:
-                #         # if low_memory:
-                #         #     ssa_obj = self.__solve_ssa_lowmem_leaky_nostats(k,t,x0,k_probe,n_traj, ssa_conditions = ssa_conditions)
-                #         # else:
-                #         ssa_obj = self.__solve_ssa_lowmem_combined(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
-
-
-                #         #ssa_obj = self.__solve_ssa_leaky_nostats(k,t,x0,kprobe,n_traj,ssa_conditions = ssa_conditions)         
-                           
+            
         else:
             ssa_obj = self.__solve_ssa_python(k,t,x0,n_traj,ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
 
        
-        
+       #Generate metadata 
         colors = ssa_obj.intensity_vec.shape[0]
         st = ssa_obj.start_time
         ft = ssa_obj.time_rec[-1]
@@ -6356,16 +6339,17 @@ class poi():
                 
 
     
-    def visualize_probe(self):
+    def visualize_probe(self, colors=None):
         probe = self.probe_loc
         fig,ax = plt.subplots(1)
         N = len(self.kelong)
         ncolors = probe.shape[0]
         
         cmap = cm.get_cmap('gist_rainbow')
-        colors = cmap(np.linspace(.01,.95, ncolors))
+        if colors == None:
+            colors = cmap(np.linspace(.01,.95, ncolors))
         
-        rectangle =  mpatches.Rectangle((0,.1), N ,.8,linewidth=1,edgecolor='k',facecolor='lightgray')
+        rectangle =  mpatches.Rectangle((0,.1), N ,.8,linewidth=1,edgecolor='k',facecolor='gray')
 
         ax.add_patch(rectangle)
         
