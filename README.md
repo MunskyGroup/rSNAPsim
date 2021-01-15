@@ -35,34 +35,25 @@ Dependencies:
 -----------------------------------
 ### Instillation 
 
-#### Pip install
+#### Within a conda enviroment:
 
-upon release the current release will be added to PyPI for pip installation
+```conda install eigen ```
 
-##### General
+```pip install -i https://test.pypi.org/simple/ rsnapsim-ssa-cpp ```
 
-open up a Terminal or Command Prompt and run 
-```pip install rSNAPsim ```
-
-##### Anaconda
-
-Open up the Anaconda Prompt (anaconda console) and run 
-```conda pip install rSNAPsim ```
+```pip install -i https://test.pypi.org/simple/ rsnapsim```
 
 ##### Compilation of the C++ 
 
-* Download the latest stable [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) release
-* Place the eigen-version into the ssa_cpp folder and rename it to "eigen"
-* open a command prompt/terminal or anaconda prompt and cd to this directory
-* run "python setup.py build_ext --inplace"
+The c++ model should attempt to compile when you pip install the ssa-cpp module, however in the event that it cannot here are some common errors:
 
- if it says Cannot open include file: 'eigen/Eigen/Dense': and exit status 2 you have eigen in the wrong directory
-
- 
+* cannot include eigen3/Eigen/Dense
+  * This means eigen was not installed correctly from the conda installiation, you may have to manually download [eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) and pass the argument to the setup.py command. ```python setup.py build_ext --inplace -I[PATH TO EIGEN FOLDER]```
+  
+* gcc not found
 
 -------------------------------------
 
 #### Future work
 
-- Adding the two color visualization and probe editing to the GUI
-- Addting I(t) vs I(t+tau) visualization plot
+- Example notebooks of all functions
