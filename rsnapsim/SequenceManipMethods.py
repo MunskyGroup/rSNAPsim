@@ -289,7 +289,7 @@ class SequenceManipMethods():
                 if tag_detected:
                     self.analyze_protein_w_tags(pr)
                     pr.tag_added = False
-                    proteins_w_tags[str(i+1)].append(protein)
+                    proteins_w_tags[str(i+1)].append(pr)
                 else:
                     self.add_tag_to_protein(pr)
                     pr.tag_added = True
@@ -409,8 +409,9 @@ class SequenceManipMethods():
         
         
         orfs = self.get_orfs(sequence_str,min_codons=min_codons)
+      
         protein_strs,proteins, tagged_proteins  = self.get_proteins(orfs,sequence_str)
-        return protein_strs,proteins, tagged_proteins
+        return protein_strs,proteins, tagged_proteins, sequence_str
         
                 
         

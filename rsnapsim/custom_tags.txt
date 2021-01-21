@@ -1,2 +1,2 @@
-test_tag,atcctggggact,ILGT
+test_tag---atcctggggact---ILGT
 

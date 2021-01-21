@@ -9,8 +9,10 @@ from . import CodonDictionaries
 from . import translation_models as models
 from . import ODE_Soln
 from . import SSA_Soln
+
 SSA_Soln = SSA_Soln.SSA_Soln
 ODE_Soln = ODE_Soln.ODE_Soln
+
 
 import time
 
@@ -163,6 +165,7 @@ class TranslationSolvers():
         tau_analyticals = []
         mean_analyticals = []
         var_analyticals = []
+ 
         for tag in tags:
 
             
@@ -172,7 +175,7 @@ class TranslationSolvers():
             L_tag = int((tag[-1] - tag[0]) / 2)
 
             ke_analytical = L*ke / np.sum(self.__get_ui(poi.nt_seq[:-3]))
-
+            
             tau_analytical = (L )/ke_analytical  #analytical tau ie autocovariance time 
             mean_analytical = ki*tau_analytical * (1.-Lm/float(L)) # mean intensity
             var_analytical = ki*tau_analytical * (1.-Lm/float(L))**2  #var intensity
@@ -260,7 +263,7 @@ class TranslationSolvers():
         return the ratio of average gene copy number / sequence codon copy number
         '''
         
-        codon_dict = CodonDictionaries()
+        codon_dict = CodonDictionaries.CodonDictionaries()
         mean_u = np.mean(list(codon_dict.strGeneCopy_single.values()) )
         ui = []
         for i in range(0, len(nt_seq), 3):
@@ -597,7 +600,8 @@ class TranslationSolvers():
         m.N = len(k)
         m.tf = t[-1]
         m.ptimes = len(t)
-        m.ke = ki 
+        m.ke = k 
+        m.kb = ki
         m.fi = 1
         m.ti = t[0]
         m.xi = x0
@@ -1257,7 +1261,7 @@ class TranslationSolvers():
                 intime = float(intime)
                 seed = seeds[i]
                 colors = int(colors)
-                
+            
             ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, kelong,frapresult, t, ki, kt, evf, evi, intime, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
 
@@ -1509,6 +1513,7 @@ class TranslationSolvers():
         ssa_obj.watched_ribs = watched_ribs
         ssa_obj.collisions = collisions
         ssa_obj.ribosome_locations = all_rib_loc
+        ssa_obj.ribtimes = all_ribtimes
         
         
         try:
