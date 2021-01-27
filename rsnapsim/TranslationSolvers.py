@@ -877,12 +877,27 @@ class TranslationSolvers():
         
         for i in range(n_trajectories):
             
+            
+                
             trna_result = np.zeros((len(t)*61),dtype=np.int32)    
             result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_trna(kbind,kindex,t,N_rib,colors)
 
             nribs = np.array([0],dtype=np.int32)
             
-            ssa_translation_lowmem.run_SSA_trna_full(result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, 0,0,0, seeds[i],nribs,x0,kelong)
+            if i == 0: #detect any int64
+                inputs = [result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, seeds[i],nribs,x0,kelong]
+                wash_inputs = self.__check_input_memview(inputs)
+            
+            if wash_inputs:
+                #check memview so all given variables are in int32 if integer for C
+                inputs = [result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, seeds[i],nribs,x0,kelong]
+
+                result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, seed,nribs,x0,kelong = self.__check_memview(inputs)
+            else:
+
+                seed = seeds[i]
+
+            ssa_translation_lowmem.run_SSA_trna_full(result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, 0,0,0, seed,nribs,x0,kelong)
                   
             all_results[i, :] = result.T
             all_trna_results[i,:] = trna_result
