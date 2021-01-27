@@ -34,7 +34,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     #url="githublink",
     packages=setuptools.find_packages(),
-    install_requires = ['BioPython','numpy','scipy','cython','matplotlib'],
+    install_requires = ['BioPython','numpy','scipy','cython','matplotlib','pandas'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

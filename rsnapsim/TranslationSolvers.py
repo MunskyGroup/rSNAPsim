@@ -18,12 +18,16 @@ import time
 
 import os
 
+
+
+## Search locally for ssa_cpp
 path_to_cpp = ''
 path_to_gen = ''
 path_to_trna = ''
 
 for root, dirs, files in os.walk(".", topdown=False):
    for branch in dirs:
+       
        if 'ssa_cpp' in branch:
            path_to_cpp = os.path.join(root, branch)
        if 'generalized_cpp' in branch:
@@ -59,14 +63,19 @@ if path_to_trna !='':
     try:
         cwd = os.getcwd()
         
-        os.chdir(path_to_gen)
+        os.chdir(path_to_trna)
         print('importing C++ tRNA models')
         import ssa_trna
         print('c++ models loaded successfully')
         os.chdir(cwd)
     except:
         os.chdir(cwd)   
-    
+
+try: 
+    import ssa_translation_lowmem
+except:
+    pass
+
 
 class TranslationSolvers():
     '''
@@ -873,7 +882,7 @@ class TranslationSolvers():
 
             nribs = np.array([0],dtype=np.int32)
             
-            ssa_trna.run_SSA(result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, 0,0,0, seeds[i],nribs,x0,kelong)
+            ssa_translation_lowmem.run_SSA_trna_full(result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, 0,0,0, seeds[i],nribs,x0,kelong)
                   
             all_results[i, :] = result.T
             all_trna_results[i,:] = trna_result
@@ -982,6 +991,7 @@ class TranslationSolvers():
         ssa_obj.intensity_vec = I
         ssa_obj.solutions = np.array(solutionssave)
         ssa_obj.all_trna_results = all_trna_results
+        ssa_obj.ribtimes = all_ribtimes
         try:
             ssa_obj.col_points = all_col_points
         except:
@@ -1483,7 +1493,7 @@ class TranslationSolvers():
         
         rib_per_t = np.zeros((n_traj,len(t)))
         for i in range(all_rib_loc.shape[0]):
-            rib_loc = all_rib_loc[i,startindex:,:]
+            rib_loc = all_rib_loc[i,:,:]
             rt = np.count_nonzero(rib_loc.T,axis=0)
             rib_per_t[i,:] = rt
         

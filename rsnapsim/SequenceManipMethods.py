@@ -9,6 +9,16 @@ from . import FileParser
 from . import poi as POI
 import numpy as np
 import re
+import time
+import os
+try:
+    from Bio import SeqIO
+    from Bio import Entrez
+except:
+    
+    print('BioPython is not installed, polling genbank will not be possible')
+    pass
+
 
 class SequenceManipMethods():
     '''
@@ -38,15 +48,15 @@ class SequenceManipMethods():
         '''
         
         if opt_dict == None:
-            opt_dict = self.codon_dict.strGeneCopy
+            opt_dict = self.codon_dicts.strGeneCopy
             
         codons = nt_seq.upper()
         seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3    
-        aa = [ self.codon_dict.aa_table[x] for x in seperated_codons ]     
+        aa = [ self.codon_dicts.aa_table[x] for x in seperated_codons ]     
         opt_seq = ''
         for i in range(0,len(aa)):
-            ind = np.argmax([opt_dict[x] for x in self.codon_dict.aa_table_r[aa[i]]])
-            opt_codon = self.codon_dict.aa_table_r[aa[i]][ind]
+            ind = np.argmax([opt_dict[x] for x in self.codon_dicts.aa_table_r[aa[i]]])
+            opt_codon = self.codon_dicts.aa_table_r[aa[i]][ind]
             opt_seq = opt_seq + opt_codon
         return opt_seq
             
@@ -71,14 +81,14 @@ class SequenceManipMethods():
         '''
         
         if deopt_dict == None:
-            deopt_dict = self.codon_dict.strGeneCopy
+            deopt_dict = self.codon_dicts.strGeneCopy
         codons = nt_seq.upper()
         seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3    
-        aa = [ self.codon_dict.aa_table[x] for x in seperated_codons ]     
+        aa = [ self.codon_dicts.aa_table[x] for x in seperated_codons ]     
         opt_seq = ''
         for i in range(0,len(aa)):
-            ind = np.argmin([deopt_dict[x] for x in self.codon_dict.aa_table_r[aa[i]]])
-            opt_codon = self.codon_dict.aa_table_r[aa[i]][ind]
+            ind = np.argmin([deopt_dict[x] for x in self.codon_dicts.aa_table_r[aa[i]]])
+            opt_codon = self.codon_dicts.aa_table_r[aa[i]][ind]
             opt_seq = opt_seq + opt_codon
         return opt_seq            
 
@@ -101,6 +111,56 @@ class SequenceManipMethods():
         for i in range(0, len(nt_seq), 3):
             aa += self.codon_dicts.aa_table[nt_seq[i:i+3]]
         return aa    
+
+
+    def get_gb_file(self, accession_number, save_dir):
+        '''
+        A function to poll genbank given an accession number and pull the relevant gb file
+
+        *args*
+
+            **accession_number**, the accession number of the sequence to find.
+            http://www.nslc.wustl.edu/elgin/genomics/bio4342/1archives/2006/AccReference.pdf
+
+        *keyword args*
+
+            **savetofile**, true or false to save the gb file in the same directory as sms for future use
+
+
+
+        '''
+
+        Entrez.email = "wsraymon@rams.colostate.edu"
+        Entrez.tool = 'SingleMoleculeSimulator'
+        er = False
+        try:
+            handle =  Entrez.efetch(db="nucleotide", rettype="gb", retmode="text", id=accession_number)
+            gb_record = SeqIO.read(handle, "genbank") #using "gb" as an alias for "genbank"
+            handle.close()
+        except:
+            er = True
+        time.sleep(2)
+        if er == True:
+            print('HTTP Error: Could not find specified ascession ID')
+
+            return
+
+
+        self.gb_rec = gb_record
+        self.gb_obj = gb_record
+
+        self.sequence_str = str(gb_record.seq)
+        self.sequence_name = gb_record.name
+
+        
+        filename = os.path.join(save_dir, self.sequence_name, '.gb')
+        f = open(filename, 'w')
+
+
+        f.write(self.gb_rec.format('gb'))
+
+        f.close()
+
 
     def get_orfs(self, nt_seq='', min_codons=80):
 

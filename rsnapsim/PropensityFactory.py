@@ -6,6 +6,7 @@ Created on Thu Dec 17 17:45:31 2020
 """
 
 from . import CodonDictionaries
+from . import SequenceManipMethods
 import numpy as np
 import warnings
 
@@ -35,6 +36,10 @@ class PropensityFactory():
 
 
     def get_trna_ids(self,nt_seq):
+        
+        if '*' in SequenceManipMethods.SequenceManipMethods().nt2aa(nt_seq)[-1]:
+            nt_seq = nt_seq[:-3]
+        
         codons = nt_seq.upper()
         seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] 
         return [self.codon_dicts.trna_dict[x] for x in seperated_codons]
