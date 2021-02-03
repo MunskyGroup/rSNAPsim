@@ -1346,21 +1346,25 @@ class TranslationSolvers():
 #        no_ribosomes_per_mrna = np.mean(no_ribosomes)
         
         ssa_obj = SSA_Soln()
-        ssa_obj.no_ribosomes = no_ribosomes
+        if ssa_conditions['record_stats']:
+            ssa_obj.no_ribosomes = no_ribosomes
+            ssa_obj.watched_ribs = watched_ribs
+            ssa_obj.collisions = collisions         
+            
         ssa_obj.n_traj = n_traj
         ssa_obj.k = k
         #ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
         #ssa_obj.rib_density = ribosome_density
         #ssa_obj.rib_means = ribosome_means
-        ssa_obj.rib_vec = rib_vec
+
         ssa_obj.intensity_vec = all_results.T[:,startindex:,:]
-        ssa_obj.I = all_results.T[:,startindex:,:]
-        ssa_obj.time_vec_fixed = t
+        #ssa_obj.I = all_results.T[:,startindex:,:]
+        
         ssa_obj.time = t
         ssa_obj.time_rec = t[startindex:]
         ssa_obj.start_time = non_consider_time
-        ssa_obj.watched_ribs = watched_ribs
-        ssa_obj.collisions = collisions
+        ssa_obj.start_index = int(startindex)
+
         
         
         try:
@@ -1369,7 +1373,7 @@ class TranslationSolvers():
             pass
         
         
-        ssa_obj.eval_time = sttime
+        ssa_obj.eval_time = float(sttime)
         
         return ssa_obj        
 
@@ -1507,6 +1511,17 @@ class TranslationSolvers():
         
         
         rib_per_t = np.zeros((n_traj,len(t)))
+        
+        
+        validind = 0
+        riblocs = []
+        for i in range(len(all_rib_loc)):
+            if np.where(np.sum(all_rib_loc[i].T,axis=1)!=0)[0][-1] > validind:
+                validind = np.where(np.sum(all_rib_loc[i].T,axis=1)!=0)[0][-1]
+                
+                
+        all_rib_loc = all_rib_loc[:,:,:validind]
+        
         for i in range(all_rib_loc.shape[0]):
             rib_loc = all_rib_loc[i,:,:]
             rt = np.count_nonzero(rib_loc.T,axis=0)
@@ -1528,13 +1543,12 @@ class TranslationSolvers():
 
         ssa_obj.rib_density = rib_density
         # ssa_obj.rib_means = ribosome_means
-        ssa_obj.rib_vec = rib_vec
         ssa_obj.intensity_vec = all_results.T[:,startindex:,:]
-        ssa_obj.I = all_results.T[:,startindex:,:]
-        ssa_obj.time_vec_fixed = t
+
         ssa_obj.time = t
         ssa_obj.time_rec = t[startindex:]
         ssa_obj.start_time = non_consider_time
+        ssa_obj.start_index = int(startindex)
         ssa_obj.watched_ribs = watched_ribs
         ssa_obj.collisions = collisions
         ssa_obj.ribosome_locations = all_rib_loc

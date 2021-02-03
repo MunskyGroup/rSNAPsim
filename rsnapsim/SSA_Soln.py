@@ -9,6 +9,7 @@ from . import GenericMetaData
 GenericMetaData = GenericMetaData.GenericMetaData
 import numpy as np
 import json, codecs
+from json import encoder
 
 class SSA_Soln():
     '''
@@ -36,13 +37,13 @@ class SSA_Soln():
 
 
 
-    def save(self,filename):
+    def save(self,filename, precision = '.4f'):
         ext = filename.split('.')[-1]
         
         if 'txt' == ext:
             self.__save_txt(filename)
         if 'json' == ext:
-            self.__save_json(filename)
+            self.__save_json(filename,precision= precision)
             
 
     def load(self,filename):
@@ -164,19 +165,42 @@ class SSA_Soln():
         return ssadict          
                      
                      
+    def __set_float_pres(self,precision='.4f'):
+        print(precision)
+        encoder.FLOAT_REPR = lambda o: format(o,precision)
+        
+    
+    def __make_float(self,float_like, precision):
+        return float(('%' + precision) % float_like)
+        
+    def __format_floats(self,arraylike,precision='.4f'):
+        
+        n_decimals = int(precision.split('.')[1][:-1])
+        if isinstance(arraylike, np.ndarray):
+            tmp_arr = np.around( arraylike, decimals=n_decimals ) .tolist()
+            return tmp_arr
+        else:
+            tmp_arr = arraylike
+            if isinstance(tmp_arr,float):
+                return self.__make_float(tmp_arr, precision)
+            if isinstance(tmp_arr,list):
+                return [self.__make_float(x,precision) for x in tmp_arr]
+        
 
-    def __save_json(self, filename):
+    def __save_json(self, filename, precision='.4f'):
 
         if '.json' in filename:
 
             ssadict = {}
             for key in self.__dict__.keys():
-               
-                #if key != 'rib_vec' and key != 'ribosome_means':
-                try:
-                    ssadict[key] = self.__dict__[key].tolist()
-                except:
-                    ssadict[key] = self.__dict__[key]
+                
+                if key != 'col_points':
+                
+                    if type(self.__dict__[key]) in [float, list, np.ndarray]:
+                        
+                        ssadict[key] =  self.__format_floats(self.__dict__[key], precision= precision)
+                    else:
+                        ssadict[key] = self.__dict__[key]
                     
                 if key == 'col_points':
                     col_pt = [x.tolist() for x in self.__dict__[key] ] 
