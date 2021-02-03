@@ -7,6 +7,7 @@ Created on Thu Dec 17 17:56:11 2020
 
 
 from . import GenericMetaData
+GenericMetaData = GenericMetaData.GenericMetaData
 import numpy as np
 import json, codecs
 

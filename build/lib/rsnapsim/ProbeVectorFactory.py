@@ -13,7 +13,28 @@ class ProbeVectorFactory():
         pass        
     
     def get_probe_vec(self, tag_epitope_dict, length):
+        '''
+        Generate a probe vector given a tag epitope dictionary and the Length of the transcript:
+            
+            Ex:   get_probe_bec({Tag_1:[10,15]},20)
+            returns:
+                pv = np.array([[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2]])
         
+
+        Parameters
+        ----------
+        tag_epitope_dict : dictionary
+            dictionary of tag epitopes, can be accessed from a POI.tag_epitopes.
+        length : int
+            Length of the transcript.
+
+        Returns
+        -------
+        probe_vec : Ncolor x L Numpy array
+            returns the cumulative sum probe vector per location of a ribosome, meaning: A ribosome at x location
+            will have pv[x] intensity.
+
+        '''
         pv = np.zeros( (len(list(tag_epitope_dict)), length))
         for i in range(len(list(tag_epitope_dict))):
             pv[i,[tag_epitope_dict[list(tag_epitope_dict.keys())[i]]]] = 1
@@ -21,6 +42,26 @@ class ProbeVectorFactory():
         return pv
 
     def get_probe_loc(self, tag_epitope_dict, length):
+        '''
+        Get 1, 0 probe location from a tag epitope dictionary
+
+            Ex:   get_probe_bec({Tag_1:[10,15]},20)
+            returns:
+                pv = np.array([[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0]])
+        
+
+        Parameters
+        ----------
+        tag_epitope_dict : dictionary
+            dictionary of tag epitopes, can be accessed from a POI.tag_epitopes.
+        length : int
+            Length of the transcript.
+
+        Returns
+        -------
+        probe_loc : Ncolor x L Numpy array
+            returns the binary probe per location of an epitope,
+        '''
         
         pv = np.zeros( (len(list(tag_epitope_dict)), length))
         for i in range(len(list(tag_epitope_dict))):
@@ -29,7 +70,23 @@ class ProbeVectorFactory():
 
     @staticmethod
     def bin_probe_vecs(probe_loc,inds):
+        '''
+        given a probe location vector and an desired binning indices, return pv and pl binned
 
+        Parameters
+        ----------
+        probe_loc : Ncolor by L binary numpy array
+            locations of tag epitopes.
+        inds : 1xL ind locations sizes
+            binning strategy, the sum of this vector should = L:.
+
+        Returns
+        -------
+        Probe_loc_binned: Ncolor x L numpy array
+            the binned probe locations.
+        Probe_vec_binned: Ncolor x L numpy array
+            the binned probe intensity vector.
+        '''
         probeloc_binned = np.zeros((probe_loc.shape[0],   len(inds)-1 ) )
         for i in range(0,len(inds)-1):
             probeloc_binned[:,i] = np.sum(probe_loc[:,inds[i]:inds[i+1]],axis=1)
@@ -49,9 +106,24 @@ class ProbeVectorFactory():
         defined in the probe location vector
         
         Note if you pass it a minium bin that when min_bin*nbins > length of your sequence
-        this function will fail
+        this function will fail        
+
+        Parameters
+        ----------
+        pl : numpy array
+            numpy array of Ncolor x Length 0's 1's for probe locations.
+        nbins : int
+            number of desired bins.
+        min_bin : int, optional
+            DESCRIPTION. The default is 1.
+
+        Returns
+        -------
+        pl_inds : numpy array
+            n bin locations over the vector length given.
+
         '''
-        
+
         if min_bin*nbins > pl.shape[1]:
             warnings.warn('Desired minimum binsize and desired number of bins is not possible with the length of the probe vector, returning best guess')
 
@@ -104,7 +176,7 @@ class ProbeVectorFactory():
 
         Returns
         -------
-        inds : TYPE
+        inds : numpy array
             n bin locations over the vector length given.
 
         '''

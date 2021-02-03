@@ -21,22 +21,43 @@ from matplotlib.patches import Ellipse
 class TranslationOptimization():
     '''
     optimization class adjusted from Micheal May's GenericOpt
+    
+    
+    Usage: one must set a solver_obj containing a model, and a data_obj containing any data to fit
+    
+    ::
+        opt = rss.optimizer.TranslationOptimization()  #Optimization object
+        opt.solver_obj = solver
+        opt.data_obj = sim_data
+        opt.parnames = ['ki','ke']
+        true_par = [.08,5]    
+        
+        Then you set the options  and optimization function you would like to fit
+        all arguments for these are stored in a dictionary and then passed to run_optimization
+        
+        opt.opts['bounds'] = ([0.01,.17],[0.1,12])
+        opt.initial_params = np.array([.033,10])
+        opt.params = np.array([.033,10])
+        opt.args['LL_acorr'] = (200,'ind','G0')
+        opt.args['LL_I_distb'] = (1,)
+        opt.run_optimization('LL_I_distb','MH',stepsize=[1,1],disp=True,mut_rate=.99,logspace=True,niter=500)
+                    
     '''        
     def __init__(self):
         
         self.solver_obj = None
         self.data_obj = None
-        self.int_a = IntensityAnalyses()
+        self.int_a = IntensityAnalyses.IntensityAnalyses()
         
         self.parnames = []
         self.params = np.array([])
         self.initial_params = np.array([])
         
-        self.pff = PropensityFactory()
-        self.pvf = ProbeVectorFactory()
+        self.pff = PropensityFactory.PropensityFactory()
+        self.pvf = ProbeVectorFactory.ProbeVectorFactory()
         
         
-        self._int_a = IntensityAnalyses()
+        self._int_a = IntensityAnalyses.IntensityAnalyses()
         self.methods={'met_hast':self.methast,\
                       'methast':self.methast,\
                       'MH':self.methast,\
@@ -69,7 +90,17 @@ class TranslationOptimization():
         self.chain = None
         
     def print_args(objfun):
-        x=1
+        if objfun == 'LL_acorr':
+            print('LL_acorr: Log Likelihood Autocorrelation')
+            print('timepoints: default 20 | how many points of decorrelation to compare the data to the model.  ')
+            print('normalization: raw, ind, global | normalization for the autocorrelation based on individual trajectories or global dataset means / var')
+            print('Normalization point: G0, G1, interp, max | which point to use as 1, g0 meaning the first point in the autocorrelation funciton, and g1 being the second point. Interpolation will calculate g0 from g1,g2,g3 to ignore shot noise. Max will use whatever is the maximum of the autocorrelation')
+        if objfun == 'I_mu_sse':
+            print("I_mu_sse: intensity mean sum of squared errors")
+        if objfun == 'LL_I_distb':
+            print("LL_I_distb: Log Likelihood Intensity Distribution")      
+            print("number of bins: Number of bins to bin model data and exp data over")
+            print("Normalization value: Number to divide all data by, for example to convert epitopes to UMP")
         
     
     def add_bounds(self,lower_bounds, upper_bounds):
@@ -354,7 +385,9 @@ class TranslationOptimization():
         self.chain.parchain = self.chain.parchain[1:,:]
         self.chain.objfunchain = self.chain.objfunchain[1:,:]
         self.chain.evalchain  = self.chain.evalchain[1:]
-        
+        self.chain.objective_fun_list = objective_fun_list
+        self.chain.objective_args = [self.args[x] for x in objective_fun_list ] 
+        self.chain.opt_args = kwargs
 
     def __update_chain(self,pars, funeval):   
 
@@ -732,7 +765,7 @@ class OptChain():
             return acf    
         
         for i in range(0,self.parchain.shape[1] ):
-            acc = get_acc2(self.parchain[:,i] )       
+            acc = get_acc2((self.parchain[:,i] - np.mean(self.parchain[:,i] ))  / np.var(self.parchain[:,i] ) )       
             if i == 0:
                 self.par_acc = acc
             else:
@@ -760,7 +793,7 @@ class OptChain():
             return acf    
         
         for i in range(0,self.objfunchain.shape[1] ):
-            acc = get_acc2(self.objfunchain[:,i] )       
+            acc = get_acc2((self.objfunchain[:,i]  -   np.mean(self.objfunchain[:,i]  )) / np.var(self.objfunchain[:,i] )  )       
             if i == 0:
                 self.objfun_acc = acc
             else:
@@ -774,7 +807,7 @@ class OptChain():
         parchain = self.parchain
         trimmed_evals = evalchain[~np.isnan(evalchain)]        
         final_evals = trimmed_evals[np.isfinite(trimmed_evals)]
-        trimmed_parchains = parchain[~np.isnan(evalchain)]
+        trimmed_parchains = parchain[~np.isnan(evalchain)[:,0]]
         final_parchains = trimmed_parchains[np.isfinite(trimmed_evals)]
         
         

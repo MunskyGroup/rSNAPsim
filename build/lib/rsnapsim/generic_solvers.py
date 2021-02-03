@@ -7,15 +7,20 @@ Created on Thu Dec 17 17:52:28 2020
 import numpy as np
 from scipy.sparse.linalg import expm
 from scipy.integrate import odeint
-from scipy.integrate import ode
+#from scipy.integrate import ode
 import scipy as sp
 import scipy.optimize
-import random as random
+#import random as random
 import collections as c
 #import matplotlib.pyplot as plt
 import copy as cp
-from multiprocessing import process as Process
-#import matplotlib.pyplot as plt
+#from multiprocessing import process as Process
+import matplotlib.pyplot as plt
+
+'''
+Generic solvers written by Micheal May, Zach Fox and Will Raymond ~2018
+'''
+
 
 class GenericSSA:
     def __init__(self,type='linear'):

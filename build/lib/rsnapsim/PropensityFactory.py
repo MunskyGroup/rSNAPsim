@@ -6,6 +6,7 @@ Created on Thu Dec 17 17:45:31 2020
 """
 
 from . import CodonDictionaries
+from . import SequenceManipMethods
 import numpy as np
 import warnings
 
@@ -35,6 +36,10 @@ class PropensityFactory():
 
 
     def get_trna_ids(self,nt_seq):
+        
+        if '*' in SequenceManipMethods.SequenceManipMethods().nt2aa(nt_seq)[-1]:
+            nt_seq = nt_seq[:-3]
+        
         codons = nt_seq.upper()
         seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] 
         return [self.codon_dicts.trna_dict[x] for x in seperated_codons]
@@ -120,7 +125,21 @@ class PropensityFactory():
     @staticmethod
     def get_binned_k(k,bins):
         '''
-        evenly bins elongation rates as best it can.
+        given a propensity vector and an desired binning indices, return pv and pl binned
+
+        Parameters
+        ----------
+        k : 1 x L  numpy array
+            Propensity vector of rates.
+        bins : 1xL ind locations sizes
+            binning strategy, the sum of this vector should = L.
+
+        Returns
+        -------
+        propensity_binned: 1 x Nbins numpy array
+            the binned propensities.
+        bin_sizes: 1 x Nbins numpy array
+            list of bin sizes.
         
         '''
         binsize = int(np.floor(len(k)/bins))
@@ -152,7 +171,22 @@ class PropensityFactory():
         defined in the probe location vector
         
         Note if you pass it a minium bin that when min_bin*nbins > length of your sequence
-        this function will fail
+        this function will fail        
+
+        Parameters
+        ----------
+        pl : numpy array
+            numpy array of Ncolor x Length 0's 1's for probe locations.
+        nbins : int
+            number of desired bins.
+        min_bin : int, optional
+            DESCRIPTION. The default is 1.
+
+        Returns
+        -------
+        pl_inds : numpy array
+            n bin locations over the vector length given.
+
         '''
         
         if min_bin*nbins > pl.shape[1]:
@@ -199,7 +233,18 @@ class PropensityFactory():
     @staticmethod
     def even_bin(length,nbins):
         '''
-        evenly bins a length over a given amount of bins as best it can
+        Parameters
+        ----------
+        length : int
+            Length of the vector to bin.
+        nbins : int
+            Number of desired bins.
+
+        Returns
+        -------
+        inds : numpy array
+            n bin locations over the vector length given.
+
         
         '''
         binsize = int(np.floor(length/nbins))

@@ -9,19 +9,25 @@ from . import CodonDictionaries
 from . import translation_models as models
 from . import ODE_Soln
 from . import SSA_Soln
+
 SSA_Soln = SSA_Soln.SSA_Soln
 ODE_Soln = ODE_Soln.ODE_Soln
+
 
 import time
 
 import os
 
+
+
+## Search locally for ssa_cpp
 path_to_cpp = ''
 path_to_gen = ''
 path_to_trna = ''
 
 for root, dirs, files in os.walk(".", topdown=False):
    for branch in dirs:
+       
        if 'ssa_cpp' in branch:
            path_to_cpp = os.path.join(root, branch)
        if 'generalized_cpp' in branch:
@@ -57,14 +63,19 @@ if path_to_trna !='':
     try:
         cwd = os.getcwd()
         
-        os.chdir(path_to_gen)
+        os.chdir(path_to_trna)
         print('importing C++ tRNA models')
         import ssa_trna
         print('c++ models loaded successfully')
         os.chdir(cwd)
     except:
         os.chdir(cwd)   
-    
+
+try: 
+    import ssa_translation_lowmem
+except:
+    pass
+
 
 class TranslationSolvers():
     '''
@@ -123,6 +134,9 @@ class TranslationSolvers():
     def solve_ballistic_model(self, ki,ke, poi=None, tag= None):
         '''
         
+        Given a iniation rate and set of elongation rates, predict analytically the intensity statistics and decorrelation time tau. 
+        
+        **warning this ignores the effect of collisiosn**
 
         Parameters
         ----------
@@ -160,6 +174,7 @@ class TranslationSolvers():
         tau_analyticals = []
         mean_analyticals = []
         var_analyticals = []
+ 
         for tag in tags:
 
             
@@ -169,7 +184,7 @@ class TranslationSolvers():
             L_tag = int((tag[-1] - tag[0]) / 2)
 
             ke_analytical = L*ke / np.sum(self.__get_ui(poi.nt_seq[:-3]))
-
+            
             tau_analytical = (L )/ke_analytical  #analytical tau ie autocovariance time 
             mean_analytical = ki*tau_analytical * (1.-Lm/float(L)) # mean intensity
             var_analytical = ki*tau_analytical * (1.-Lm/float(L))**2  #var intensity
@@ -183,7 +198,9 @@ class TranslationSolvers():
     
     def invert_ballistic(self,tau_measured, mu_I, poi= None):
         '''
-
+        
+        Given a measured decorrelation time tau from FCS, predict the elongation rates and initation rates
+        
         Parameters
         ----------
         tau_measured : float, int, list, ndarray
@@ -255,7 +272,7 @@ class TranslationSolvers():
         return the ratio of average gene copy number / sequence codon copy number
         '''
         
-        codon_dict = CodonDictionaries()
+        codon_dict = CodonDictionaries.CodonDictionaries()
         mean_u = np.mean(list(codon_dict.strGeneCopy_single.values()) )
         ui = []
         for i in range(0, len(nt_seq), 3):
@@ -390,6 +407,58 @@ class TranslationSolvers():
         return ssa_obj
     
     def solve_ssa(self,ke,t,ki=.33,kt = 10,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,kprobe=np.ones(1),record_stats=False,probe_vec = None, probe_loc=None, kon=1,koff=1,bursting=False, rib_prealloc=200, dynamic_prealloc=False):
+        '''
+        
+        Solve a stochastic simulation of ribosomes on an mRNA transcript given codon dependent rates (TASEP)
+
+        Parameters
+        ----------
+        ke : list
+            list of kelongation rates, can be accessed via a protein object by POI.kelong.
+        t : list, arr
+            a list/array of times to run the simulation for.
+        ki : float, optional
+            Initiation Rate. The default is .33 1/time.
+        kt : float, optional
+            Termination Rate. The default is 10 1/time.
+        x0 : numpy array, optional
+            1xRibsomes max intial condition. The default is [] (no intial condition).
+        n_traj : int, optional
+            Number of trajectories to simulate. The default is 100.
+        bins : numpy array, optional
+            binning key array, for example [2,2,2,2,2] would bin a 10 length ke into 5 bins. The default is None.
+        low_memory : Bool, optional
+            Use lower memory when simulating, meaning dont keep track of ribosome positions over time, just the Intensity. The default is True.
+        perturb : list [bool, bool, float], optional
+            Apply a pertubation [frap, inhibitor, application time], for example [1,0,50] would apply frap at time 50. The default is [0,0,0].
+        leaky_probes : bool, optional
+            Use leaky probes with a probability kprobe for binding when passing each epitope. The default is False.
+        kprobe : list of floats, optional
+            probabilities for each probe to bind, for example a two color system should have [.1,.9] for 10% chance of color 1 binding, and 90% of color two binding on each epitope. The default is np.ones(1).
+        record_stats : bool, optional
+            Record stats such as collisions or ribosome dwell times. The default is False.
+        probe_vec : numpy array, optional
+            probe cumsum to convert to Intensities Ncolor x L_transcript. If left blank will use POI. The default is None.
+        probe_loc : numpy array, optional
+            probe locations Ncolor x L_transcript with 1 for epitope locations, 0 otherwise. If left blank will use POI. The default is None.
+        kon : float, optional
+            on rate for bursting. The default is 1.
+        koff : float, optional
+            off rate for bursting. The default is 1.
+        bursting : bool, optional
+            use a on/off bursting dynamic for initiation. The default is False.
+        rib_prealloc : int, optional
+            how many ribosomes to consider binding at a time, for a transcript the maximum that can bind at a time is L/9. The default is 200.
+        dynamic_prealloc : bool, optional
+            calculate the expeted number of maximum ribosomes and use that to preallocate memory. The default is False.
+            
+        Returns
+        -------
+        ssa_obj : SSA_Soln_obj
+            returns a container object containing all the stats from the simulation, such as intensity.
+
+        '''
+        
         
         self.__check_rates(ke)
         
@@ -489,14 +558,47 @@ class TranslationSolvers():
     
     
 
-    def solve_ode(self,k,t,x0,kbind,pl,bins=None, corr = False):
+    def solve_ode(self,k,t,x0,ki,pl,bins=None, corr = False):
+        '''
+        Solve the system of odes describing the mRNA transcript by their forward rates.
+        
+        **WARNING** This cannot take into account collisions, if you want to simulate collisions you must use stochastic simulations.
+        If you dont know if your system will encounter heavy collisions use the following rule of thumbs:
+            ki ~ min(kelong)  or ki >=  L_transcript / ( 1/np.sum(1/kelong))  
+            
+        these correspond to a single slow codon causing a jam or v_in >= v_out of the total system.
+
+        Parameters
+        ----------
+        k : list
+            elongation rates [ke...., kt].
+        t : numpy array / list
+            time vector.
+        x0 : numpy array
+            x0, 1xL_transcript with 1 for ribosomes occupying that location.
+        ki : float
+            initation rate.
+        pl : numpy array
+            probe location array, 0s and 1s.
+        bins : numpy array, optional
+            binning array. The default is None.
+        corr : Bool, optional
+            calculate the analytical correlation of intensity, **THIS WILL TAKE A LONG TIME**. The default is False.
+
+        Returns
+        -------
+        ode_soln : ODEsoln OBJ
+            ODE solution object.
+
+        '''
+        
         st = time.time()
         m_ode = models.TranslateODE()
         m_ode.N = len(k)
         m_ode.tf = t[-1]
         m_ode.ptimes = len(t)
         m_ode.ke = k
-        m_ode.kb = kbind 
+        m_ode.kb = ki 
         m_ode.fi = 1
         m_ode.ti = t[0]
         m_ode.binary = pl
@@ -507,8 +609,8 @@ class TranslationSolvers():
         m.N = len(k)
         m.tf = t[-1]
         m.ptimes = len(t)
-        m.ke = k
-        m.kb = kbind 
+        m.ke = k 
+        m.kb = ki
         m.fi = 1
         m.ti = t[0]
         m.xi = x0
@@ -521,8 +623,6 @@ class TranslationSolvers():
         #m.faster_solve()
        
         m.get_mean_SS()
-        
-
         
         mean_ss = m.get_mean_SS()
         
@@ -554,7 +654,7 @@ class TranslationSolvers():
         ode_soln.k = k
         ode_soln.x0 = x0
         ode_soln.fi = 1
-        ode_soln.kb = kbind
+        ode_soln.ki = ki
         ode_soln.prob_loc = pl
         ode_soln.solve_time = time.time()-st
         
@@ -777,12 +877,27 @@ class TranslationSolvers():
         
         for i in range(n_trajectories):
             
+            
+                
             trna_result = np.zeros((len(t)*61),dtype=np.int32)    
             result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_trna(kbind,kindex,t,N_rib,colors)
 
             nribs = np.array([0],dtype=np.int32)
             
-            ssa_trna.run_SSA(result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, 0,0,0, seeds[i],nribs,x0,kelong)
+            if i == 0: #detect any int64
+                inputs = [result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, seeds[i],nribs,x0,kelong]
+                wash_inputs = self.__check_input_memview(inputs)
+            
+            if wash_inputs:
+                #check memview so all given variables are in int32 if integer for C
+                inputs = [result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, seeds[i],nribs,x0,kelong]
+
+                result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, seed,nribs,x0,kelong = self.__check_memview(inputs)
+            else:
+
+                seed = seeds[i]
+
+            ssa_translation_lowmem.run_SSA_trna_full(result,trna_result,ribtimes,coltimes,colpointsx,colpointst, kindex,ktrna,kdiffusion,frapresult,t,kbind,kcompl, 0,0,0, seed,nribs,x0,kelong)
                   
             all_results[i, :] = result.T
             all_trna_results[i,:] = trna_result
@@ -891,6 +1006,7 @@ class TranslationSolvers():
         ssa_obj.intensity_vec = I
         ssa_obj.solutions = np.array(solutionssave)
         ssa_obj.all_trna_results = all_trna_results
+        ssa_obj.ribtimes = all_ribtimes
         try:
             ssa_obj.col_points = all_col_points
         except:
@@ -1170,7 +1286,7 @@ class TranslationSolvers():
                 intime = float(intime)
                 seed = seeds[i]
                 colors = int(colors)
-                
+            
             ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, kelong,frapresult, t, ki, kt, evf, evi, intime, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
 
@@ -1230,21 +1346,25 @@ class TranslationSolvers():
 #        no_ribosomes_per_mrna = np.mean(no_ribosomes)
         
         ssa_obj = SSA_Soln()
-        ssa_obj.no_ribosomes = no_ribosomes
+        if ssa_conditions['record_stats']:
+            ssa_obj.no_ribosomes = no_ribosomes
+            ssa_obj.watched_ribs = watched_ribs
+            ssa_obj.collisions = collisions         
+            
         ssa_obj.n_traj = n_traj
         ssa_obj.k = k
         #ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
         #ssa_obj.rib_density = ribosome_density
         #ssa_obj.rib_means = ribosome_means
-        ssa_obj.rib_vec = rib_vec
+
         ssa_obj.intensity_vec = all_results.T[:,startindex:,:]
-        ssa_obj.I = all_results.T[:,startindex:,:]
-        ssa_obj.time_vec_fixed = t
+        #ssa_obj.I = all_results.T[:,startindex:,:]
+        
         ssa_obj.time = t
         ssa_obj.time_rec = t[startindex:]
         ssa_obj.start_time = non_consider_time
-        ssa_obj.watched_ribs = watched_ribs
-        ssa_obj.collisions = collisions
+        ssa_obj.start_index = int(startindex)
+
         
         
         try:
@@ -1253,7 +1373,7 @@ class TranslationSolvers():
             pass
         
         
-        ssa_obj.eval_time = sttime
+        ssa_obj.eval_time = float(sttime)
         
         return ssa_obj        
 
@@ -1391,8 +1511,19 @@ class TranslationSolvers():
         
         
         rib_per_t = np.zeros((n_traj,len(t)))
+        
+        
+        validind = 0
+        riblocs = []
+        for i in range(len(all_rib_loc)):
+            if np.where(np.sum(all_rib_loc[i].T,axis=1)!=0)[0][-1] > validind:
+                validind = np.where(np.sum(all_rib_loc[i].T,axis=1)!=0)[0][-1]
+                
+                
+        all_rib_loc = all_rib_loc[:,:,:validind]
+        
         for i in range(all_rib_loc.shape[0]):
-            rib_loc = all_rib_loc[i,startindex:,:]
+            rib_loc = all_rib_loc[i,:,:]
             rt = np.count_nonzero(rib_loc.T,axis=0)
             rib_per_t[i,:] = rt
         
@@ -1412,16 +1543,16 @@ class TranslationSolvers():
 
         ssa_obj.rib_density = rib_density
         # ssa_obj.rib_means = ribosome_means
-        ssa_obj.rib_vec = rib_vec
         ssa_obj.intensity_vec = all_results.T[:,startindex:,:]
-        ssa_obj.I = all_results.T[:,startindex:,:]
-        ssa_obj.time_vec_fixed = t
+
         ssa_obj.time = t
         ssa_obj.time_rec = t[startindex:]
         ssa_obj.start_time = non_consider_time
+        ssa_obj.start_index = int(startindex)
         ssa_obj.watched_ribs = watched_ribs
         ssa_obj.collisions = collisions
         ssa_obj.ribosome_locations = all_rib_loc
+        ssa_obj.ribtimes = all_ribtimes
         
         
         try:

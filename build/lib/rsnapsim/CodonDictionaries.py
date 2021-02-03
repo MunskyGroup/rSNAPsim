@@ -6,7 +6,28 @@ Created on Thu Dec 17 18:06:56 2020
 """
 import numpy as np
 
+
+'''
+This is a dictionary object that handles everything dealing with tag sequences and AA tables
+'''
+
+
 class CodonDictionaries():
+    '''
+    Contains: 
+        
+       tag_dict - dictionary of tag name and their epitopes
+       tag_colors - dictionary of tag name and their colors
+       tag_full - dictionary of tag name and their full nt sequence
+       aa_keys - keys for amino acids
+       aa_table - codon to aa table
+       aa_table_r - aa to codons table
+       strGeneCopy - codon gene copys for both U|T
+       strGeneCopy_single - a codon gene copy number with only T, for average / calculation basis that would be thrown off with including U and T
+       trna_ids - tRNA species to ID
+       
+    '''
+    
     
     def __init__(self):
         self.tag_dict = {'T_SunTag':'EELLSKNYHLENEVARLKK',

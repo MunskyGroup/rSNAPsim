@@ -10,7 +10,9 @@ import time
 import os
 import sys
 import platform
-
+'''
+Method to tag solution objects with some metadata
+'''
 class GenericMetaData():
     def __init__(self):
         self.id = ''
