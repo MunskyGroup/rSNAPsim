@@ -19,9 +19,31 @@ import numpy as np
 
 class poi():
     '''
-    Protein of Intrest class
-
-    Holds all the information for analyzed proteins
+    
+    Attributes
+    ----------
+    
+    aa_seq: str
+        amino acid sequence
+    nt_seq: str
+        nucleotide sequence
+    gene_length: int
+        length of the non-tag region if applicable
+    tag_length: int
+        length of the tag region if applicable
+    name: str
+        the name of the transcript
+    tag_types: list
+        list of tag types
+    tag_epitopes: dict
+        tag epitope dictionary: keys are the tag name, values are the tag nt seq
+    ki: float
+        initation rate
+    ke_mu: float
+        average elongation rate
+    kt: float
+        termination rate 
+    
     '''
     def __init__(self):
         self.aa_seq = ''    #amino sequence
@@ -38,11 +60,39 @@ class poi():
 
     @property
     def CAI(self):
+        '''
+        Geometric mean of the weight of to each codon in a transcript.
+        
+        ..[1] https://en.wikipedia.org/wiki/Codon_Adaptation_Index
+
+        Returns
+        -------
+        CAI : Float
+            Codon Adaptation Index. - a 0-1 measure of codon bias.
+            
+            
+            
+        '''
+        
         cs, CAI, cc = SequenceManipMethods().codon_usage(self.nt_seq)
         return CAI
     
     @property
     def codon_sensitivity(self):
+        '''
+        returns the percentage usage of each codon within the transcript times its senstitivity rate from cdict
+        
+        %codon in transcript * sensitivity
+
+        sensitivity is defined as the ratio of the fastest synonomous codon rate / slowest synonomous codon rate
+
+        Returns
+        -------
+        codon_sensitivity : list of floats
+            
+
+        '''
+        
         cs, CAI, cc = SequenceManipMethods().codon_usage(self.nt_seq)
         return cs
        
@@ -50,6 +100,15 @@ class poi():
 
     @property
     def codons(self):
+        '''
+        A list of all codon strings
+
+        Returns
+        -------
+        list
+            list of all codons in the protein sequence.
+
+        '''
         codons = self.nt_seq.upper()
         return [codons[i:i+3] for i in range(0, len(codons), 3)]
 
@@ -59,10 +118,36 @@ class poi():
         
     @property    
     def kelong(self):
+        '''
+        quick method to get the default elongation rates for a transcript from its current ke_mu 
+        
+        Returns
+        -------
+        list
+            elongation rates for the protein object, calculated from the default gene copy numbers
+
+        '''
         return PropensityFactory().get_k(self.nt_seq,self.ki,self.ke_mu,self.kt)[1:-1]
     
     @property
     def probe_vec(self):
+        '''
+        probe vector describes the transformation of ribosome position to intensity value
+        
+        For example, a transcript of length 5 with the probe locations
+        
+        [0,1,0,1,0]
+        
+        would have the following probe vector
+        
+        [0,1,1,2,2]
+
+        Returns
+        -------
+        probe_vec : ndarray
+            cumulative sum vector for Ncolor x L of the transcript.
+
+        '''
         pv = np.zeros( (len(list(self.tag_epitopes)), self.total_length))
         for i in range(len(list(self.tag_epitopes))):
             pv[i,[self.tag_epitopes[list(self.tag_epitopes.keys())[i]]]] = 1
@@ -71,15 +156,32 @@ class poi():
     
     @property
     def probe_loc(self):
+        '''
+        Probe location vector, describes the indexes where the epitope locations are
+
+        Returns
+        -------
+        probe_loc : ndarray
+            binary vector of epitope locations over Ncolor x L of the transcript.
+
+        '''
         pv = np.zeros( (len(list(self.tag_epitopes)), self.total_length))
         for i in range(len(list(self.tag_epitopes))):
             pv[i,[self.tag_epitopes[list(self.tag_epitopes.keys())[i]]]] = 1      
         return pv        
 
-
     
     @property
     def all_k(self):
+        '''
+        All propensities for simulation        
+        
+        Returns
+        -------
+        all propensities vector : list
+            a list of all propensities including kinitiation and ktermination (ki, kt)
+
+        '''
         return PropensityFactory().get_k(self.nt_seq,self.ki,self.ke_mu,self.kt)   
     
     
@@ -97,6 +199,18 @@ class poi():
     
     
     def generate_3frame_tags(self):
+        '''
+        Generates 3 open reading frame tags for model building on the POI obj
+        
+        * multiframe_epitopes
+        * multiframe_nt_seq
+        * multiframe_aa_seq
+        
+        Returns
+        -------
+        None.
+
+        '''
         
         #multiframe_epitopes = {}
         codons_seq = ''
@@ -138,6 +252,19 @@ class poi():
 
     
     def visualize_probe(self, colors=None):
+        '''
+        method to visualize the transcript        
+        
+        Parameters
+        ----------
+        colors : list, optional
+            Ncolor list of colors to use for the tag colors. The default is cmap gist rainbow.
+
+        Returns
+        -------
+        None.
+
+        '''
         probe = self.probe_loc
         fig,ax = plt.subplots(1)
         N = len(self.kelong)

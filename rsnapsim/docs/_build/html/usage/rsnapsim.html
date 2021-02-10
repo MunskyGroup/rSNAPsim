@@ -1,0 +1,2243 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>rsnapsim package &mdash; rSNAPsim 0.0.15 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> rSNAPsim
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">rsnapsim package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.CodonDictionaries">rsnapsim.CodonDictionaries module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.FileParser">rsnapsim.FileParser module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.GenericMetaData">rsnapsim.GenericMetaData module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.GenericSSA">rsnapsim.GenericSSA module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.IntensityAnalyses">rsnapsim.IntensityAnalyses module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.IntensityAnalysesRagged">rsnapsim.IntensityAnalysesRagged module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.ModelBuilder">rsnapsim.ModelBuilder module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.ODE_Soln">rsnapsim.ODE_Soln module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.ProbeVectorFactory">rsnapsim.ProbeVectorFactory module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.PropensityFactory">rsnapsim.PropensityFactory module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.SSA_Soln">rsnapsim.SSA_Soln module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.SequenceManipMethods">rsnapsim.SequenceManipMethods module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.TranslationOptimization">rsnapsim.TranslationOptimization module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.TranslationSolvers">rsnapsim.TranslationSolvers module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.expv">rsnapsim.expv module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.expvt">rsnapsim.expvt module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.generic_solvers">rsnapsim.generic_solvers module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.poi">rsnapsim.poi module</a></li>
+<li><a class="reference internal" href="#rsnapsim-rss-module">rsnapsim.rss module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim.translation_models">rsnapsim.translation_models module</a></li>
+<li><a class="reference internal" href="#module-rsnapsim">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">rSNAPsim</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>rsnapsim package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/usage/rsnapsim.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="rsnapsim-package">
+<h1>rsnapsim package<a class="headerlink" href="#rsnapsim-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-rsnapsim.CodonDictionaries">
+<span id="rsnapsim-codondictionaries-module"></span><h2>rsnapsim.CodonDictionaries module<a class="headerlink" href="#module-rsnapsim.CodonDictionaries" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 18:06:56 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.CodonDictionaries.</code><code class="sig-name descname">CodonDictionaries</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Contains:</p>
+<blockquote>
+<div><p>tag_dict - dictionary of tag name and their epitopes
+tag_colors - dictionary of tag name and their colors
+tag_full - dictionary of tag name and their full nt sequence
+aa_keys - keys for amino acids
+aa_table - codon to aa table
+aa_table_r - aa to codons table
+strGeneCopy - codon gene copys for both U|T
+strGeneCopy_single - a codon gene copy number with only T, for average / calculation basis that would be thrown off with including U and T
+trna_ids - tRNA species to ID</p>
+</div></blockquote>
+<dl class="py method">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.add_tag">
+<code class="sig-name descname">add_tag</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.add_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>add a custom tag sequence</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.load_tags">
+<code class="sig-name descname">load_tags</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.load_tags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.mean_genecopynumber">
+<em class="property">property </em><code class="sig-name descname">mean_genecopynumber</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.mean_genecopynumber" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.FileParser">
+<span id="rsnapsim-fileparser-module"></span><h2>rsnapsim.FileParser module<a class="headerlink" href="#module-rsnapsim.FileParser" title="Permalink to this headline">¶</a></h2>
+<p>Created on Tue Apr 21 16:29:21 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.FileParser.FileParser">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.FileParser.</code><code class="sig-name descname">FileParser</code><a class="headerlink" href="#rsnapsim.FileParser.FileParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to parse incoming files</p>
+<dl class="py method">
+<dt id="rsnapsim.FileParser.FileParser.clean_seq">
+<code class="sig-name descname">clean_seq</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">seq</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.FileParser.FileParser.clean_seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>clean the sequences to lowercase only a, u, g, c</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.FileParser.FileParser.get_description">
+<code class="sig-name descname">get_description</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.FileParser.FileParser.get_description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.FileParser.FileParser.get_name">
+<code class="sig-name descname">get_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.FileParser.FileParser.get_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.FileParser.FileParser.get_sequence">
+<code class="sig-name descname">get_sequence</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.FileParser.FileParser.get_sequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the sequence from several different file types</p>
+<p>Supported: .txt, .dna, .gb, .fasta</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.GenericMetaData">
+<span id="rsnapsim-genericmetadata-module"></span><h2>rsnapsim.GenericMetaData module<a class="headerlink" href="#module-rsnapsim.GenericMetaData" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 17:48:33 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.GenericMetaData.GenericMetaData">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.GenericMetaData.</code><code class="sig-name descname">GenericMetaData</code><a class="headerlink" href="#rsnapsim.GenericMetaData.GenericMetaData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="rsnapsim.GenericMetaData.GenericMetaData.get">
+<code class="sig-name descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericMetaData.GenericMetaData.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.GenericSSA">
+<span id="rsnapsim-genericssa-module"></span><h2>rsnapsim.GenericSSA module<a class="headerlink" href="#module-rsnapsim.GenericSSA" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 17:50:16 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.GenericSSA.GenericSSA">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.GenericSSA.</code><code class="sig-name descname">GenericSSA</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">type</span><span class="o">=</span><span class="default_value">'linear'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericSSA.GenericSSA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Generic SSA solver - used for the simulated cell animations</p>
+<dl class="py method">
+<dt id="rsnapsim.GenericSSA.GenericSSA.get_dist">
+<code class="sig-name descname">get_dist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specID</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericSSA.GenericSSA.get_dist" title="Permalink to this definition">¶</a></dt>
+<dd><p>build distribution (non-normalized and pdf)
+of rna for the model)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.GenericSSA.GenericSSA.get_means">
+<code class="sig-name descname">get_means</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specID</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericSSA.GenericSSA.get_means" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the first moment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.GenericSSA.GenericSSA.get_traj">
+<code class="sig-name descname">get_traj</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specID</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">ntraj</span><span class="o">=</span><span class="default_value">'all'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericSSA.GenericSSA.get_traj" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.GenericSSA.GenericSSA.get_variances">
+<code class="sig-name descname">get_variances</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specID</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericSSA.GenericSSA.get_variances" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the second moment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.GenericSSA.GenericSSA.gettvec">
+<code class="sig-name descname">gettvec</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericSSA.GenericSSA.gettvec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.GenericSSA.GenericSSA.return_all_var">
+<code class="sig-name descname">return_all_var</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericSSA.GenericSSA.return_all_var" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.GenericSSA.GenericSSA.return_names">
+<code class="sig-name descname">return_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericSSA.GenericSSA.return_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.GenericSSA.GenericSSA.setpar">
+<code class="sig-name descname">setpar</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">val</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericSSA.GenericSSA.setpar" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.GenericSSA.GenericSSA.updateparams">
+<code class="sig-name descname">updateparams</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericSSA.GenericSSA.updateparams" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.IntensityAnalyses">
+<span id="rsnapsim-intensityanalyses-module"></span><h2>rsnapsim.IntensityAnalyses module<a class="headerlink" href="#module-rsnapsim.IntensityAnalyses" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 11:50:56 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.IntensityAnalyses.</code><code class="sig-name descname">IntensityAnalyses</code><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_acc2">
+<em class="property">static </em><code class="sig-name descname">get_acc2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">trunc</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_acc2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get autocorrelation function</p>
+<p><em>NOT</em> multi-tau</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_autocorr">
+<code class="sig-name descname">get_autocorr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">autocov</span></em>, <em class="sig-param"><span class="n">g0</span><span class="o">=</span><span class="default_value">'G0'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_autocorr" title="Permalink to this definition">¶</a></dt>
+<dd><p>normalize the autocovariance over g0</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_autocorr2">
+<code class="sig-name descname">get_autocorr2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity_vec</span></em>, <em class="sig-param"><span class="n">time_vec</span></em>, <em class="sig-param"><span class="n">totalSimulationTime</span></em>, <em class="sig-param"><span class="n">geneLength</span></em>, <em class="sig-param"><span class="n">normalization</span><span class="o">=</span><span class="default_value">'Individual'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_autocorr2" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the autocorrelations</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_autocorr_norm">
+<code class="sig-name descname">get_autocorr_norm</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity_vec</span></em>, <em class="sig-param"><span class="n">time_vec</span></em>, <em class="sig-param"><span class="n">totalSimulationTime</span></em>, <em class="sig-param"><span class="n">geneLength</span></em>, <em class="sig-param"><span class="n">normalization</span><span class="o">=</span><span class="default_value">'Individual'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_autocorr_norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the autocorrelations</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_autocov">
+<code class="sig-name descname">get_autocov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity_vec</span></em>, <em class="sig-param"><span class="n">norm</span><span class="o">=</span><span class="default_value">'raw'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_autocov" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_crosscorr">
+<code class="sig-name descname">get_crosscorr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity_vecs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_crosscorr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_crosscorr2">
+<code class="sig-name descname">get_crosscorr2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iv1</span></em>, <em class="sig-param"><span class="n">iv2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_crosscorr2" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the autocorrelations</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_fragments">
+<code class="sig-name descname">get_fragments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">position_tensor</span></em>, <em class="sig-param"><span class="n">total_length</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_fragments" title="Permalink to this definition">¶</a></dt>
+<dd><p>attempts to get the individual trajectories back from ribosomal posistion,
+this is by no means a perfect process</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_frags_ssa_obj">
+<code class="sig-name descname">get_frags_ssa_obj</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ssa_obj</span></em>, <em class="sig-param"><span class="n">total_length</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_frags_ssa_obj" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_g0">
+<code class="sig-name descname">get_g0</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">correlation</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'interp'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_g0" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.normalize_cc">
+<code class="sig-name descname">normalize_cc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">correlation</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'max'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.normalize_cc" title="Permalink to this definition">¶</a></dt>
+<dd><p>normalize cc via either center or maximum.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.IntensityAnalysesRagged">
+<span id="rsnapsim-intensityanalysesragged-module"></span><h2>rsnapsim.IntensityAnalysesRagged module<a class="headerlink" href="#module-rsnapsim.IntensityAnalysesRagged" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 11:49:42 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.IntensityAnalysesRagged.</code><code class="sig-name descname">IntensityAnalysesRagged</code><a class="headerlink" href="#rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged.get_acc2">
+<em class="property">static </em><code class="sig-name descname">get_acc2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">trunc</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged.get_acc2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get autocorrelation function</p>
+<p><em>NOT</em> multi-tau</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged.get_autocorr">
+<code class="sig-name descname">get_autocorr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">autocov</span></em>, <em class="sig-param"><span class="n">g0</span><span class="o">=</span><span class="default_value">'G0'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged.get_autocorr" title="Permalink to this definition">¶</a></dt>
+<dd><p>normalize the autocovariance over g0</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged.get_autocov">
+<code class="sig-name descname">get_autocov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity_vec</span></em>, <em class="sig-param"><span class="n">max_lag</span></em>, <em class="sig-param"><span class="n">norm</span><span class="o">=</span><span class="default_value">'raw'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged.get_autocov" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged.get_g0">
+<code class="sig-name descname">get_g0</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">covariance</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'interp'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged.get_g0" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged.get_intensity_histogram">
+<code class="sig-name descname">get_intensity_histogram</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity_vec</span></em>, <em class="sig-param"><span class="n">n_bins</span></em>, <em class="sig-param"><span class="n">scale_factor</span></em>, <em class="sig-param"><span class="n">time_slice</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged.get_intensity_histogram" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.ModelBuilder">
+<span id="rsnapsim-modelbuilder-module"></span><h2>rsnapsim.ModelBuilder module<a class="headerlink" href="#module-rsnapsim.ModelBuilder" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 18:08:58 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.ModelBuilder.ModelBuilder">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.ModelBuilder.</code><code class="sig-name descname">ModelBuilder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">time</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xi</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ModelBuilder.ModelBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Container class for the solvers</p>
+<dl class="py method">
+<dt id="rsnapsim.ModelBuilder.ModelBuilder.add_enters">
+<code class="sig-name descname">add_enters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">locs</span></em>, <em class="sig-param"><span class="n">frames</span></em>, <em class="sig-param"><span class="n">rates</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ModelBuilder.ModelBuilder.add_enters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ModelBuilder.ModelBuilder.add_jumps">
+<code class="sig-name descname">add_jumps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">locs</span></em>, <em class="sig-param"><span class="n">frames</span></em>, <em class="sig-param"><span class="n">dest_locs</span></em>, <em class="sig-param"><span class="n">dest_frames</span></em>, <em class="sig-param"><span class="n">rates</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ModelBuilder.ModelBuilder.add_jumps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ModelBuilder.ModelBuilder.add_k">
+<code class="sig-name descname">add_k</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">poi</span></em>, <em class="sig-param"><span class="n">kelong_mean</span><span class="o">=</span><span class="default_value">10</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ModelBuilder.ModelBuilder.add_k" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ModelBuilder.ModelBuilder.add_pauses">
+<code class="sig-name descname">add_pauses</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">locs</span></em>, <em class="sig-param"><span class="n">frames</span></em>, <em class="sig-param"><span class="n">rates</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ModelBuilder.ModelBuilder.add_pauses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ModelBuilder.ModelBuilder.add_stops">
+<code class="sig-name descname">add_stops</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">locs</span></em>, <em class="sig-param"><span class="n">frames</span></em>, <em class="sig-param"><span class="n">rates</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ModelBuilder.ModelBuilder.add_stops" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ModelBuilder.ModelBuilder.clear_model">
+<code class="sig-name descname">clear_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ModelBuilder.ModelBuilder.clear_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ModelBuilder.ModelBuilder.generate_probe">
+<code class="sig-name descname">generate_probe</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ModelBuilder.ModelBuilder.generate_probe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ModelBuilder.ModelBuilder.n_extra_rxns">
+<em class="property">property </em><code class="sig-name descname">n_extra_rxns</code><a class="headerlink" href="#rsnapsim.ModelBuilder.ModelBuilder.n_extra_rxns" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ModelBuilder.ModelBuilder.run_ssa">
+<code class="sig-name descname">run_ssa</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">n_traj</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">low_mem</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ModelBuilder.ModelBuilder.run_ssa" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ModelBuilder.ModelBuilder.visualize_transcript">
+<code class="sig-name descname">visualize_transcript</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ModelBuilder.ModelBuilder.visualize_transcript" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.ODE_Soln">
+<span id="rsnapsim-ode-soln-module"></span><h2>rsnapsim.ODE_Soln module<a class="headerlink" href="#module-rsnapsim.ODE_Soln" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 17:56:11 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.ODE_Soln.ODE_Soln">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.ODE_Soln.</code><code class="sig-name descname">ODE_Soln</code><a class="headerlink" href="#rsnapsim.ODE_Soln.ODE_Soln" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="rsnapsim.ODE_Soln.ODE_Soln.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ODE_Soln.ODE_Soln.load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ODE_Soln.ODE_Soln.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ODE_Soln.ODE_Soln.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.ProbeVectorFactory">
+<span id="rsnapsim-probevectorfactory-module"></span><h2>rsnapsim.ProbeVectorFactory module<a class="headerlink" href="#module-rsnapsim.ProbeVectorFactory" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 17:47:28 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.ProbeVectorFactory.ProbeVectorFactory">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.ProbeVectorFactory.</code><code class="sig-name descname">ProbeVectorFactory</code><a class="headerlink" href="#rsnapsim.ProbeVectorFactory.ProbeVectorFactory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="rsnapsim.ProbeVectorFactory.ProbeVectorFactory.bin_probe_vecs">
+<em class="property">static </em><code class="sig-name descname">bin_probe_vecs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">probe_loc</span></em>, <em class="sig-param"><span class="n">inds</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ProbeVectorFactory.ProbeVectorFactory.bin_probe_vecs" title="Permalink to this definition">¶</a></dt>
+<dd><p>given a probe location vector and an desired binning indices, return pv and pl binned</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>probe_loc</strong> (<em>Ncolor by L binary numpy array</em>) – locations of tag epitopes.</p></li>
+<li><p><strong>inds</strong> (<em>1xL ind locations sizes</em>) – binning strategy, the sum of this vector should = L:.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>Probe_loc_binned</strong> (<em>Ncolor x L numpy array</em>) – the binned probe locations.</p></li>
+<li><p><strong>Probe_vec_binned</strong> (<em>Ncolor x L numpy array</em>) – the binned probe intensity vector.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ProbeVectorFactory.ProbeVectorFactory.even_bin">
+<em class="property">static </em><code class="sig-name descname">even_bin</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="n">nbins</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ProbeVectorFactory.ProbeVectorFactory.even_bin" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>length</strong> (<em>int</em>) – Length of the vector to bin.</p></li>
+<li><p><strong>nbins</strong> (<em>int</em>) – Number of desired bins.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>inds</strong> – n bin locations over the vector length given.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ProbeVectorFactory.ProbeVectorFactory.get_probe_loc">
+<code class="sig-name descname">get_probe_loc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tag_epitope_dict</span></em>, <em class="sig-param"><span class="n">length</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ProbeVectorFactory.ProbeVectorFactory.get_probe_loc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get 1, 0 probe location from a tag epitope dictionary</p>
+<blockquote>
+<div><p>Ex:   get_probe_bec({Tag_1:[10,15]},20)
+returns:</p>
+<blockquote>
+<div><p>pv = np.array([[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0]])</p>
+</div></blockquote>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tag_epitope_dict</strong> (<em>dictionary</em>) – dictionary of tag epitopes, can be accessed from a POI.tag_epitopes.</p></li>
+<li><p><strong>length</strong> (<em>int</em>) – Length of the transcript.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>probe_loc</strong> – returns the binary probe per location of an epitope,</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Ncolor x L Numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ProbeVectorFactory.ProbeVectorFactory.get_probe_vec">
+<code class="sig-name descname">get_probe_vec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tag_epitope_dict</span></em>, <em class="sig-param"><span class="n">length</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ProbeVectorFactory.ProbeVectorFactory.get_probe_vec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a probe vector given a tag epitope dictionary and the Length of the transcript:</p>
+<blockquote>
+<div><p>Ex:   get_probe_bec({Tag_1:[10,15]},20)
+returns:</p>
+<blockquote>
+<div><p>pv = np.array([[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2]])</p>
+</div></blockquote>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tag_epitope_dict</strong> (<em>dictionary</em>) – dictionary of tag epitopes, can be accessed from a POI.tag_epitopes.</p></li>
+<li><p><strong>length</strong> (<em>int</em>) – Length of the transcript.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>probe_vec</strong> – returns the cumulative sum probe vector per location of a ribosome, meaning: A ribosome at x location
+will have pv[x] intensity.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Ncolor x L Numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.ProbeVectorFactory.ProbeVectorFactory.intellegent_bin">
+<em class="property">static </em><code class="sig-name descname">intellegent_bin</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pl</span></em>, <em class="sig-param"><span class="n">nbins</span></em>, <em class="sig-param"><span class="n">min_bin</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ProbeVectorFactory.ProbeVectorFactory.intellegent_bin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to do intellegent binning, focuses resolution on the areas
+defined in the probe location vector</p>
+<p>Note if you pass it a minium bin that when min_bin*nbins &gt; length of your sequence
+this function will fail</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pl</strong> (<em>numpy array</em>) – numpy array of Ncolor x Length 0’s 1’s for probe locations.</p></li>
+<li><p><strong>nbins</strong> (<em>int</em>) – number of desired bins.</p></li>
+<li><p><strong>min_bin</strong> (<em>int</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pl_inds</strong> – n bin locations over the vector length given.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.PropensityFactory">
+<span id="rsnapsim-propensityfactory-module"></span><h2>rsnapsim.PropensityFactory module<a class="headerlink" href="#module-rsnapsim.PropensityFactory" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 17:45:31 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.PropensityFactory.PropensityFactory">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.PropensityFactory.</code><code class="sig-name descname">PropensityFactory</code><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>factory class for the k’s</p>
+<dl class="py method">
+<dt id="rsnapsim.PropensityFactory.PropensityFactory.bin_k">
+<em class="property">static </em><code class="sig-name descname">bin_k</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">k</span></em>, <em class="sig-param"><span class="n">inds</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory.bin_k" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.PropensityFactory.PropensityFactory.even_bin">
+<em class="property">static </em><code class="sig-name descname">even_bin</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="n">nbins</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory.even_bin" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>length</strong> (<em>int</em>) – Length of the vector to bin.</p></li>
+<li><p><strong>nbins</strong> (<em>int</em>) – Number of desired bins.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>inds</strong> – n bin locations over the vector length given.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.PropensityFactory.PropensityFactory.get_binned_k">
+<em class="property">static </em><code class="sig-name descname">get_binned_k</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">k</span></em>, <em class="sig-param"><span class="n">bins</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory.get_binned_k" title="Permalink to this definition">¶</a></dt>
+<dd><p>given a propensity vector and an desired binning indices, return pv and pl binned</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>k</strong> (<em>1 x L  numpy array</em>) – Propensity vector of rates.</p></li>
+<li><p><strong>bins</strong> (<em>1xL ind locations sizes</em>) – binning strategy, the sum of this vector should = L.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>propensity_binned</strong> (<em>1 x Nbins numpy array</em>) – the binned propensities.</p></li>
+<li><p><strong>bin_sizes</strong> (<em>1 x Nbins numpy array</em>) – list of bin sizes.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.PropensityFactory.PropensityFactory.get_k">
+<code class="sig-name descname">get_k</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em>, <em class="sig-param"><span class="n">k_init</span></em>, <em class="sig-param"><span class="n">k_elong_mean</span></em>, <em class="sig-param"><span class="n">k_end</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory.get_k" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns all propensities for a given nucleotide sequence</p>
+<p><em>args</em></p>
+<blockquote>
+<div><p><strong>nt_seq</strong>,  nucleotide sequence as a string</p>
+<p><strong>k_initiation</strong>, initiation rate of ribosome binding</p>
+<p><strong>k_elong_mean</strong>, average rate of elgonation experimentally found</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.PropensityFactory.PropensityFactory.get_k_3_frame">
+<code class="sig-name descname">get_k_3_frame</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em>, <em class="sig-param"><span class="n">k_elong_mean</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory.get_k_3_frame" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nt_seq</strong> (<em>str</em>) – nucleotide sequence.</p></li>
+<li><p><strong>k_elong_mean</strong> (<em>float</em>) – mean elongation rate aa/s.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p><strong>kelongs</strong> –</p>
+<dl class="simple">
+<dt>elongation rates for all 3 frames of a nucleotide sequence stacked in:</dt><dd><p>[0+frame L, 1+frame L-1, 2+frame L-1] .</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.PropensityFactory.PropensityFactory.get_trna_ids">
+<code class="sig-name descname">get_trna_ids</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory.get_trna_ids" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.PropensityFactory.PropensityFactory.intellegent_bin">
+<em class="property">static </em><code class="sig-name descname">intellegent_bin</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pl</span></em>, <em class="sig-param"><span class="n">nbins</span></em>, <em class="sig-param"><span class="n">min_bin</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory.intellegent_bin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to do intellegent binning, focuses resolution on the areas
+defined in the probe location vector</p>
+<p>Note if you pass it a minium bin that when min_bin*nbins &gt; length of your sequence
+this function will fail</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pl</strong> (<em>numpy array</em>) – numpy array of Ncolor x Length 0’s 1’s for probe locations.</p></li>
+<li><p><strong>nbins</strong> (<em>int</em>) – number of desired bins.</p></li>
+<li><p><strong>min_bin</strong> (<em>int</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pl_inds</strong> – n bin locations over the vector length given.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.SSA_Soln">
+<span id="rsnapsim-ssa-soln-module"></span><h2>rsnapsim.SSA_Soln module<a class="headerlink" href="#module-rsnapsim.SSA_Soln" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 17:57:33 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.SSA_Soln.SSA_Soln">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.SSA_Soln.</code><code class="sig-name descname">SSA_Soln</code><a class="headerlink" href="#rsnapsim.SSA_Soln.SSA_Soln" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>SSA container class</p>
+<p>holds intensity / ribosome data as well as the propensities used</p>
+<p>__.n_traj = number of trajectories
+__.k = propensities used for the simulation
+__.rib_density = ribosome density per mRNA strand
+__.ribosome_means</p>
+<dl class="py method">
+<dt id="rsnapsim.SSA_Soln.SSA_Soln.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SSA_Soln.SSA_Soln.load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SSA_Soln.SSA_Soln.make_dict">
+<code class="sig-name descname">make_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SSA_Soln.SSA_Soln.make_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SSA_Soln.SSA_Soln.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">precision</span><span class="o">=</span><span class="default_value">'.4f'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SSA_Soln.SSA_Soln.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.SequenceManipMethods">
+<span id="rsnapsim-sequencemanipmethods-module"></span><h2>rsnapsim.SequenceManipMethods module<a class="headerlink" href="#module-rsnapsim.SequenceManipMethods" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 11:35:43 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.SequenceManipMethods.</code><code class="sig-name descname">SequenceManipMethods</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sequence</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>class that handles manipulation methods dealing with sequences</p>
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.add_tag_to_protein">
+<code class="sig-name descname">add_tag_to_protein</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">POI</span></em>, <em class="sig-param"><span class="n">tag_type</span><span class="o">=</span><span class="default_value">'T_Flag'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.add_tag_to_protein" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>POI</strong> (<em>poi object</em>) – protein of interest object.</p></li>
+<li><p><strong>tag_type</strong> (<em>str</em><em>, </em><em>optional</em>) – What kind of tag to append onto the protein object. The default is ‘T_Flag’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.analyze_protein_w_tags">
+<code class="sig-name descname">analyze_protein_w_tags</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">POI</span></em>, <em class="sig-param"><span class="n">epitope_loc</span><span class="o">=</span><span class="default_value">'front'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.analyze_protein_w_tags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.codon_usage">
+<code class="sig-name descname">codon_usage</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.codon_usage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analyzes codon useage from the nucleotide sequence</p>
+<p><em>args</em></p>
+<blockquote>
+<div><p><strong>nt_seq</strong>,  nucleotide sequence as a string</p>
+</div></blockquote>
+<p><em>returns</em></p>
+<blockquote>
+<div><p><strong>codon_sensitivity</strong>, a list of codon sensitivity for the nucleotide sequence</p>
+<p><strong>cai</strong>, cai value</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.deoptimize_ntseq">
+<code class="sig-name descname">deoptimize_ntseq</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em>, <em class="sig-param"><span class="n">deopt_dict</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.deoptimize_ntseq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optimizes a nucleotide sequence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nt_seq</strong> (<em>str</em>) – nucleotide sequence string</p></li>
+<li><p><strong>deopt_dict</strong> (<em>dictionary</em><em>, </em><em>optional</em>) – a user defined dictionary to deoptimize over. The default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>deopt_seq</strong> – Deoptimized NT sequenced based on a given dictionary of rates</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.geomean">
+<em class="property">static </em><code class="sig-name descname">geomean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iterable</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.geomean" title="Permalink to this definition">¶</a></dt>
+<dd><p>geometric mean used for codon sensitivity calculations</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.get_gb_file">
+<code class="sig-name descname">get_gb_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">accession_number</span></em>, <em class="sig-param"><span class="n">save_dir</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.get_gb_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function to poll genbank given an accession number and pull the relevant gb file</p>
+<p><em>args</em></p>
+<blockquote>
+<div><p><strong>accession_number</strong>, the accession number of the sequence to find.
+<a class="reference external" href="http://www.nslc.wustl.edu/elgin/genomics/bio4342/1archives/2006/AccReference.pdf">http://www.nslc.wustl.edu/elgin/genomics/bio4342/1archives/2006/AccReference.pdf</a></p>
+</div></blockquote>
+<p><em>keyword args</em></p>
+<blockquote>
+<div><p><strong>savetofile</strong>, true or false to save the gb file in the same directory as sms for future use</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.get_orfs">
+<code class="sig-name descname">get_orfs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">min_codons</span><span class="o">=</span><span class="default_value">80</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.get_orfs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns open reading frames of the nucleotide sequence given</p>
+<dl class="simple">
+<dt>orfs = {‘1’:[proteins],</dt><dd><p>‘2’:[proteins],
+‘3’:[proteins]}</p>
+</dd>
+</dl>
+<p><em>keyword args</em></p>
+<blockquote>
+<div><p><strong>nt_seq</strong>, nucleotide sequence as a string. If left blank uses
+the self.sequence_str</p>
+<p><strong>min_codons</strong>, minimum amount of codons to be considered
+a protein in the open reading frame</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.get_proteins">
+<code class="sig-name descname">get_proteins</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">orfs</span></em>, <em class="sig-param"><span class="n">seq</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.get_proteins" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>orfs</strong> (<em>dict</em>) – dictionary of open reading frames.
+{‘1’: [[starts],[stops] ],’2’: [[starts],[stops] ],’3’: [[starts],[stops] ] }</p></li>
+<li><p><strong>seq</strong> (<em>str</em>) – nucleotide sequence.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>proteins_strs</strong> (<em>dict</em>) – aa strings of all proteins found in the given orfs.</p></li>
+<li><p><strong>protein_objs</strong> (<em>dict</em>) – container objects for proteins found in the given orf.</p></li>
+<li><p><strong>proteins_w_tags</strong> (<em>dict</em>) – conatiner objects for any proteins with detected tags.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.get_tag_loc">
+<code class="sig-name descname">get_tag_loc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aa_seq</span></em>, <em class="sig-param"><span class="n">tag</span></em>, <em class="sig-param"><span class="n">epitope_loc</span><span class="o">=</span><span class="default_value">'front'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.get_tag_loc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.nt2aa">
+<code class="sig-name descname">nt2aa</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.nt2aa" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nt_seq</strong> (<em>str</em>) – nucleotide sequence.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>aa</strong> – amino acid sequence.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.open_seq_file">
+<code class="sig-name descname">open_seq_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">seqfile</span></em>, <em class="sig-param"><span class="n">min_codons</span><span class="o">=</span><span class="default_value">80</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.open_seq_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a sequence file, either a .txt file or a .gb genbank file</p>
+<p><em>args</em></p>
+<blockquote>
+<div><p><strong>seqfile</strong>, sequence file either in txt, gb, gbk format</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.optimize_ntseq">
+<code class="sig-name descname">optimize_ntseq</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em>, <em class="sig-param"><span class="n">opt_dict</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.optimize_ntseq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optimizes a nucleotide sequence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nt_seq</strong> (<em>str</em>) – nucleotide sequence string</p></li>
+<li><p><strong>opt_dict</strong> (<em>dictionary</em><em>, </em><em>optional</em>) – a user defined dictionary to optimize over. The default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>opt_seq</strong> – Optimized NT sequenced based on a given dictionary of rates</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.SequenceManipMethods.SequenceManipMethods.seq_to_protein_obj">
+<code class="sig-name descname">seq_to_protein_obj</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sequence_str</span></em>, <em class="sig-param"><span class="n">min_codons</span><span class="o">=</span><span class="default_value">80</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.SequenceManipMethods.SequenceManipMethods.seq_to_protein_obj" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.TranslationOptimization">
+<span id="rsnapsim-translationoptimization-module"></span><h2>rsnapsim.TranslationOptimization module<a class="headerlink" href="#module-rsnapsim.TranslationOptimization" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 17:34:04 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.TranslationOptimization.IntensityData">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.TranslationOptimization.</code><code class="sig-name descname">IntensityData</code><a class="headerlink" href="#rsnapsim.TranslationOptimization.IntensityData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.IntensityData.add_data">
+<code class="sig-name descname">add_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">intensity_vec</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.IntensityData.add_data" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>intensity_vec</strong> (<em>TYPE</em>) – DESCRIPTION.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.IntensityData.get_stats">
+<code class="sig-name descname">get_stats</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.IntensityData.get_stats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.IntensityData.load_data">
+<code class="sig-name descname">load_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.IntensityData.load_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.IntensityData.load_dataframe">
+<code class="sig-name descname">load_dataframe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataframe</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.IntensityData.load_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.TranslationOptimization.OptChain">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.TranslationOptimization.</code><code class="sig-name descname">OptChain</code><a class="headerlink" href="#rsnapsim.TranslationOptimization.OptChain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Container class for parameter optimization chains</p>
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.OptChain.check_objfun_convergence">
+<code class="sig-name descname">check_objfun_convergence</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.OptChain.check_objfun_convergence" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.OptChain.check_parameter_convergence">
+<code class="sig-name descname">check_parameter_convergence</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.OptChain.check_parameter_convergence" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.OptChain.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.OptChain.load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.OptChain.parplot">
+<code class="sig-name descname">parplot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ellipse</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">logspace</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.OptChain.parplot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.OptChain.report">
+<code class="sig-name descname">report</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.OptChain.report" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.OptChain.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.OptChain.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.TranslationOptimization.</code><code class="sig-name descname">TranslationOptimization</code><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>optimization class adjusted from Micheal May’s GenericOpt</p>
+<p>Usage: one must set a solver_obj containing a model, and a data_obj containing any data to fit</p>
+<dl>
+<dt>::</dt><dd><p>opt = rss.optimizer.TranslationOptimization()  #Optimization object
+opt.solver_obj = solver
+opt.data_obj = sim_data
+opt.parnames = [‘ki’,’ke’]
+true_par = [.08,5]</p>
+<p>Then you set the options  and optimization function you would like to fit
+all arguments for these are stored in a dictionary and then passed to run_optimization</p>
+<p>opt.opts[‘bounds’] = ([0.01,.17],[0.1,12])
+opt.initial_params = np.array([.033,10])
+opt.params = np.array([.033,10])
+opt.args[‘LL_acorr’] = (200,’ind’,’G0’)
+opt.args[‘LL_I_distb’] = (1,)
+opt.run_optimization(‘LL_I_distb’,’MH’,stepsize=[1,1],disp=True,mut_rate=.99,logspace=True,niter=500)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.add_bounds">
+<code class="sig-name descname">add_bounds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lower_bounds</span></em>, <em class="sig-param"><span class="n">upper_bounds</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.add_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds bounds to the optimizer object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lower_bounds</strong> (<em>List</em><em> or </em><em>ndarray</em>) – lower bound of each parameter.</p></li>
+<li><p><strong>upper_bounds</strong> (<em>List</em><em> or </em><em>ndarray</em>) – upper bound of each parameter.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.analytical_autocorrelation">
+<code class="sig-name descname">analytical_autocorrelation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">bins</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">bin_method</span><span class="o">=</span><span class="default_value">'intellegent'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.analytical_autocorrelation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.autocorrelation_fun">
+<code class="sig-name descname">autocorrelation_fun</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity</span></em>, <em class="sig-param"><span class="n">norm</span><span class="o">=</span><span class="default_value">'ind'</span></em>, <em class="sig-param"><span class="n">g0</span><span class="o">=</span><span class="default_value">'G0'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.autocorrelation_fun" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.autocovariance_fun">
+<code class="sig-name descname">autocovariance_fun</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity</span></em>, <em class="sig-param"><span class="n">norm</span><span class="o">=</span><span class="default_value">'ind'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.autocovariance_fun" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.chisq">
+<em class="property">static </em><code class="sig-name descname">chisq</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_data</span></em>, <em class="sig-param"><span class="n">model_var</span></em>, <em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.chisq" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.combined_objective">
+<code class="sig-name descname">combined_objective</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">objfun_list</span></em>, <em class="sig-param"><span class="n">intensity_fun</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.combined_objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.genetic">
+<code class="sig-name descname">genetic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objfun</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.genetic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.get_intensity_sse">
+<code class="sig-name descname">get_intensity_sse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.get_intensity_sse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.get_loglikelihood_autocorr">
+<code class="sig-name descname">get_loglikelihood_autocorr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity</span></em>, <em class="sig-param"><span class="n">n_points</span></em>, <em class="sig-param"><span class="n">norm</span></em>, <em class="sig-param"><span class="n">g0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.get_loglikelihood_autocorr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.get_loglikelihood_autocorr_ode">
+<code class="sig-name descname">get_loglikelihood_autocorr_ode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity</span></em>, <em class="sig-param"><span class="n">n_points</span></em>, <em class="sig-param"><span class="n">norm</span></em>, <em class="sig-param"><span class="n">g0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.get_loglikelihood_autocorr_ode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.get_loglikelihood_intensity_distribution">
+<code class="sig-name descname">get_loglikelihood_intensity_distribution</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity</span></em>, <em class="sig-param"><span class="n">norm</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.get_loglikelihood_intensity_distribution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.intensity_distribution">
+<code class="sig-name descname">intensity_distribution</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity</span></em>, <em class="sig-param"><span class="n">bins</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">density</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">norm</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.intensity_distribution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.intensity_fun">
+<code class="sig-name descname">intensity_fun</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.intensity_fun" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.lin_opt">
+<code class="sig-name descname">lin_opt</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.lin_opt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.loglikelihood_acc">
+<em class="property">static </em><code class="sig-name descname">loglikelihood_acc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">data_err</span></em>, <em class="sig-param"><span class="n">nspots</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.loglikelihood_acc" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>ndarray</em>) – autocorrelation model generated data array.</p></li>
+<li><p><strong>data</strong> (<em>ndarray</em>) – autocorrelation data array.</p></li>
+<li><p><strong>data_err</strong> (<em>ndarray</em>) – error array (SEM, STD) of the data.</p></li>
+<li><p><strong>nspots</strong> (<em>int</em>) – number of spots.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>returns the logliklihood from the formula:</p>
+<blockquote>
+<div><p>log L(G|M) = Const. - 1/Nt * sum( (G_D(t_i) - G_M(t_i))^2 / sigma_G_D(t_i) )</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Loglikelihood (float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.loglikelihood_distb">
+<em class="property">static </em><code class="sig-name descname">loglikelihood_distb</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_intensity</span></em>, <em class="sig-param"><span class="n">data_intensity</span></em>, <em class="sig-param"><span class="n">nbins</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">norm</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.loglikelihood_distb" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_intensity</strong> (<em>ndarray</em>) – array of model simulated intensity over time.</p></li>
+<li><p><strong>data_intensity</strong> (<em>ndarray</em>) – array of data intensity over time.</p></li>
+<li><p><strong>nbins</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of bins. The default is 20.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>LogLikelihood of the intensity distributions.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.methast">
+<code class="sig-name descname">methast</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">optfun</span></em>, <em class="sig-param"><span class="n">optfun_type</span></em>, <em class="sig-param"><span class="n">niter</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">burnin</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">stepsize</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mut_rate</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">disp</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">logspace</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">proposal</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.methast" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>optfun</strong> (<em>function</em>) – objective function to optimize.</p></li>
+<li><p><strong>optfun_type</strong> (<em>str</em>) – the name of the objective function for __.args to access its arguments</p></li>
+<li><p><strong>niter</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of iterations. The default is 1000.</p></li>
+<li><p><strong>burnin</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of iterations to burn (disregard from the final chain). The default is 100.</p></li>
+<li><p><strong>stepsize</strong> (<em>list</em><em>, </em><em>ndarray</em><em>, </em><em>optional</em>) – The stepsize of the proposal distribution. The default is None.</p></li>
+<li><p><strong>mut_rate</strong> (<em>float 0-1</em><em>, </em><em>optional</em>) – mutation probability. The default is .3.</p></li>
+<li><p><strong>disp</strong> (<em>boolean</em><em>, </em><em>optional</em>) – return a display of the current progress. The default is False.</p></li>
+<li><p><strong>logspace</strong> (<em>boolean</em><em>, </em><em>optional</em>) – use logspace to search. The default is True.</p></li>
+<li><p><strong>proposal</strong> (<em>function</em><em>, </em><em>optional</em>) – function to draw proposal distributions from. The default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>scipy result object.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>OptimizeResult</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.print_args">
+<code class="sig-name descname">print_args</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.print_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.run_optimization">
+<code class="sig-name descname">run_optimization</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objective_fun_list</span></em>, <em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="n">model</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">data</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">intensity_fun</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.run_optimization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.sim_anneal">
+<code class="sig-name descname">sim_anneal</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objfun</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.sim_anneal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationOptimization.TranslationOptimization.sse">
+<em class="property">static </em><code class="sig-name descname">sse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_data</span></em>, <em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationOptimization.TranslationOptimization.sse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.TranslationOptimization.suite">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.TranslationOptimization.</code><code class="sig-name descname">suite</code><a class="headerlink" href="#rsnapsim.TranslationOptimization.suite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>a coterie of constructs</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.TranslationSolvers">
+<span id="rsnapsim-translationsolvers-module"></span><h2>rsnapsim.TranslationSolvers module<a class="headerlink" href="#module-rsnapsim.TranslationSolvers" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 17:52:28 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.TranslationSolvers.TranslationSolvers">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.TranslationSolvers.</code><code class="sig-name descname">TranslationSolvers</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">time</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xi</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationSolvers.TranslationSolvers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Container class for the solvers</p>
+<dl class="py method">
+<dt id="rsnapsim.TranslationSolvers.TranslationSolvers.invert_ballistic">
+<code class="sig-name descname">invert_ballistic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tau_measured</span></em>, <em class="sig-param"><span class="n">mu_I</span></em>, <em class="sig-param"><span class="n">poi</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationSolvers.TranslationSolvers.invert_ballistic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a measured decorrelation time tau from FCS, predict the elongation rates and initation rates</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tau_measured</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>list</em><em>, </em><em>ndarray</em>) – measured analytical decorrelation time(s).</p></li>
+<li><p><strong>mu_I</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>list</em><em>, </em><em>ndarray</em>) – average intensitie(s).</p></li>
+<li><p><strong>poi</strong> (<em>Poi object</em><em> (</em><em>optional</em><em>)</em>) – Protein of interest to pull geometry from.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>kes</strong> (<em>list</em>) – analytical average k_elongation(s).</p></li>
+<li><p><strong>kis</strong> (<em>list</em>) – analytical average k_initations(s).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationSolvers.TranslationSolvers.protein">
+<em class="property">property </em><code class="sig-name descname">protein</code><a class="headerlink" href="#rsnapsim.TranslationSolvers.TranslationSolvers.protein" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationSolvers.TranslationSolvers.solve_ballistic_model">
+<code class="sig-name descname">solve_ballistic_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ki</span></em>, <em class="sig-param"><span class="n">ke</span></em>, <em class="sig-param"><span class="n">poi</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tag</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationSolvers.TranslationSolvers.solve_ballistic_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a iniation rate and set of elongation rates, predict analytically the intensity statistics and decorrelation time tau.</p>
+<p><strong>warning this ignores the effect of collisiosn</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ki</strong> (<em>float</em>) – initation rate of ribosomes.</p></li>
+<li><p><strong>ke</strong> (<em>float</em>) – mean elongation rate along the transcript.</p></li>
+<li><p><strong>poi</strong> (<em>protein object</em><em>, </em><em>optional</em>) – a particular protein object to pull geometry from. The default is None.</p></li>
+<li><p><strong>tag</strong> (<em>list</em><em>, </em><em>optional</em>) – list of tag locations if geometry not given. The default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>tau_analyticals</strong> (<em>list of floats</em>) – analytically sovled decorrelation times tau.</p></li>
+<li><p><strong>mean_analyticals</strong> (<em>list of floats</em>) – the visible ribosome means on the transcript.</p></li>
+<li><p><strong>var_analyticals</strong> (<em>list of floats</em>) – variances of ribosomes on the transcript.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationSolvers.TranslationSolvers.solve_ode">
+<code class="sig-name descname">solve_ode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">k</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">x0</span></em>, <em class="sig-param"><span class="n">ki</span></em>, <em class="sig-param"><span class="n">pl</span></em>, <em class="sig-param"><span class="n">bins</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">corr</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationSolvers.TranslationSolvers.solve_ode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the system of odes describing the mRNA transcript by their forward rates.</p>
+<p><strong>WARNING</strong> This cannot take into account collisions, if you want to simulate collisions you must use stochastic simulations.
+If you dont know if your system will encounter heavy collisions use the following rule of thumbs:</p>
+<blockquote>
+<div><p>ki ~ min(kelong)  or ki &gt;=  L_transcript / ( 1/np.sum(1/kelong))</p>
+</div></blockquote>
+<p>these correspond to a single slow codon causing a jam or v_in &gt;= v_out of the total system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>k</strong> (<em>list</em>) – elongation rates [ke…., kt].</p></li>
+<li><p><strong>t</strong> (<em>numpy array / list</em>) – time vector.</p></li>
+<li><p><strong>x0</strong> (<em>numpy array</em>) – x0, 1xL_transcript with 1 for ribosomes occupying that location.</p></li>
+<li><p><strong>ki</strong> (<em>float</em>) – initation rate.</p></li>
+<li><p><strong>pl</strong> (<em>numpy array</em>) – probe location array, 0s and 1s.</p></li>
+<li><p><strong>bins</strong> (<em>numpy array</em><em>, </em><em>optional</em>) – binning array. The default is None.</p></li>
+<li><p><strong>corr</strong> (<em>Bool</em><em>, </em><em>optional</em>) – calculate the analytical correlation of intensity, <strong>THIS WILL TAKE A LONG TIME</strong>. The default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ode_soln</strong> – ODE solution object.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ODEsoln OBJ</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationSolvers.TranslationSolvers.solve_ssa">
+<code class="sig-name descname">solve_ssa</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ke</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">ki</span><span class="o">=</span><span class="default_value">0.33</span></em>, <em class="sig-param"><span class="n">kt</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">x0</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">n_traj</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">bins</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">low_memory</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">perturb</span><span class="o">=</span><span class="default_value">[0, 0, 0]</span></em>, <em class="sig-param"><span class="n">leaky_probes</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">kprobe</span><span class="o">=</span><span class="default_value">array([1.0])</span></em>, <em class="sig-param"><span class="n">record_stats</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">probe_vec</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">probe_loc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">kon</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">koff</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">bursting</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">rib_prealloc</span><span class="o">=</span><span class="default_value">200</span></em>, <em class="sig-param"><span class="n">dynamic_prealloc</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationSolvers.TranslationSolvers.solve_ssa" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve a stochastic simulation of ribosomes on an mRNA transcript given codon dependent rates (TASEP)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ke</strong> (<em>list</em>) – list of kelongation rates, can be accessed via a protein object by POI.kelong.</p></li>
+<li><p><strong>t</strong> (<em>list</em><em>, </em><em>arr</em>) – a list/array of times to run the simulation for.</p></li>
+<li><p><strong>ki</strong> (<em>float</em><em>, </em><em>optional</em>) – Initiation Rate. The default is .33 1/time.</p></li>
+<li><p><strong>kt</strong> (<em>float</em><em>, </em><em>optional</em>) – Termination Rate. The default is 10 1/time.</p></li>
+<li><p><strong>x0</strong> (<em>numpy array</em><em>, </em><em>optional</em>) – 1xRibsomes max intial condition. The default is [] (no intial condition).</p></li>
+<li><p><strong>n_traj</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of trajectories to simulate. The default is 100.</p></li>
+<li><p><strong>bins</strong> (<em>numpy array</em><em>, </em><em>optional</em>) – binning key array, for example [2,2,2,2,2] would bin a 10 length ke into 5 bins. The default is None.</p></li>
+<li><p><strong>low_memory</strong> (<em>Bool</em><em>, </em><em>optional</em>) – Use lower memory when simulating, meaning dont keep track of ribosome positions over time, just the Intensity. The default is True.</p></li>
+<li><p><strong>perturb</strong> (<em>list</em><em> [</em><em>bool</em><em>, </em><em>bool</em><em>, </em><em>float</em><em>]</em><em>, </em><em>optional</em>) – Apply a pertubation [frap, inhibitor, application time], for example [1,0,50] would apply frap at time 50. The default is [0,0,0].</p></li>
+<li><p><strong>leaky_probes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use leaky probes with a probability kprobe for binding when passing each epitope. The default is False.</p></li>
+<li><p><strong>kprobe</strong> (<em>list of floats</em><em>, </em><em>optional</em>) – probabilities for each probe to bind, for example a two color system should have [.1,.9] for 10% chance of color 1 binding, and 90% of color two binding on each epitope. The default is np.ones(1).</p></li>
+<li><p><strong>record_stats</strong> (<em>bool</em><em>, </em><em>optional</em>) – Record stats such as collisions or ribosome dwell times. The default is False.</p></li>
+<li><p><strong>probe_vec</strong> (<em>numpy array</em><em>, </em><em>optional</em>) – probe cumsum to convert to Intensities Ncolor x L_transcript. If left blank will use POI. The default is None.</p></li>
+<li><p><strong>probe_loc</strong> (<em>numpy array</em><em>, </em><em>optional</em>) – probe locations Ncolor x L_transcript with 1 for epitope locations, 0 otherwise. If left blank will use POI. The default is None.</p></li>
+<li><p><strong>kon</strong> (<em>float</em><em>, </em><em>optional</em>) – on rate for bursting. The default is 1.</p></li>
+<li><p><strong>koff</strong> (<em>float</em><em>, </em><em>optional</em>) – off rate for bursting. The default is 1.</p></li>
+<li><p><strong>bursting</strong> (<em>bool</em><em>, </em><em>optional</em>) – use a on/off bursting dynamic for initiation. The default is False.</p></li>
+<li><p><strong>rib_prealloc</strong> (<em>int</em><em>, </em><em>optional</em>) – how many ribosomes to consider binding at a time, for a transcript the maximum that can bind at a time is L/9. The default is 200.</p></li>
+<li><p><strong>dynamic_prealloc</strong> (<em>bool</em><em>, </em><em>optional</em>) – calculate the expeted number of maximum ribosomes and use that to preallocate memory. The default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ssa_obj</strong> – returns a container object containing all the stats from the simulation, such as intensity.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SSA_Soln_obj</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationSolvers.TranslationSolvers.solve_ssa_set_conditions">
+<code class="sig-name descname">solve_ssa_set_conditions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationSolvers.TranslationSolvers.solve_ssa_set_conditions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.TranslationSolvers.TranslationSolvers.solve_ssa_trna">
+<code class="sig-name descname">solve_ssa_trna</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">k_index</span></em>, <em class="sig-param"><span class="n">k_diffusion</span></em>, <em class="sig-param"><span class="n">k_bind</span></em>, <em class="sig-param"><span class="n">kelong</span></em>, <em class="sig-param"><span class="n">k_compl</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">x0</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">k_trna</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">perturb</span><span class="o">=</span><span class="default_value">[0, 0, 0]</span></em>, <em class="sig-param"><span class="n">leaky_probes</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">kprobe</span><span class="o">=</span><span class="default_value">array([1.0])</span></em>, <em class="sig-param"><span class="n">probe_vec</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">probe_loc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">kon</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">koff</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">bursting</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">n_traj</span><span class="o">=</span><span class="default_value">10</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.TranslationSolvers.TranslationSolvers.solve_ssa_trna" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.expv">
+<span id="rsnapsim-expv-module"></span><h2>rsnapsim.expv module<a class="headerlink" href="#module-rsnapsim.expv" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="rsnapsim.expv.expv">
+<code class="sig-prename descclassname">rsnapsim.expv.</code><code class="sig-name descname">expv</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">A</span></em>, <em class="sig-param"><span class="n">v</span></em>, <em class="sig-param"><span class="n">tol</span><span class="o">=</span><span class="default_value">1e-07</span></em>, <em class="sig-param"><span class="n">m</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">u</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.expv.expv" title="Permalink to this definition">¶</a></dt>
+<dd><p>a python version of expv from
+roger sidje’s expokit. A should be sparse.</p>
+<p><a class="reference external" href="https://www.maths.uq.edu.au/expokit/paper.pdf">https://www.maths.uq.edu.au/expokit/paper.pdf</a></p>
+<p>Produces the analytical solution to the Homogenous ODE solutoin</p>
+<p>dw/dt = A* w(t) with w(0) = v
+dw/dt = A* w(t) + u with w(0) = v TODO add this &lt;–</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t</strong> (<em>timepoint to solve</em>) – time vector to solve the ODE over</p></li>
+<li><p><strong>A</strong> (<em>ndarray</em><em> (</em><em>states x reactions</em><em>)</em>) – The state transition matrix</p></li>
+<li><p><strong>v</strong> (<em>ndarray</em><em> (</em><em>states x 1</em><em>)</em>) – initial state of the system</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>w - Solution</em></p></li>
+<li><p><em>err - Error in approximation</em></p></li>
+<li><p><em>hump - bound approximation</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.expvt">
+<span id="rsnapsim-expvt-module"></span><h2>rsnapsim.expvt module<a class="headerlink" href="#module-rsnapsim.expvt" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="rsnapsim.expvt.expvt">
+<code class="sig-prename descclassname">rsnapsim.expvt.</code><code class="sig-name descname">expvt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tvec</span></em>, <em class="sig-param"><span class="n">A</span></em>, <em class="sig-param"><span class="n">v</span></em>, <em class="sig-param"><span class="n">tol</span><span class="o">=</span><span class="default_value">1e-07</span></em>, <em class="sig-param"><span class="n">m</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">u</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.expvt.expvt" title="Permalink to this definition">¶</a></dt>
+<dd><p>a python version of expv from
+roger sidje’s expokit. A should be sparse.</p>
+<p><a class="reference external" href="https://www.maths.uq.edu.au/expokit/paper.pdf">https://www.maths.uq.edu.au/expokit/paper.pdf</a></p>
+<p>Produces the analytical solution to the Homogenous ODE solutoin</p>
+<p>dw/dt = A* w(t) with w(0) = v
+dw/dt = A* w(t) + u with w(0) = v TODO add this &lt;–</p>
+<p>Returns the solution over time from one integration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t</strong> (<em>ndarray</em><em> (</em><em>1 x time</em><em>)</em>) – time vector to solve the ODE over</p></li>
+<li><p><strong>A</strong> (<em>ndarray</em><em> (</em><em>states x reactions</em><em>)</em>) – The state transition matrix</p></li>
+<li><p><strong>v</strong> (<em>ndarray</em><em> (</em><em>states x 1</em><em>)</em>) – initial state of the system</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>w - Solution</em></p></li>
+<li><p><em>err - Error in approximation</em></p></li>
+<li><p><em>hump - bound approximation</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.generic_solvers">
+<span id="rsnapsim-generic-solvers-module"></span><h2>rsnapsim.generic_solvers module<a class="headerlink" href="#module-rsnapsim.generic_solvers" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 17:52:28 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.generic_solvers.GenericFSP">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.generic_solvers.</code><code class="sig-name descname">GenericFSP</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ti</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">tf</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">xi</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">A</span><span class="o">=</span><span class="default_value">array([], dtype=float64)</span></em>, <em class="sig-param"><span class="n">ptimes</span><span class="o">=</span><span class="default_value">100</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericFSP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericFSP.gettvec">
+<code class="sig-name descname">gettvec</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericFSP.gettvec" title="Permalink to this definition">¶</a></dt>
+<dd><p>get vector of times</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericFSP.updateparams">
+<code class="sig-name descname">updateparams</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericFSP.updateparams" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.generic_solvers.GenericModel">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.generic_solvers.</code><code class="sig-name descname">GenericModel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ti</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ODE</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ptimes</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">xi</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#rsnapsim.generic_solvers.GenericSSA" title="rsnapsim.generic_solvers.GenericSSA"><code class="xref py py-class docutils literal notranslate"><span class="pre">rsnapsim.generic_solvers.GenericSSA</span></code></a>, <a class="reference internal" href="#rsnapsim.generic_solvers.GenericODE" title="rsnapsim.generic_solvers.GenericODE"><code class="xref py py-class docutils literal notranslate"><span class="pre">rsnapsim.generic_solvers.GenericODE</span></code></a></p>
+<p>define a generic model to run SSA,ODE~may add FSP analysis here one day</p>
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericModel.gettvec">
+<code class="sig-name descname">gettvec</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericModel.gettvec" title="Permalink to this definition">¶</a></dt>
+<dd><p>get vector of times</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericModel.updateparams">
+<code class="sig-name descname">updateparams</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericModel.updateparams" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.generic_solvers.GenericODE">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.generic_solvers.</code><code class="sig-name descname">GenericODE</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ti</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ODE</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ptimes</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">xi</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericODE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericODE.gettvec">
+<code class="sig-name descname">gettvec</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericODE.gettvec" title="Permalink to this definition">¶</a></dt>
+<dd><p>get vector of times</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericODE.updateparams">
+<code class="sig-name descname">updateparams</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericODE.updateparams" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.generic_solvers.GenericOpt">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.generic_solvers.</code><code class="sig-name descname">GenericOpt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.cacheitem">
+<code class="sig-name descname">cacheitem</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">item</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.cacheitem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.cachepars">
+<code class="sig-name descname">cachepars</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.cachepars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.chisq">
+<code class="sig-name descname">chisq</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.chisq" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.clearcache">
+<code class="sig-name descname">clearcache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.clearcache" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.genetic">
+<code class="sig-name descname">genetic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.genetic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.getoptfun">
+<code class="sig-name descname">getoptfun</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.getoptfun" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.getpars">
+<code class="sig-name descname">getpars</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.getpars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.getsimdata">
+<code class="sig-name descname">getsimdata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.getsimdata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.kld">
+<code class="sig-name descname">kld</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.kld" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.lin_opt">
+<code class="sig-name descname">lin_opt</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.lin_opt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.methast">
+<code class="sig-name descname">methast</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">N</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">burn</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">stepsize</span><span class="o">=</span><span class="default_value">5</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.methast" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.parplot">
+<code class="sig-name descname">parplot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">s</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="o">=</span><span class="default_value">0.5</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.parplot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.setpars">
+<code class="sig-name descname">setpars</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parval</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.setpars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.sim_anneal">
+<code class="sig-name descname">sim_anneal</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.sim_anneal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericOpt.sse">
+<code class="sig-name descname">sse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericOpt.sse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.generic_solvers.GenericSSA">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.generic_solvers.</code><code class="sig-name descname">GenericSSA</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">type</span><span class="o">=</span><span class="default_value">'linear'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericSSA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericSSA.getW0">
+<code class="sig-name descname">getW0</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericSSA.getW0" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericSSA.getW1">
+<code class="sig-name descname">getW1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericSSA.getW1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericSSA.gettvec">
+<code class="sig-name descname">gettvec</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericSSA.gettvec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericSSA.setpar">
+<code class="sig-name descname">setpar</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">val</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericSSA.setpar" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericSSA.updateparams">
+<code class="sig-name descname">updateparams</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericSSA.updateparams" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.generic_solvers.GenericStats">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.generic_solvers.</code><code class="sig-name descname">GenericStats</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericStats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>a class of static functions to analyze data</p>
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericStats.get_acc">
+<em class="property">static </em><code class="sig-name descname">get_acc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">one_sided</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">trunc</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericStats.get_acc" title="Permalink to this definition">¶</a></dt>
+<dd><p>a function that return the statistical autocorreletion of data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericStats.get_acc2">
+<em class="property">static </em><code class="sig-name descname">get_acc2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">trunc</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericStats.get_acc2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericStats.get_curvature">
+<em class="property">static </em><code class="sig-name descname">get_curvature</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">h</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericStats.get_curvature" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericStats.get_fastacc2">
+<em class="property">static </em><code class="sig-name descname">get_fastacc2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">trunc</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericStats.get_fastacc2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericStats.get_kld">
+<em class="property">static </em><code class="sig-name descname">get_kld</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">p</span></em>, <em class="sig-param"><span class="n">q</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericStats.get_kld" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the kullback-leibler divergence between the distributions
+p and q.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericStats.get_means">
+<em class="property">static </em><code class="sig-name descname">get_means</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">time</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericStats.get_means" title="Permalink to this definition">¶</a></dt>
+<dd><p>a function that returns the statistical mean of data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericStats.get_sse">
+<em class="property">static </em><code class="sig-name descname">get_sse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data1</span></em>, <em class="sig-param"><span class="n">data2</span></em>, <em class="sig-param"><span class="n">axis</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericStats.get_sse" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculates sum of squared error of two numpy array datasets</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericStats.get_var">
+<em class="property">static </em><code class="sig-name descname">get_var</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">time</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericStats.get_var" title="Permalink to this definition">¶</a></dt>
+<dd><p>a function that returns statistical variance of data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericStats.get_xcc">
+<em class="property">static </em><code class="sig-name descname">get_xcc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data1</span></em>, <em class="sig-param"><span class="n">data2</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">axis</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">norm</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">trunc</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericStats.get_xcc" title="Permalink to this definition">¶</a></dt>
+<dd><p>a function that returns the statistical crosscorrelation(or autocorrelation)of data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.generic_solvers.GenericStats.normalize">
+<em class="property">static </em><code class="sig-name descname">normalize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericStats.normalize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim.poi">
+<span id="rsnapsim-poi-module"></span><h2>rsnapsim.poi module<a class="headerlink" href="#module-rsnapsim.poi" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Dec 17 18:13:32 2020</p>
+<p>&#64;author: willi</p>
+<dl class="py class">
+<dt id="rsnapsim.poi.poi">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.poi.</code><code class="sig-name descname">poi</code><a class="headerlink" href="#rsnapsim.poi.poi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt id="rsnapsim.poi.poi.aa_seq">
+<code class="sig-name descname">aa_seq</code><a class="headerlink" href="#rsnapsim.poi.poi.aa_seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>amino acid sequence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.poi.poi.nt_seq">
+<code class="sig-name descname">nt_seq</code><a class="headerlink" href="#rsnapsim.poi.poi.nt_seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>nucleotide sequence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.poi.poi.gene_length">
+<code class="sig-name descname">gene_length</code><a class="headerlink" href="#rsnapsim.poi.poi.gene_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>length of the non-tag region if applicable</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.poi.poi.tag_length">
+<code class="sig-name descname">tag_length</code><a class="headerlink" href="#rsnapsim.poi.poi.tag_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>length of the tag region if applicable</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.poi.poi.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#rsnapsim.poi.poi.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>the name of the transcript</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.poi.poi.tag_types">
+<code class="sig-name descname">tag_types</code><a class="headerlink" href="#rsnapsim.poi.poi.tag_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of tag types</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.poi.poi.tag_epitopes">
+<code class="sig-name descname">tag_epitopes</code><a class="headerlink" href="#rsnapsim.poi.poi.tag_epitopes" title="Permalink to this definition">¶</a></dt>
+<dd><p>tag epitope dictionary: keys are the tag name, values are the tag nt seq</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.poi.poi.ki">
+<code class="sig-name descname">ki</code><a class="headerlink" href="#rsnapsim.poi.poi.ki" title="Permalink to this definition">¶</a></dt>
+<dd><p>initation rate</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.poi.poi.ke_mu">
+<code class="sig-name descname">ke_mu</code><a class="headerlink" href="#rsnapsim.poi.poi.ke_mu" title="Permalink to this definition">¶</a></dt>
+<dd><p>average elongation rate</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.poi.poi.kt">
+<code class="sig-name descname">kt</code><a class="headerlink" href="#rsnapsim.poi.poi.kt" title="Permalink to this definition">¶</a></dt>
+<dd><p>termination rate</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.CAI">
+<em class="property">property </em><code class="sig-name descname">CAI</code><a class="headerlink" href="#rsnapsim.poi.poi.CAI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Geometric mean of the weight of to each codon in a transcript.</p>
+<p>..[1] <a class="reference external" href="https://en.wikipedia.org/wiki/Codon_Adaptation_Index">https://en.wikipedia.org/wiki/Codon_Adaptation_Index</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>CAI</strong> – Codon Adaptation Index. - a 0-1 measure of codon bias.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.all_k">
+<em class="property">property </em><code class="sig-name descname">all_k</code><a class="headerlink" href="#rsnapsim.poi.poi.all_k" title="Permalink to this definition">¶</a></dt>
+<dd><p>All propensities for simulation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>all propensities vector</strong> – a list of all propensities including kinitiation and ktermination (ki, kt)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.codon_sensitivity">
+<em class="property">property </em><code class="sig-name descname">codon_sensitivity</code><a class="headerlink" href="#rsnapsim.poi.poi.codon_sensitivity" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the percentage usage of each codon within the transcript times its senstitivity rate from cdict</p>
+<p>%codon in transcript * sensitivity</p>
+<p>sensitivity is defined as the ratio of the fastest synonomous codon rate / slowest synonomous codon rate</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>codon_sensitivity</strong></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list of floats</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.codons">
+<em class="property">property </em><code class="sig-name descname">codons</code><a class="headerlink" href="#rsnapsim.poi.poi.codons" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of all codon strings</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list of all codons in the protein sequence.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.generate_3frame_tags">
+<code class="sig-name descname">generate_3frame_tags</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.poi.poi.generate_3frame_tags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates 3 open reading frame tags for model building on the POI obj</p>
+<ul class="simple">
+<li><p>multiframe_epitopes</p></li>
+<li><p>multiframe_nt_seq</p></li>
+<li><p>multiframe_aa_seq</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.get_binned_vectors">
+<code class="sig-name descname">get_binned_vectors</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbins</span></em>, <em class="sig-param"><span class="n">strategy</span><span class="o">=</span><span class="default_value">'intellegent'</span></em>, <em class="sig-param"><span class="n">min_binsize</span><span class="o">=</span><span class="default_value">3</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.poi.poi.get_binned_vectors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.kelong">
+<em class="property">property </em><code class="sig-name descname">kelong</code><a class="headerlink" href="#rsnapsim.poi.poi.kelong" title="Permalink to this definition">¶</a></dt>
+<dd><p>quick method to get the default elongation rates for a transcript from its current ke_mu</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>elongation rates for the protein object, calculated from the default gene copy numbers</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.ktrna_id">
+<em class="property">property </em><code class="sig-name descname">ktrna_id</code><a class="headerlink" href="#rsnapsim.poi.poi.ktrna_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.probe_loc">
+<em class="property">property </em><code class="sig-name descname">probe_loc</code><a class="headerlink" href="#rsnapsim.poi.poi.probe_loc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probe location vector, describes the indexes where the epitope locations are</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>probe_loc</strong> – binary vector of epitope locations over Ncolor x L of the transcript.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.probe_vec">
+<em class="property">property </em><code class="sig-name descname">probe_vec</code><a class="headerlink" href="#rsnapsim.poi.poi.probe_vec" title="Permalink to this definition">¶</a></dt>
+<dd><p>probe vector describes the transformation of ribosome position to intensity value</p>
+<p>For example, a transcript of length 5 with the probe locations</p>
+<p>[0,1,0,1,0]</p>
+<p>would have the following probe vector</p>
+<p>[0,1,1,2,2]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>probe_vec</strong> – cumulative sum vector for Ncolor x L of the transcript.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.visualize_probe">
+<code class="sig-name descname">visualize_probe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">colors</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.poi.poi.visualize_probe" title="Permalink to this definition">¶</a></dt>
+<dd><p>method to visualize the transcript</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>colors</strong> (<em>list</em><em>, </em><em>optional</em>) – Ncolor list of colors to use for the tag colors. The default is cmap gist rainbow.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="rsnapsim-rss-module">
+<h2>rsnapsim.rss module<a class="headerlink" href="#rsnapsim-rss-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-rsnapsim.translation_models">
+<span id="rsnapsim-translation-models-module"></span><h2>rsnapsim.translation_models module<a class="headerlink" href="#module-rsnapsim.translation_models" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="rsnapsim.translation_models.TranslateCoarseCorrs">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.translation_models.</code><code class="sig-name descname">TranslateCoarseCorrs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">N</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateCoarseCorrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#rsnapsim.translation_models.TranslateCorrs" title="rsnapsim.translation_models.TranslateCorrs"><code class="xref py py-class docutils literal notranslate"><span class="pre">rsnapsim.translation_models.TranslateCorrs</span></code></a></p>
+<p>get auto and cross correlations for Coarse Grained model</p>
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateCoarseCorrs.loadfullmodel">
+<code class="sig-name descname">loadfullmodel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateCoarseCorrs.loadfullmodel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateCoarseCorrs.loadprobe">
+<code class="sig-name descname">loadprobe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">probedesign</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateCoarseCorrs.loadprobe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.translation_models.TranslateCorrs">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.translation_models.</code><code class="sig-name descname">TranslateCorrs</code><a class="headerlink" href="#rsnapsim.translation_models.TranslateCorrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#rsnapsim.translation_models.TranslateVars" title="rsnapsim.translation_models.TranslateVars"><code class="xref py py-class docutils literal notranslate"><span class="pre">rsnapsim.translation_models.TranslateVars</span></code></a></p>
+<p>get auto and cross correlations</p>
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateCorrs.correlation_ODE">
+<code class="sig-name descname">correlation_ODE</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateCorrs.correlation_ODE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build variance/covariance ODEs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateCorrs.csolve">
+<code class="sig-name descname">csolve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateCorrs.csolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>update parameters and solve correlations</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateCorrs.faster_solve">
+<code class="sig-name descname">faster_solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateCorrs.faster_solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>a faster way to solve the system of ODEs using
+expokit.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateCorrs.full_solve">
+<code class="sig-name descname">full_solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateCorrs.full_solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateCorrs.get_autonomous_matrix">
+<code class="sig-name descname">get_autonomous_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateCorrs.get_autonomous_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the phi matrix</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateCorrs.get_mean_SS">
+<code class="sig-name descname">get_mean_SS</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateCorrs.get_mean_SS" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the steady state mean values for the system</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateCorrs.get_var_SS">
+<code class="sig-name descname">get_var_SS</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateCorrs.get_var_SS" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the steady state variance for the system
+by solving the lyapunov fn.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.translation_models.TranslateModels">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.translation_models.</code><code class="sig-name descname">TranslateModels</code><a class="headerlink" href="#rsnapsim.translation_models.TranslateModels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateModels.getW0">
+<code class="sig-name descname">getW0</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateModels.getW0" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateModels.getW1">
+<code class="sig-name descname">getW1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateModels.getW1" title="Permalink to this definition">¶</a></dt>
+<dd><p>build a propensity vector that works with my SSA.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateModels.get_fluor_vec">
+<code class="sig-name descname">get_fluor_vec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">binary</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateModels.get_fluor_vec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateModels.getselongation">
+<code class="sig-name descname">getselongation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateModels.getselongation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateModels.map_to_fluorescence">
+<code class="sig-name descname">map_to_fluorescence</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">soln</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateModels.map_to_fluorescence" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateModels.map_to_fluorescence2">
+<code class="sig-name descname">map_to_fluorescence2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">color_1_bin</span></em>, <em class="sig-param"><span class="n">color_2_bin</span></em>, <em class="sig-param"><span class="n">soln</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateModels.map_to_fluorescence2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateModels.map_to_fluorescence3">
+<code class="sig-name descname">map_to_fluorescence3</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">soln</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateModels.map_to_fluorescence3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the fluorescence at steady state</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.translation_models.TranslateODE">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.translation_models.</code><code class="sig-name descname">TranslateODE</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ptimes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ke</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">kb</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fi</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">N</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateODE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#rsnapsim.translation_models.TranslateModels" title="rsnapsim.translation_models.TranslateModels"><code class="xref py py-class docutils literal notranslate"><span class="pre">rsnapsim.translation_models.TranslateModels</span></code></a>, <a class="reference internal" href="#rsnapsim.generic_solvers.GenericODE" title="rsnapsim.generic_solvers.GenericODE"><code class="xref py py-class docutils literal notranslate"><span class="pre">rsnapsim.generic_solvers.GenericODE</span></code></a></p>
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateODE.build_W0">
+<code class="sig-name descname">build_W0</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateODE.build_W0" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateODE.build_W1">
+<code class="sig-name descname">build_W1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateODE.build_W1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateODE.build_probe">
+<code class="sig-name descname">build_probe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">_TranslateODE__placements</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateODE.build_probe" title="Permalink to this definition">¶</a></dt>
+<dd><p>build a default probe on the beginning and end of RNA</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateODE.expv_solve_means">
+<code class="sig-name descname">expv_solve_means</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateODE.expv_solve_means" title="Permalink to this definition">¶</a></dt>
+<dd><p>expv solver for systems that are greater than 100 states</p>
+<p>This is specific for the Translational models as it can be written as A*X</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateODE.get_flu_acc">
+<code class="sig-name descname">get_flu_acc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateODE.get_flu_acc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateODE.getfc">
+<code class="sig-name descname">getfc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateODE.getfc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateODE.getxi">
+<code class="sig-name descname">getxi</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateODE.getxi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateODE.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateODE.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrap generic run to reinitialize variables</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="rsnapsim.translation_models.TranslateVars">
+<em class="property">class </em><code class="sig-prename descclassname">rsnapsim.translation_models.</code><code class="sig-name descname">TranslateVars</code><a class="headerlink" href="#rsnapsim.translation_models.TranslateVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#rsnapsim.translation_models.TranslateODE" title="rsnapsim.translation_models.TranslateODE"><code class="xref py py-class docutils literal notranslate"><span class="pre">rsnapsim.translation_models.TranslateODE</span></code></a></p>
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateVars.variance_ODE">
+<code class="sig-name descname">variance_ODE</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateVars.variance_ODE" title="Permalink to this definition">¶</a></dt>
+<dd><p>build variance/covariance ODEs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.translation_models.TranslateVars.vsolve">
+<code class="sig-name descname">vsolve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">steady_state</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.translation_models.TranslateVars.vsolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrap solve function to have changing parameters
+if steady_state is true, solve the covariances by solving
+the Lyapunov function.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-rsnapsim">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-rsnapsim" title="Permalink to this headline">¶</a></h2>
+<p>Created on Thu Nov 29 19:42:52 2018</p>
+<p>&#64;author: willi</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, William Raymond.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

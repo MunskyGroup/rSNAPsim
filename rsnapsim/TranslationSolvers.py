@@ -273,7 +273,7 @@ class TranslationSolvers():
         '''
         
         codon_dict = CodonDictionaries.CodonDictionaries()
-        mean_u = np.mean(list(codon_dict.strGeneCopy_single.values()) )
+        mean_u =codon_dict.mean_genecopynumber
         ui = []
         for i in range(0, len(nt_seq), 3):
             ui.append(mean_u/ codon_dict.strGeneCopy[nt_seq[i:i+3]])
@@ -621,7 +621,6 @@ class TranslationSolvers():
               
         m.get_autonomous_matrix()
         #m.faster_solve()
-       
         m.get_mean_SS()
         
         mean_ss = m.get_mean_SS()
@@ -636,12 +635,14 @@ class TranslationSolvers():
         if corr:
             
             m.csolve()
+
             norm_acc = np.ravel((m.intensity)/var_I)
             intensity_acc = m.intensity
             ode_soln.intensity_acc = m.intensity
             ode_soln.intensity_acc_norm = norm_acc
-            
 
+    
+   
         ode_soln.mu_state_ss = mean_ss
         ode_soln.var_state_ss = var_ss
 
@@ -649,7 +650,7 @@ class TranslationSolvers():
         ode_soln.mu_I_ss = mean_I
         ode_soln.var_I_ss = var_I
         ode_soln.time = t
-        
+        ode_soln.bins = bins
         ode_soln.N = len(k)
         ode_soln.k = k
         ode_soln.x0 = x0
@@ -658,6 +659,8 @@ class TranslationSolvers():
         ode_soln.prob_loc = pl
         ode_soln.solve_time = time.time()-st
         
+        
+        ode_soln.probvec = m.get_fluor_vec()
         if len(k) > 100:
             ode_soln.solve_method = 'expv'
         else:
@@ -690,8 +693,7 @@ class TranslationSolvers():
         evi = ssa_conditions['perturb'][1]
         intime = ssa_conditions['perturb'][2]
         non_consider_time = ssa_conditions['burnin']
-        
-        print(t)
+    
         
         st = time.time()
         

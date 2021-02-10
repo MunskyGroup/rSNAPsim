@@ -1,7 +1,8 @@
+
 import numpy as np
 import scipy.sparse.linalg as spl
 
-def expv(t,A,v,tol=1.0e-7,m=30, u = 0):
+def expvt(tvec,A,v,tol=1.0e-7,m=30, u = 0):
     '''
     a python version of expv from 
     roger sidje's expokit. A should be sparse.
@@ -13,11 +14,11 @@ def expv(t,A,v,tol=1.0e-7,m=30, u = 0):
     dw/dt = A* w(t) with w(0) = v
     dw/dt = A* w(t) + u with w(0) = v TODO add this <--
     
-    
+    Returns the solution over time from one integration
     
     Parameters
     ----------
-    t : timepoint to solve
+    t : ndarray (1 x time)
         time vector to solve the ODE over
     A : ndarray (states x reactions)
         The state transition matrix
@@ -30,6 +31,8 @@ def expv(t,A,v,tol=1.0e-7,m=30, u = 0):
     err - Error in approximation
     hump - bound approximation
 
+
+    
     '''
     n,n = A.shape 
     if n<m:
@@ -39,7 +42,7 @@ def expv(t,A,v,tol=1.0e-7,m=30, u = 0):
     # set some default parameters
     mxrej = 10.0;  btol  = 1.0e-7; 
     gamma = 0.9; delta = 1.2; 
-    mb    = m; t_out   = abs(t);
+    mb    = m; t_out   = np.max(tvec);
     nstep = 0.0; t_new   = 0.0;
     t_now = 0.0; s_error = 0.0;
     eps = np.finfo(float).eps 
@@ -49,10 +52,19 @@ def expv(t,A,v,tol=1.0e-7,m=30, u = 0):
     fact = (((m+1)/np.exp(1))**(m+1))*np.sqrt(2*np.pi*(m+1));
     t_new = (1.0/anorm)*((fact*tol)/(4.0*beta*anorm))**xm;
     s = 10**(np.floor(np.log10(t_new))-1); t_new = np.ceil(float(t_new)/s)*s; 
-    sgn = np.sign(t); nstep = 0;   
+    sgn = np.sign(t_out); nstep = 0;   
     w = v
     hump  = normv
+    errs = []
+    humps = []
+    wt = []
+    ws = w
+
+    kk = 0
+    err_loc = 0
+
     while t_now < t_out:
+        print(t_now)
         nstep += 1
         t_step = np.min([t_out-t_now,t_new])
         V = np.zeros((n,m+1))
@@ -113,8 +125,22 @@ def expv(t,A,v,tol=1.0e-7,m=30, u = 0):
         s = 10**(np.floor(np.log10(t_new))-1)
         t_new = np.ceil(t_new/float(s))*s
         err_loc = np.max([err_loc,rndoff])
+
+        while t_now > tvec[kk]:
+            print(ws.shape)
+            print(w.shape)
+            ws = np.hstack((ws,np.array([w]).T))
+            errs = errs + [err_loc,]
+            humps = humps + [hump,]
+            kk +=1
+
         s_error = s_error + err_loc
+
+# get last time point
+
     err = s_error
     hump = hump / float(normv)
-    return w, err, hump
-        
+    humps = np.array(humps) / float(normv)
+    errs = np.array(errs)
+    
+    return ws, errs, humps

@@ -28,8 +28,3 @@ rsnapsim.egg-info/SOURCES.txt
 rsnapsim.egg-info/dependency_links.txt
 rsnapsim.egg-info/requires.txt
 rsnapsim.egg-info/top_level.txt
-rsnapsim/ssa_cpp/__init__.py
-rsnapsim/ssa_cpp/benchmark_ssas.py
-rsnapsim/ssa_cpp/setup.py
-rsnapsim/ssa_cpp/test_translation_ssa.py
-rsnapsim/ssa_cpp/test_translation_ssa_lowmem.py
