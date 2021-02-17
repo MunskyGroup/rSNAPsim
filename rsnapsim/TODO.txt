@@ -1,0 +1,3 @@
+poi obj:
+add save and load
+

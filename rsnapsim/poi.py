@@ -248,7 +248,16 @@ class poi():
             self.multiframe_epitopes.append(multiframe_epitopes)
 
                 
-                
+    def save(self):
+        '''
+        TODO
+        '''
+        x=1 
+    def load(self):
+        '''
+        TODO
+        '''
+        x=1
 
     
     def visualize_probe(self, colors=None):

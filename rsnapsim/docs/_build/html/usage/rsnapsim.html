@@ -185,38 +185,157 @@
 <div class="section" id="module-rsnapsim.CodonDictionaries">
 <span id="rsnapsim-codondictionaries-module"></span><h2>rsnapsim.CodonDictionaries module<a class="headerlink" href="#module-rsnapsim.CodonDictionaries" title="Permalink to this headline">¶</a></h2>
 <p>Created on Thu Dec 17 18:06:56 2020</p>
-<p>&#64;author: willi</p>
+<p>&#64;author: William Raymond</p>
 <dl class="py class">
 <dt id="rsnapsim.CodonDictionaries.CodonDictionaries">
 <em class="property">class </em><code class="sig-prename descclassname">rsnapsim.CodonDictionaries.</code><code class="sig-name descname">CodonDictionaries</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Contains:</p>
-<blockquote>
-<div><p>tag_dict - dictionary of tag name and their epitopes
-tag_colors - dictionary of tag name and their colors
-tag_full - dictionary of tag name and their full nt sequence
-aa_keys - keys for amino acids
-aa_table - codon to aa table
-aa_table_r - aa to codons table
-strGeneCopy - codon gene copys for both U|T
-strGeneCopy_single - a codon gene copy number with only T, for average / calculation basis that would be thrown off with including U and T
-trna_ids - tRNA species to ID</p>
-</div></blockquote>
+<dl class="py attribute">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.tag_dict">
+<code class="sig-name descname">tag_dict</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.tag_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>dictionary of tag name and their epitopes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.tag_colors">
+<code class="sig-name descname">tag_colors</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.tag_colors" title="Permalink to this definition">¶</a></dt>
+<dd><p>dictionary of tag name and their colors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.tag_full">
+<code class="sig-name descname">tag_full</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.tag_full" title="Permalink to this definition">¶</a></dt>
+<dd><p>dictionary of tag name and their full nt sequence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.aa_keys">
+<code class="sig-name descname">aa_keys</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.aa_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>keys for amino acids</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.aa_table">
+<code class="sig-name descname">aa_table</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.aa_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>codon to aa table</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.aa_table_r">
+<code class="sig-name descname">aa_table_r</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.aa_table_r" title="Permalink to this definition">¶</a></dt>
+<dd><p>aa to codons table</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.strGeneCopy">
+<code class="sig-name descname">strGeneCopy</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.strGeneCopy" title="Permalink to this definition">¶</a></dt>
+<dd><p>codon gene copys for both U|T</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.strGeneCopy_single">
+<code class="sig-name descname">strGeneCopy_single</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.strGeneCopy_single" title="Permalink to this definition">¶</a></dt>
+<dd><p>a codon gene copy number with only T, for average / calculation basis that would be thrown off with including U and T</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.trna_ids">
+<code class="sig-name descname">trna_ids</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.trna_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>tRNA species to ID</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
-<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.add_tag">
-<code class="sig-name descname">add_tag</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.add_tag" title="Permalink to this definition">¶</a></dt>
-<dd><p>add a custom tag sequence</p>
+<dt id="rsnapsim.CodonDictionaries.CodonDictionaries.add_custom_tag">
+<code class="sig-name descname">add_custom_tag</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.add_custom_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>add a custom tag to custom_tags.txt and the tag dictionaries</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nt_seq</strong> (<em>str</em>) – nucleotide sequence of the tag / epitope.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – name of the tag / epitope .</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt id="rsnapsim.CodonDictionaries.CodonDictionaries.load_tags">
 <code class="sig-name descname">load_tags</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.load_tags" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Opens custom_tags.txt and adds them to the dictionary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="rsnapsim.CodonDictionaries.CodonDictionaries.mean_genecopynumber">
 <em class="property">property </em><code class="sig-name descname">mean_genecopynumber</code><a class="headerlink" href="#rsnapsim.CodonDictionaries.CodonDictionaries.mean_genecopynumber" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Generate the mean copy number from the strGeneCopy dictionary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Mean gene copy number.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -224,33 +343,82 @@ trna_ids - tRNA species to ID</p>
 <div class="section" id="module-rsnapsim.FileParser">
 <span id="rsnapsim-fileparser-module"></span><h2>rsnapsim.FileParser module<a class="headerlink" href="#module-rsnapsim.FileParser" title="Permalink to this headline">¶</a></h2>
 <p>Created on Tue Apr 21 16:29:21 2020</p>
-<p>&#64;author: willi</p>
+<p>&#64;author: William Raymond</p>
 <dl class="py class">
 <dt id="rsnapsim.FileParser.FileParser">
 <em class="property">class </em><code class="sig-prename descclassname">rsnapsim.FileParser.</code><code class="sig-name descname">FileParser</code><a class="headerlink" href="#rsnapsim.FileParser.FileParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class to parse incoming files</p>
+<p>TODO: Extend this for psuedouridine /m6a / modification dictionary</p>
 <dl class="py method">
 <dt id="rsnapsim.FileParser.FileParser.clean_seq">
 <code class="sig-name descname">clean_seq</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">seq</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.FileParser.FileParser.clean_seq" title="Permalink to this definition">¶</a></dt>
-<dd><p>clean the sequences to lowercase only a, u, g, c</p>
+<dd><p>Return an mrna sequence of lowercase a,u,c,g from IPUAC substitutions</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>this code will replace substitutive nucleotides with preferential order a, g , u , c. for example: N (any base) is set to A, W (T,U, or A) is set to A, S (C or G) is set to G</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>seq</strong> (<em>str</em>) – sequence string.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>seq</strong> – cleaned sequence str (only lowercase a,u,c,g).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt id="rsnapsim.FileParser.FileParser.get_description">
 <code class="sig-name descname">get_description</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.FileParser.FileParser.get_description" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>attempt to find the transcript description from a file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>path</em>) – path to file.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>transcript description or “unknown”.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="rsnapsim.FileParser.FileParser.get_name">
 <code class="sig-name descname">get_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.FileParser.FileParser.get_name" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>attempt to find the transcript name from a file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>path</em>) – path to file.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>transcript name or “unknown”.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="rsnapsim.FileParser.FileParser.get_sequence">
 <code class="sig-name descname">get_sequence</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.FileParser.FileParser.get_sequence" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the sequence from several different file types</p>
-<p>Supported: .txt, .dna, .gb, .fasta</p>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>path</em>) – Path to the file to open.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>mRNA sequence string.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -259,7 +427,7 @@ trna_ids - tRNA species to ID</p>
 <div class="section" id="module-rsnapsim.GenericMetaData">
 <span id="rsnapsim-genericmetadata-module"></span><h2>rsnapsim.GenericMetaData module<a class="headerlink" href="#module-rsnapsim.GenericMetaData" title="Permalink to this headline">¶</a></h2>
 <p>Created on Thu Dec 17 17:48:33 2020</p>
-<p>&#64;author: willi</p>
+<p>&#64;author: William Raymond</p>
 <dl class="py class">
 <dt id="rsnapsim.GenericMetaData.GenericMetaData">
 <em class="property">class </em><code class="sig-prename descclassname">rsnapsim.GenericMetaData.</code><code class="sig-name descname">GenericMetaData</code><a class="headerlink" href="#rsnapsim.GenericMetaData.GenericMetaData" title="Permalink to this definition">¶</a></dt>
@@ -267,7 +435,16 @@ trna_ids - tRNA species to ID</p>
 <dl class="py method">
 <dt id="rsnapsim.GenericMetaData.GenericMetaData.get">
 <code class="sig-name descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.GenericMetaData.GenericMetaData.get" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>generate and return a metadata dictionary for a solver object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a dictionary of metadata such as solution id, time ran, user, platform and rss version.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -336,7 +513,7 @@ of rna for the model)</p>
 <div class="section" id="module-rsnapsim.IntensityAnalyses">
 <span id="rsnapsim-intensityanalyses-module"></span><h2>rsnapsim.IntensityAnalyses module<a class="headerlink" href="#module-rsnapsim.IntensityAnalyses" title="Permalink to this headline">¶</a></h2>
 <p>Created on Thu Dec 17 11:50:56 2020</p>
-<p>&#64;author: willi</p>
+<p>&#64;author: William Raymond</p>
 <dl class="py class">
 <dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses">
 <em class="property">class </em><code class="sig-prename descclassname">rsnapsim.IntensityAnalyses.</code><code class="sig-name descname">IntensityAnalyses</code><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses" title="Permalink to this definition">¶</a></dt>
@@ -344,8 +521,21 @@ of rna for the model)</p>
 <dl class="py method">
 <dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_acc2">
 <em class="property">static </em><code class="sig-name descname">get_acc2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">trunc</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_acc2" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get autocorrelation function</p>
-<p><em>NOT</em> multi-tau</p>
+<dd><p>return autocorrelation from a data vector via Fourier transform</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>ndarray</em>) – numpy array of data to get the correlation from.</p></li>
+<li><p><strong>trunc</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove non zero entries and only return decreasing entries. The default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>autocorrelation</strong> – autocorrelation function.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -385,24 +575,78 @@ of rna for the model)</p>
 <dl class="py method">
 <dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_fragments">
 <code class="sig-name descname">get_fragments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">position_tensor</span></em>, <em class="sig-param"><span class="n">total_length</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_fragments" title="Permalink to this definition">¶</a></dt>
-<dd><p>attempts to get the individual trajectories back from ribosomal posistion,
-this is by no means a perfect process</p>
+<dd><p>Get individual ribosome trajectories for kymograph generation</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is not perfect process, if the time resolution of a simulation is too coarse this will not be able to rebuild ribosome trajectories. This will fail if ribosomes are moving fast enough between timesteps to pass previously recorded positions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>position_tensor</strong> (<em>ndarray</em>) – Ribosome position tensor:  Nribosomes x Ntime, accessed from SSA_Soln.solutions if a full statistical model was run.</p></li>
+<li><p><strong>total_length</strong> (<em>int</em><em>, </em><em>optional</em>) – Length of the transcript. If left blank it will use the maximum detected ribosome position</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fragtimes</strong> (<em>ndarray</em>) – N_ribosomes x N_longest_time. The individual trajectory times for the positions fragments</p></li>
+<li><p><strong>fragarray</strong> (<em>ndarray</em>) – N_ribosomes x N_position. The individual ribosome trajectory positions</p></li>
+</ul>
+</p>
+</dd>
+</dl>
 </dd></dl>
-
-<dl class="py method">
-<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_frags_ssa_obj">
-<code class="sig-name descname">get_frags_ssa_obj</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ssa_obj</span></em>, <em class="sig-param"><span class="n">total_length</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_frags_ssa_obj" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="py method">
 <dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_g0">
 <code class="sig-name descname">get_g0</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">correlation</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'interp'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_g0" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correlation</strong> (<em>ndarray</em>) – numpy array of a cross or autocovariance.</p></li>
+<li><p><strong>mode</strong> (<em>string</em><em>, </em><em>optional</em>) – <p>the type of G0 shot noise to return,</p>
+<ul>
+<li><p>’Interp’ - will interpolate the g0 position from the G1, G2, and G3 points.</p></li>
+<li><p>’g1’ - (second point) g1 will be returned</p></li>
+<li><p>’g0’ - g0 will be returned (first point)</p></li>
+<li><p>’max’ -maximum of the correlation will be returned</p></li>
+</ul>
+<p>The default is ‘interp’.</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>G0</strong> – point to normalize correlation over.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.normalize_cc">
 <code class="sig-name descname">normalize_cc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">correlation</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'max'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.normalize_cc" title="Permalink to this definition">¶</a></dt>
-<dd><p>normalize cc via either center or maximum.</p>
+<dd><p>normalize a cross correlation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>correlation</strong> (<em>ndarray</em>) – numpy array of the cross correlation to .</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) – <p>The type of normalization. The default is ‘max’.</p>
+<ul>
+<li><p>’max’ - normalize by maximum point</p></li>
+<li><p>’middle’ - maximize by the middle point</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>norm_cor</strong> – normalized cross correlation.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -411,7 +655,7 @@ this is by no means a perfect process</p>
 <div class="section" id="module-rsnapsim.IntensityAnalysesRagged">
 <span id="rsnapsim-intensityanalysesragged-module"></span><h2>rsnapsim.IntensityAnalysesRagged module<a class="headerlink" href="#module-rsnapsim.IntensityAnalysesRagged" title="Permalink to this headline">¶</a></h2>
 <p>Created on Thu Dec 17 11:49:42 2020</p>
-<p>&#64;author: willi</p>
+<p>&#64;author: William Raymond</p>
 <dl class="py class">
 <dt id="rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged">
 <em class="property">class </em><code class="sig-prename descclassname">rsnapsim.IntensityAnalysesRagged.</code><code class="sig-name descname">IntensityAnalysesRagged</code><a class="headerlink" href="#rsnapsim.IntensityAnalysesRagged.IntensityAnalysesRagged" title="Permalink to this definition">¶</a></dt>
@@ -582,13 +826,11 @@ this is by no means a perfect process</p>
 <dt id="rsnapsim.ProbeVectorFactory.ProbeVectorFactory.get_probe_loc">
 <code class="sig-name descname">get_probe_loc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tag_epitope_dict</span></em>, <em class="sig-param"><span class="n">length</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ProbeVectorFactory.ProbeVectorFactory.get_probe_loc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get 1, 0 probe location from a tag epitope dictionary</p>
-<blockquote>
-<div><p>Ex:   get_probe_bec({Tag_1:[10,15]},20)
-returns:</p>
-<blockquote>
-<div><p>pv = np.array([[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0]])</p>
-</div></blockquote>
-</div></blockquote>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">probef</span><span class="o">.</span><span class="n">get_probe_loc</span><span class="p">({</span><span class="n">Tag_1</span><span class="p">:[</span><span class="mi">10</span><span class="p">,</span><span class="mi">15</span><span class="p">]},</span><span class="mi">20</span><span class="p">)</span>
+<span class="go">pv = np.array([[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0]])</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -609,13 +851,11 @@ returns:</p>
 <dt id="rsnapsim.ProbeVectorFactory.ProbeVectorFactory.get_probe_vec">
 <code class="sig-name descname">get_probe_vec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tag_epitope_dict</span></em>, <em class="sig-param"><span class="n">length</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.ProbeVectorFactory.ProbeVectorFactory.get_probe_vec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a probe vector given a tag epitope dictionary and the Length of the transcript:</p>
-<blockquote>
-<div><p>Ex:   get_probe_bec({Tag_1:[10,15]},20)
-returns:</p>
-<blockquote>
-<div><p>pv = np.array([[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2]])</p>
-</div></blockquote>
-</div></blockquote>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">probef</span><span class="o">.</span><span class="n">get_probe_vec</span><span class="p">({</span><span class="n">Tag_1</span><span class="p">:[</span><span class="mi">10</span><span class="p">,</span><span class="mi">15</span><span class="p">]},</span><span class="mi">20</span><span class="p">)</span>
+<span class="go">np.array([[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2]])</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -672,7 +912,22 @@ this function will fail</p>
 <dl class="py method">
 <dt id="rsnapsim.PropensityFactory.PropensityFactory.bin_k">
 <em class="property">static </em><code class="sig-name descname">bin_k</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">k</span></em>, <em class="sig-param"><span class="n">inds</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory.bin_k" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Generate a k_binned from a given indexing vector</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>k</strong> (<em>array like</em>) – propensity list or ndarray.</p></li>
+<li><p><strong>inds</strong> (<em>ndarray</em>) – numpy array of index locations, can be generated from even_bin() or intellegent_bin().</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>k_binned</strong> – propensity rates for the proposed binning strategy.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="rsnapsim.PropensityFactory.PropensityFactory.even_bin">
@@ -716,14 +971,24 @@ this function will fail</p>
 
 <dl class="py method">
 <dt id="rsnapsim.PropensityFactory.PropensityFactory.get_k">
-<code class="sig-name descname">get_k</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em>, <em class="sig-param"><span class="n">k_init</span></em>, <em class="sig-param"><span class="n">k_elong_mean</span></em>, <em class="sig-param"><span class="n">k_end</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory.get_k" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns all propensities for a given nucleotide sequence</p>
-<p><em>args</em></p>
-<blockquote>
-<div><p><strong>nt_seq</strong>,  nucleotide sequence as a string</p>
-<p><strong>k_initiation</strong>, initiation rate of ribosome binding</p>
-<p><strong>k_elong_mean</strong>, average rate of elgonation experimentally found</p>
-</div></blockquote>
+<code class="sig-name descname">get_k</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em>, <em class="sig-param"><span class="n">k_init</span></em>, <em class="sig-param"><span class="n">k_elong_mean</span></em>, <em class="sig-param"><span class="n">k_term</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory.get_k" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all propensity functions for a given kinit, kelong_mu, and k termination</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nt_seq</strong> (<em>string</em>) – nucleotide sequence.</p></li>
+<li><p><strong>k_init</strong> (<em>float</em>) – initation rate.</p></li>
+<li><p><strong>k_elong_mean</strong> (<em>float</em>) – average kelongation rate for the transcript.</p></li>
+<li><p><strong>k_term</strong> (<em>float</em>) – termination rate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>all_k</strong> – list of propensity values per location + initiation and termination at respective ends.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -733,7 +998,7 @@ this function will fail</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nt_seq</strong> (<em>str</em>) – nucleotide sequence.</p></li>
-<li><p><strong>k_elong_mean</strong> (<em>float</em>) – mean elongation rate aa/s.</p></li>
+<li><p><strong>k_elong_mean</strong> (<em>float</em>) – mean elongation rate aa/time.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -753,7 +1018,19 @@ this function will fail</p>
 <dl class="py method">
 <dt id="rsnapsim.PropensityFactory.PropensityFactory.get_trna_ids">
 <code class="sig-name descname">get_trna_ids</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt_seq</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.PropensityFactory.PropensityFactory.get_trna_ids" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Return tRNA ids 0-60 for a given nt_seq</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nt_seq</strong> (<em>str</em>) – nucleotide sequence.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of trna IDs 0-60 (one for each codon).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="rsnapsim.PropensityFactory.PropensityFactory.intellegent_bin">
@@ -1496,7 +1773,7 @@ dw/dt = A* w(t) + u with w(0) = v TODO add this &lt;–</p>
 <div class="section" id="module-rsnapsim.generic_solvers">
 <span id="rsnapsim-generic-solvers-module"></span><h2>rsnapsim.generic_solvers module<a class="headerlink" href="#module-rsnapsim.generic_solvers" title="Permalink to this headline">¶</a></h2>
 <p>Created on Thu Dec 17 17:52:28 2020</p>
-<p>&#64;author: willi</p>
+<p>&#64;author: Micheal May, Zach Fox and Will Raymond</p>
 <dl class="py class">
 <dt id="rsnapsim.generic_solvers.GenericFSP">
 <em class="property">class </em><code class="sig-prename descclassname">rsnapsim.generic_solvers.</code><code class="sig-name descname">GenericFSP</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ti</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">tf</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">xi</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">A</span><span class="o">=</span><span class="default_value">array([], dtype=float64)</span></em>, <em class="sig-param"><span class="n">ptimes</span><span class="o">=</span><span class="default_value">100</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.generic_solvers.GenericFSP" title="Permalink to this definition">¶</a></dt>
@@ -1952,6 +2229,12 @@ p and q.</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt id="rsnapsim.poi.poi.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.poi.poi.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="rsnapsim.poi.poi.probe_loc">
 <em class="property">property </em><code class="sig-name descname">probe_loc</code><a class="headerlink" href="#rsnapsim.poi.poi.probe_loc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Probe location vector, describes the indexes where the epitope locations are</p>
@@ -1981,6 +2264,12 @@ p and q.</p>
 <dd class="field-even"><p>ndarray</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="rsnapsim.poi.poi.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.poi.poi.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO</p>
 </dd></dl>
 
 <dl class="py method">

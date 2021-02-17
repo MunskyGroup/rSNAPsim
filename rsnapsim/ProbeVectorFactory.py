@@ -16,9 +16,11 @@ class ProbeVectorFactory():
         '''
         Generate a probe vector given a tag epitope dictionary and the Length of the transcript:
             
-            Ex:   get_probe_bec({Tag_1:[10,15]},20)
-            returns:
-                pv = np.array([[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2]])
+        Examples
+        --------
+        
+        >>> probef.get_probe_vec({Tag_1:[10,15]},20)
+        np.array([[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2]])
         
 
         Parameters
@@ -45,10 +47,12 @@ class ProbeVectorFactory():
         '''
         Get 1, 0 probe location from a tag epitope dictionary
 
-            Ex:   get_probe_bec({Tag_1:[10,15]},20)
-            returns:
-                pv = np.array([[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0]])
+        Examples
+        --------
         
+        >>> probef.get_probe_loc({Tag_1:[10,15]},20)
+        pv = np.array([[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0]])
+    
 
         Parameters
         ----------

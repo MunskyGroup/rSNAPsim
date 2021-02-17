@@ -2,7 +2,7 @@
 """
 Created on Thu Dec 17 18:06:56 2020
 
-@author: willi
+@author: William Raymond
 """
 import numpy as np
 
@@ -14,17 +14,27 @@ This is a dictionary object that handles everything dealing with tag sequences a
 
 class CodonDictionaries():
     '''
-    Contains: 
+    Attributes
+    ----------
         
-       tag_dict - dictionary of tag name and their epitopes
-       tag_colors - dictionary of tag name and their colors
-       tag_full - dictionary of tag name and their full nt sequence
-       aa_keys - keys for amino acids
-       aa_table - codon to aa table
-       aa_table_r - aa to codons table
-       strGeneCopy - codon gene copys for both U|T
-       strGeneCopy_single - a codon gene copy number with only T, for average / calculation basis that would be thrown off with including U and T
-       trna_ids - tRNA species to ID
+    tag_dict: dict
+        dictionary of tag name and their epitopes
+    tag_colors: dict
+        dictionary of tag name and their colors
+    tag_full: dict
+        dictionary of tag name and their full nt sequence
+    aa_keys: list
+        keys for amino acids
+    aa_table: dict
+        codon to aa table
+    aa_table_r: dict
+        aa to codons table
+    strGeneCopy: dict
+        codon gene copys for both U|T
+    strGeneCopy_single: dict
+        a codon gene copy number with only T, for average / calculation basis that would be thrown off with including U and T
+    trna_ids: list
+        tRNA species to ID
        
     '''
     
@@ -290,11 +300,28 @@ class CodonDictionaries():
 
     @property
     def mean_genecopynumber(self):
+        '''
+        Generate the mean copy number from the strGeneCopy dictionary
+
+        Returns
+        -------
+        float
+            Mean gene copy number.
+
+        '''
         keys = ['TTT', 'TCT', 'TAT', 'TGT', 'TTC', 'TCC', 'TAC', 'TGC', 'TTA', 'TCA', 'TAA', 'TGA', 'TTG', 'TCG', 'TAG', 'TGG', 'CTT', 'CCT', 'CAT', 'CGT', 'CTC', 'CCC', 'CAC', 'CGC', 'CTA', 'CCA', 'CAA', 'CGA', 'CTG', 'CCG', 'CAG', 'CGG', 'ATT', 'ACT', 'AAT', 'AGT', 'ATC', 'ACC', 'AAC', 'AGC', 'ATA', 'ACA', 'AAA', 'AGA', 'ATG', 'ACG', 'AAG', 'AGG', 'GTT', 'GCT', 'GAT', 'GGT', 'GTC', 'GCC', 'GAC', 'GGC', 'GTA', 'GCA', 'GAA', 'GGA', 'GTG', 'GCG', 'GAG', 'GGG']
         
         return sum([self.strGeneCopy[x] for x in keys ])/len(keys)
 
     def load_tags(self):
+        '''
+        Opens custom_tags.txt and adds them to the dictionary
+
+        Returns
+        -------
+        None.
+
+        '''
         try:
             f= open("custom_tags.txt","r")
         except:
@@ -318,9 +345,21 @@ class CodonDictionaries():
         f.close()
                 
 
-    def add_tag(self,nt_seq,name):
+    def add_custom_tag(self,nt_seq,name):
         '''
-        add a custom tag sequence
+        add a custom tag to custom_tags.txt and the tag dictionaries        
+
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence of the tag / epitope.
+        name : str
+            name of the tag / epitope .
+
+        Returns
+        -------
+        None.
+
         '''
 
         f= open("custom_tags.txt","r")

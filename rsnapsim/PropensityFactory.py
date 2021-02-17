@@ -20,6 +20,22 @@ class PropensityFactory():
 
     @staticmethod
     def bin_k(k,inds):
+        '''
+        Generate a k_binned from a given indexing vector
+
+        Parameters
+        ----------
+        k : array like
+            propensity list or ndarray.
+        inds : ndarray
+            numpy array of index locations, can be generated from even_bin() or intellegent_bin().
+
+        Returns
+        -------
+        k_binned : list
+            propensity rates for the proposed binning strategy.
+
+        '''
         try: 
             k = k.tolist()
         except:
@@ -36,6 +52,20 @@ class PropensityFactory():
 
 
     def get_trna_ids(self,nt_seq):
+        '''
+        Return tRNA ids 0-60 for a given nt_seq
+
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence.
+
+        Returns
+        -------
+        list
+            list of trna IDs 0-60 (one for each codon).
+
+        '''
         
         if '*' in SequenceManipMethods.SequenceManipMethods().nt2aa(nt_seq)[-1]:
             nt_seq = nt_seq[:-3]
@@ -46,18 +76,25 @@ class PropensityFactory():
         
         
 
-    def get_k(self, nt_seq, k_init, k_elong_mean,k_end):
+    def get_k(self, nt_seq, k_init, k_elong_mean,k_term):
         '''
-        returns all propensities for a given nucleotide sequence
+        Returns all propensity functions for a given kinit, kelong_mu, and k termination
 
-        *args*
+        Parameters
+        ----------
+        nt_seq : string
+            nucleotide sequence.
+        k_init : float
+            initation rate.
+        k_elong_mean : float
+            average kelongation rate for the transcript.
+        k_term : float
+            termination rate.
 
-            **nt_seq**,  nucleotide sequence as a string
-
-            **k_initiation**, initiation rate of ribosome binding
-
-            **k_elong_mean**, average rate of elgonation experimentally found
-
+        Returns
+        -------
+        all_k : list
+            list of propensity values per location + initiation and termination at respective ends.
 
         '''
         codons = nt_seq.upper()
@@ -74,7 +111,7 @@ class PropensityFactory():
         mean_tRNA_copynumber = np.mean(list(self.codon_dicts.strGeneCopy_single.values()))
 
         k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
-        all_k = [k_init] + k_elongation.flatten().tolist() + [k_end]
+        all_k = [k_init] + k_elongation.flatten().tolist() + [k_term]
         
         return all_k
     
@@ -86,7 +123,7 @@ class PropensityFactory():
         nt_seq : str
             nucleotide sequence.
         k_elong_mean : float
-            mean elongation rate aa/s.
+            mean elongation rate aa/time.
 
         Returns
         -------

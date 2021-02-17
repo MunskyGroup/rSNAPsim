@@ -2,7 +2,7 @@
 """
 Created on Tue Apr 21 16:29:21 2020
 
-@author: willi
+@author: William Raymond
 """
 
 import re
@@ -21,17 +21,36 @@ import os
 class FileParser():
     '''
     Class to parse incoming files
+    
+    TODO: Extend this for psuedouridine /m6a / modification dictionary
     '''
     def __init__(self):
         self.file = None
         self.letter_dict = ['a','c','u','g']
-        self.sub_dict = {'m':'a','w':'a','r':'g','y':'t','k':'g','s':'g','w':'a','h':'a','n':'a'}       
+        # IPUAC SUBSTITIONS - They need to  adjusted / extended for mrna modifications?
+        self.sub_dict = {'m':'a','w':'a','r':'a','y':'t','k':'g','s':'g','w':'a','h':'a','n':'a','Ψ':'u'}    
+        
         self.test_seq = 'aucuguacguacguaucgaucguguacuggcaaaacguaguagcugagcaucaucuaug'                
         pass    
 
     def clean_seq(self,seq):
         '''
-        clean the sequences to lowercase only a, u, g, c
+        Return an mrna sequence of lowercase a,u,c,g from IPUAC substitutions
+        
+        .. warning:: this code will replace substitutive nucleotides with preferential order a, g , u , c. for example: N (any base) is set to A, W (T,U, or A) is set to A, S (C or G) is set to G
+        
+        
+
+        Parameters
+        ----------
+        seq : str
+            sequence string.
+
+        Returns
+        -------
+        seq : str
+            cleaned sequence str (only lowercase a,u,c,g).
+
         '''
         seq = seq.lower()
         
@@ -44,9 +63,18 @@ class FileParser():
     
     def get_sequence(self,file):
         '''
-        Return the sequence from several different file types
         
-        Supported: .txt, .dna, .gb, .fasta
+
+        Parameters
+        ----------
+        file : path
+            Path to the file to open.
+
+        Returns
+        -------
+        str
+            mRNA sequence string.
+
         '''
         self.__check_valid_file(file)
         extension = file.split('.')[-1] 
@@ -86,7 +114,20 @@ class FileParser():
     
     
     def get_name(self,file):
-        
+        '''
+        attempt to find the transcript name from a file 
+
+        Parameters
+        ----------
+        file : path
+            path to file.
+
+        Returns
+        -------
+        str
+            transcript name or "unknown".
+
+        '''
         self.__check_valid_file(file)
         
         name = 'unknown'
@@ -116,6 +157,20 @@ class FileParser():
     
     
     def get_description(self,file):
+        '''
+        attempt to find the transcript description from a file 
+
+        Parameters
+        ----------
+        file : path
+            path to file.
+
+        Returns
+        -------
+        str
+            transcript description or "unknown".
+
+        '''
         self.__check_valid_file(file)
         
         extension = file.split('.')[-1] 

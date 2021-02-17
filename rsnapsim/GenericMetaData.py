@@ -2,7 +2,7 @@
 """
 Created on Thu Dec 17 17:48:33 2020
 
-@author: willi
+@author: William Raymond
 """
 
 import rsnapsim as rSNAPsim
@@ -23,5 +23,14 @@ class GenericMetaData():
         self.python_version = sys.version
         
     def get(self):
+        '''
+        generate and return a metadata dictionary for a solver object
+
+        Returns
+        -------
+        dict
+            a dictionary of metadata such as solution id, time ran, user, platform and rss version.
+
+        '''
         return self.__dict__
         
