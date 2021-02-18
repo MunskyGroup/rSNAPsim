@@ -917,7 +917,7 @@ class TranslationSolvers():
         for i in range(n_traj):
             soln = all_results[i, :].reshape((N_rib, len(t)))
        
-
+            
             validind = np.where(np.sum(soln,axis=1)!=0)[0]
             
 
@@ -1518,8 +1518,16 @@ class TranslationSolvers():
         validind = 0
         riblocs = []
         for i in range(len(all_rib_loc)):
-            if np.where(np.sum(all_rib_loc[i].T,axis=1)!=0)[0][-1] > validind:
-                validind = np.where(np.sum(all_rib_loc[i].T,axis=1)!=0)[0][-1]
+            try: 
+                
+        
+                if np.where(np.sum(all_rib_loc[i].T,axis=1)!=0)[0][-1] > validind:
+                    
+                    validind = np.where(np.sum(all_rib_loc[i].T,axis=1)!=0)[0][-1]
+                    
+                        #there was a blank 
+            except:
+                pass
                 
                 
         all_rib_loc = all_rib_loc[:,:,:validind]
