@@ -33,6 +33,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -563,13 +564,42 @@ of rna for the model)</p>
 
 <dl class="py method">
 <dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_crosscorr">
-<code class="sig-name descname">get_crosscorr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity_vecs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_crosscorr" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.get_crosscorr2">
-<code class="sig-name descname">get_crosscorr2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iv1</span></em>, <em class="sig-param"><span class="n">iv2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_crosscorr2" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns the autocorrelations</p>
+<code class="sig-name descname">get_crosscorr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">intensity_vecs</span></em>, <em class="sig-param"><span class="n">norm</span><span class="o">=</span><span class="default_value">'indiv'</span></em>, <em class="sig-param"><span class="n">g0</span><span class="o">=</span><span class="default_value">'indiv_center'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.get_crosscorr" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>return a cross correlation tensor from an intensity tensor of (ncolor, ntime, ntraj)</p>
+<dl class="simple">
+<dt>intensity_vecs<span class="classifier">ndarray</span></dt><dd><p>(ncolor, ntime, ntraj) intensity tensor.</p>
+</dd>
+<dt>norm<span class="classifier">str, optional</span></dt><dd><p>Normalization to apply,
+* global - subtract by the global intensity mean for the correlation
+* indiv - subtract by each trajectory’s mean for the correlation
+* raw - do no mean subtraction
+The default is ‘indiv’.</p>
+</dd>
+<dt>g0<span class="classifier">str, optional</span></dt><dd><p>point to normalize the correlation by after correlating
+* global_middle - divide the correlation by the average of the center point of all trajectories
+* indiv_middle - divide the correlation trajectories by their individual center point
+* global_max - divide the correlation trajectories by the global max point
+* indiv_max - divide the correlation trajectories by their individual max point
+* raw - do not divide by a point.</p>
+</dd>
+</dl>
+<dl>
+<dt>cross_corr<span class="classifier">ndarray</span></dt><dd><p>cross correlation tensor,  size (ncolor**2, 2*ntime-1, ntraj).</p>
+</dd>
+<dt>err_crosscorr<span class="classifier">TYPE</span></dt><dd><p>cross correlation standard error estimation.</p>
+<div class="math notranslate nohighlight">
+\[\sigma_{cc} =\]</div>
+</dd>
+</dl>
+</div></blockquote>
+<p>rac{sigma}{sqrt(n_{trajectories})}</p>
+<blockquote>
+<div><dl class="simple">
+<dt>inds<span class="classifier">list</span></dt><dd><p>indices describing which colors were correlated with which.</p>
+</dd>
+</dl>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -626,7 +656,7 @@ of rna for the model)</p>
 
 <dl class="py method">
 <dt id="rsnapsim.IntensityAnalyses.IntensityAnalyses.normalize_cc">
-<code class="sig-name descname">normalize_cc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">correlation</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'max'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.normalize_cc" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">normalize_cc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">correlation</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'global_max'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#rsnapsim.IntensityAnalyses.IntensityAnalyses.normalize_cc" title="Permalink to this definition">¶</a></dt>
 <dd><p>normalize a cross correlation</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

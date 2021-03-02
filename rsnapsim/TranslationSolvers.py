@@ -18,8 +18,6 @@ import time
 
 import os
 
-
-
 ## Search locally for ssa_cpp
 path_to_cpp = ''
 path_to_gen = ''
@@ -385,14 +383,17 @@ class TranslationSolvers():
 
             k_trna = np.array(list(CodonDictionaries().strGeneCopy_single.values()))
         
-        print(k_trna)
+        
         if not provided_probe:
             if provided_protein:
                 probe_vec = self.protein.probe_vec.astype(np.int32)
                 probe_loc = self.protein.probe_loc.astype(np.int32)
             else:
-                print("no provided probe vector, please set the solver.protein with a protein object or provide a probe vector")
-                raise 
+                try:
+                    num = int("string")
+                except ValueError:
+                    print("no provided probe vector, please set the solver.protein with a protein object or provide a probe vector")
+               
         else:
             probe_vec = probe_vec
             
