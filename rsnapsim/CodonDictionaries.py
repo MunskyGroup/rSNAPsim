@@ -128,7 +128,7 @@ class CodonDictionaries():
                           'C':['TGC', 'TGT','UGC','UGU'],
                           'Q':['CAA', 'CAG'],
                           'E':['GAA', 'GAG'],
-                          'G':['GGT', 'GGC', 'GGA', 'GGC','GGU'],
+                          'G':['GGT', 'GGC', 'GGA', 'GGG','GGU'],
                           'H':['CAC', 'CAT','CAU'],
                           'I':['ATT', 'ATC', 'ATA','AUU','AUC','AUA'],
                           'L':['CTA', 'CTC', 'CTG', 'CTT', 'TTA', 'TTG','CUA', 'CUC', 'CUG', 'CUU', 'UUA', 'UUG'],
