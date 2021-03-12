@@ -136,7 +136,7 @@ class CodonDictionaries():
                           'M':['ATG','AUG'],
                           'F':['TTC', 'TTT','UUC','UUU'],
                           'P':['CCT', 'CCC', 'CCG', 'CCA','CCU'],
-                          'S':['TCA', 'TCC', 'TCG', 'TCT','AGC','AGT','UCA','UCC','UCG'],
+                          'S':['TCA', 'TCC', 'TCG', 'TCT','AGC','AGT',  'UCA','UCC','UCG', 'UCU','AGU'],
                           'T':['ACA', 'ACC', 'ACG', 'ACT','ACU'],
                           'W':['TGG','UGG'],
                           'Y':['TAT', 'TAC','UAC','UAU'],
