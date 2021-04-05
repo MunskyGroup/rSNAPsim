@@ -76,7 +76,7 @@ class PropensityFactory():
         
         
 
-    def get_k(self, nt_seq, k_init, k_elong_mean,k_term):
+    def get_k(self, nt_seq, k_init, k_elong_mean,k_term, codon_freq_bias_dict = None):
         '''
         Returns all propensity functions for a given kinit, kelong_mu, and k termination
 
@@ -97,6 +97,10 @@ class PropensityFactory():
             list of propensity values per location + initiation and termination at respective ends.
 
         '''
+        
+        if codon_freq_bias_dict == None:
+            codon_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
+            
         codons = nt_seq.upper()
         
         genelength = int(len(codons)/3)
@@ -106,9 +110,9 @@ class PropensityFactory():
 
      
         for i in range(len(seperated_codons)):
-            tRNA_copynumber[0, i] = self.codon_dicts.strGeneCopy[seperated_codons[i]]
+            tRNA_copynumber[0, i] = codon_dict[seperated_codons[i]]
 
-        mean_tRNA_copynumber = np.mean(list(self.codon_dicts.strGeneCopy_single.values()))
+        mean_tRNA_copynumber = np.mean(list(codon_dict.strGeneCopy_single.values()))
 
         k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
         all_k = [k_init] + k_elongation.flatten().tolist() + [k_term]
@@ -116,7 +120,7 @@ class PropensityFactory():
         return all_k
     
     
-    def get_k_3_frame(self,nt_seq,k_elong_mean):
+    def get_k_3_frame(self,nt_seq,k_elong_mean,codon_freq_bias_dict = None):
         '''
         Parameters
         ----------
@@ -134,6 +138,9 @@ class PropensityFactory():
         '''
         kelongs = []
         
+        if codon_freq_bias_dict == None:
+            codon_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
+            
         for n in range(3):
             if n !=0:
                 codons = nt_seq[n:-(3-n)]
@@ -146,9 +153,9 @@ class PropensityFactory():
 
      
             for i in range(len(seperated_codons)):
-                tRNA_copynumber[0, i] = self.codon_dicts.strGeneCopy[seperated_codons[i]]
+                tRNA_copynumber[0, i] = codon_dict[seperated_codons[i]]
     
-            mean_tRNA_copynumber = np.mean(list(self.codon_dicts.strGeneCopy_single.values()))
+            mean_tRNA_copynumber = np.mean(list(codon_dict.values()))
     
             k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
         

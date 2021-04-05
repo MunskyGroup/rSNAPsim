@@ -29,9 +29,9 @@ class CodonDictionaries():
         codon to aa table
     aa_table_r: dict
         aa to codons table
-    strGeneCopy: dict
+    human_codon_frequency_bias_nakamura: dict
         codon gene copys for both U|T
-    strGeneCopy_single: dict
+    human_codon_frequency_bias_nakamura_single: dict
         a codon gene copy number with only T, for average / calculation basis that would be thrown off with including U and T
     trna_ids: list
         tRNA species to ID
@@ -145,7 +145,7 @@ class CodonDictionaries():
                          }
 
 
-        self.strGeneCopy = {'TTT': 17.6, 'TCT': 15.2, 'TAT': 12.2, 'TGT': 10.6, 'TTC': 20.3,
+        self.human_codon_frequency_bias_nakamura = {'TTT': 17.6, 'TCT': 15.2, 'TAT': 12.2, 'TGT': 10.6, 'TTC': 20.3,
                             'TCC': 17.7, 'TAC': 15.3, 'TGC': 12.6, 'TTA': 7.7, 'TCA': 12.2,
                             'TAA': 1.0, 'TGA': 1.6, 'TTG': 12.9, 'TCG':  4.4, 'TAG': 0.8,
                             'TGG': 13.2, 'CTT': 13.2, 'CCT': 17.5, 'CAT': 10.9, 'CGT': 4.5,
@@ -159,7 +159,7 @@ class CodonDictionaries():
                             'GGC': 22.2, 'GTA':  7.1, 'GCA': 15.8, 'GAA': 29.0, 'GGA': 16.5,
                             'GTG': 28.1, 'GCG': 7.4, 'GAG': 39.6, 'GGG': 16.5}
         
-        self.strGeneCopy_single = {'TTT': 17.6, 'TCT': 15.2, 'TAT': 12.2, 'TGT': 10.6, 'TTC': 20.3,
+        self.human_codon_frequency_bias_nakamura_single = {'TTT': 17.6, 'TCT': 15.2, 'TAT': 12.2, 'TGT': 10.6, 'TTC': 20.3,
                             'TCC': 17.7, 'TAC': 15.3, 'TGC': 12.6, 'TTA': 7.7, 'TCA': 12.2,
                             'TAA': 1.0, 'TGA': 1.6, 'TTG': 12.9, 'TCG':  4.4, 'TAG': 0.8,
                             'TGG': 13.2, 'CTT': 13.2, 'CCT': 17.5, 'CAT': 10.9, 'CGT': 4.5,
@@ -200,15 +200,15 @@ class CodonDictionaries():
         
         
         # add the U codons
-        for key in list(self.strGeneCopy.keys()):
+        for key in list(self.human_codon_frequency_bias_nakamura.keys()):
             if 'T' in key:
-                val = self.strGeneCopy[key]
+                val = self.human_codon_frequency_bias_nakamura[key]
                 newkey = key.replace('T','U')
-                self.strGeneCopy[newkey] = val
+                self.human_codon_frequency_bias_nakamura[newkey] = val
 
 
 
-        self.strGeneCopy_fast = {'GCT': 27.7, 'GCC': 27.7, 'GCA': 27.7, 'GCG': 27.7,  #A
+        self.human_codon_frequency_bias_nakamura_fast = {'GCT': 27.7, 'GCC': 27.7, 'GCA': 27.7, 'GCG': 27.7,  #A
                                  'CGT': 12.2, 'CGC': 12.2, 'CGA': 12.2, 'CGG': 12.2,
                                  'AGA': 12.2, 'AGG': 12.2,   # R
                                  'AAT': 19.1, 'AAC': 19.1,   #N
@@ -235,13 +235,13 @@ class CodonDictionaries():
                                 }
 
 
-        for key in list(self.strGeneCopy_fast.keys()):
+        for key in list(self.human_codon_frequency_bias_nakamura_fast.keys()):
             if 'T' in key:
-                val = self.strGeneCopy_fast[key]
+                val = self.human_codon_frequency_bias_nakamura_fast[key]
                 newkey = key.replace('T','U')
-                self.strGeneCopy_fast[newkey] = val
+                self.human_codon_frequency_bias_nakamura_fast[newkey] = val
 
-        self.strGeneCopy_slow = {'GCT': 7.4, 'GCC': 7.4, 'GCA': 7.4, 'GCG': 7.4,  #A
+        self.human_codon_frequency_bias_nakamura_slow = {'GCT': 7.4, 'GCC': 7.4, 'GCA': 7.4, 'GCG': 7.4,  #A
                                  'CGT': 4.5, 'CGC': 4.5, 'CGA': 4.5, 'CGG': 4.5,
                                  'AGA':4.5, 'AGG':4.5,   #R
                                  'AAT': 17.0, 'AAC':17.0,  #%N
@@ -267,11 +267,11 @@ class CodonDictionaries():
                                  'TAA': 0.8, 'TAG': 0.8, 'TGA': 0.8 #STOP CODON}
                                 }
         
-        for key in list(self.strGeneCopy_slow.keys()):
+        for key in list(self.human_codon_frequency_bias_nakamura_slow.keys()):
             if 'T' in key:
-                val = self.strGeneCopy_slow[key]
+                val = self.human_codon_frequency_bias_nakamura_slow[key]
                 newkey = key.replace('T','U')
-                self.strGeneCopy_slow[newkey] = val
+                self.human_codon_frequency_bias_nakamura_slow[newkey] = val
 
 
         self.fast_codons_value = [27.7, 12.2, 19.1, 25.1, 12.6, 34.2, 39.6, 22.2, 15.1,
@@ -294,14 +294,20 @@ class CodonDictionaries():
                      'ACT', 'TGG', 'TAT', 'GTT', 'TAA']
         self.sensitivity_fast_slow = []
         for i in range(len(codonkeys)):
-            self.sensitivity_fast_slow.append(self.strGeneCopy_fast[codonkeys[i]] / self.strGeneCopy_slow[codonkeys[i]])
+            self.sensitivity_fast_slow.append(self.human_codon_frequency_bias_nakamura_fast[codonkeys[i]] / self.human_codon_frequency_bias_nakamura_slow[codonkeys[i]])
 
         self.load_tags()
+
+
+        self.strCodonFreq = self.human_codon_frequency_bias_nakamura
+        self.strCodonFreq_single = self.human_codon_frequency_bias_nakamura_single
+        self.strCodonFreq_fast = self.human_codon_frequency_bias_nakamura_fast
+        self.strCodonFreq_slow = self.human_codon_frequency_bias_nakamura_slow
 
     @property
     def mean_genecopynumber(self):
         '''
-        Generate the mean copy number from the strGeneCopy dictionary
+        Generate the mean copy number from the human_codon_frequency_bias_nakamura dictionary
 
         Returns
         -------
@@ -311,7 +317,7 @@ class CodonDictionaries():
         '''
         keys = ['TTT', 'TCT', 'TAT', 'TGT', 'TTC', 'TCC', 'TAC', 'TGC', 'TTA', 'TCA', 'TAA', 'TGA', 'TTG', 'TCG', 'TAG', 'TGG', 'CTT', 'CCT', 'CAT', 'CGT', 'CTC', 'CCC', 'CAC', 'CGC', 'CTA', 'CCA', 'CAA', 'CGA', 'CTG', 'CCG', 'CAG', 'CGG', 'ATT', 'ACT', 'AAT', 'AGT', 'ATC', 'ACC', 'AAC', 'AGC', 'ATA', 'ACA', 'AAA', 'AGA', 'ATG', 'ACG', 'AAG', 'AGG', 'GTT', 'GCT', 'GAT', 'GGT', 'GTC', 'GCC', 'GAC', 'GGC', 'GTA', 'GCA', 'GAA', 'GGA', 'GTG', 'GCG', 'GAG', 'GGG']
         
-        return sum([self.strGeneCopy[x] for x in keys ])/len(keys)
+        return sum([self.human_codon_frequency_bias_nakamura[x] for x in keys ])/len(keys)
 
     def load_tags(self):
         '''

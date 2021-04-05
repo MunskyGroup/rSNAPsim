@@ -8,6 +8,9 @@ Created on Thu Nov 29 19:42:52 2018
 from . import CodonDictionaries
 cdict = CodonDictionaries.CodonDictionaries()
 
+from . import CodonDictionaries
+aux_cdict = AuxCodonDicts.AuxCodonDicts()
+
 from . import SequenceManipMethods 
 seqmanip = SequenceManipMethods.SequenceManipMethods()
 

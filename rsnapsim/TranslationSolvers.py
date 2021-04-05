@@ -265,16 +265,18 @@ class TranslationSolvers():
 
 
     
-    def __get_ui(self, nt_seq):
+    def __get_ui(self, nt_seq, cdict = None):
         '''
         return the ratio of average gene copy number / sequence codon copy number
         '''
         
         codon_dict = CodonDictionaries.CodonDictionaries()
+        if cdict == None:
+            cdict = codon_dict.human_codon_frequency_bias_nakamura
         mean_u =codon_dict.mean_genecopynumber
         ui = []
         for i in range(0, len(nt_seq), 3):
-            ui.append(mean_u/ codon_dict.strGeneCopy[nt_seq[i:i+3]])
+            ui.append(mean_u/ cdict[nt_seq[i:i+3]])
         return ui
         
 
@@ -376,12 +378,12 @@ class TranslationSolvers():
             k_trna[0]
         except:
             
-            strGeneCopy = CodonDictionaries().strGeneCopy_single
+            strGeneCopy = CodonDictionaries().human_codon_frequency_bias_nakamura
             strGeneCopy.pop('TAG')
             strGeneCopy.pop('TAA')
             strGeneCopy.pop('TGA')
 
-            k_trna = np.array(list(CodonDictionaries().strGeneCopy_single.values()))
+            k_trna = np.array(list(CodonDictionaries().human_codon_frequency_bias_nakamura.values()))
         
         
         if not provided_probe:

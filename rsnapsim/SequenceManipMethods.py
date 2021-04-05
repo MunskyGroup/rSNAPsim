@@ -48,7 +48,7 @@ class SequenceManipMethods():
         '''
         
         if opt_dict == None:
-            opt_dict = self.codon_dicts.strGeneCopy
+            opt_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
             
         codons = nt_seq.upper()
         seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3    
@@ -81,7 +81,7 @@ class SequenceManipMethods():
         '''
         
         if deopt_dict == None:
-            deopt_dict = self.codon_dicts.strGeneCopy
+            deopt_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
         codons = nt_seq.upper()
         seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3    
         aa = [ self.codon_dicts.aa_table[x] for x in seperated_codons ]     
@@ -235,7 +235,7 @@ class SequenceManipMethods():
                     
         return orfs
     
-    def codon_usage(self, nt_seq):
+    def codon_usage(self, nt_seq, codon_dict = None):
         '''
         Analyzes codon useage from the nucleotide sequence
 
@@ -250,7 +250,9 @@ class SequenceManipMethods():
             **cai**, cai value
 
         '''
-
+        
+        if codon_dict == None:
+            codon_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
 
         codon_usage = np.zeros((1, 21))
         gene_len = len(nt_seq)/3
@@ -265,7 +267,11 @@ class SequenceManipMethods():
 
         cai_codons = []
         for i in range(0, len(nt_seq), 3):
-            cai_codons.append(self.codon_dicts.strGeneCopy[nt_seq[i:i+3]] / self.codon_dicts.strGeneCopy_fast[nt_seq[i:i+3]])
+            synonmous_codons = self.codon_dicts.aa_table_r[self.codon_dicts.aa_table[codon_dict[nt_seq[i:i+3]]]]
+            
+            max_freq = max([codon_dict[x] for x in synonmous_codons])
+            
+            cai_codons.append(codon_dict[nt_seq[i:i+3]] /max_freq)
 
         cai = self.geomean(cai_codons)
 
