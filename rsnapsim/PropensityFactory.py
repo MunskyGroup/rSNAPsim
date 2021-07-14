@@ -112,7 +112,7 @@ class PropensityFactory():
         for i in range(len(seperated_codons)):
             tRNA_copynumber[0, i] = codon_dict[seperated_codons[i]]
 
-        mean_tRNA_copynumber = np.mean(list(codon_dict.strGeneCopy_single.values()))
+        mean_tRNA_copynumber = np.mean(list(codon_dict.values()))
 
         k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
         all_k = [k_init] + k_elongation.flatten().tolist() + [k_term]

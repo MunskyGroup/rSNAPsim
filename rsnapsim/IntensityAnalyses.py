@@ -74,7 +74,15 @@ class IntensityAnalyses():
         nsteps = position_tensor.shape[0]
         k = 0
 
-        ind = np.array([next(j for j in range(0,solutions[k].shape[0]) if int(solutions[k][j, i]) == 0 or int(solutions[k][j, i]) == -1) for i in range(0, solutions[k].shape[1])])
+
+        ind = np.zeros(position_tensor.shape[1]).astype(int)
+        for i in range(position_tensor.shape[1]):
+          tmp = np.where(position_tensor[:,i] == 0)[0]
+          if len(tmp) > 0:
+            ind[i] = np.where(position_tensor[:,i] == 0)[0][0]
+          else:
+            ind[i] = position_tensor.shape[0]-1
+        
         changes = ind[1:] - ind[:-1]
         addindexes = np.where(changes > 0)[0]
         subindexes = np.where(changes < 0)[0]
@@ -137,7 +145,8 @@ class IntensityAnalyses():
                 if len(minusloc) > 1:
                     if m <= truefrags:
                         for n in range(len(minusloc)-1):
-                            iterind = iterind + min(0,traj_ind[minusloc[n]])
+                            iterind = iterind + int(min(0,traj_ind[minusloc[n]]))
+
                             fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten()) 
                             
                             

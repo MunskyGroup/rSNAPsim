@@ -12,6 +12,7 @@ PropensityFactory = PropensityFactory.PropensityFactory
 ProbeVectorFactory = ProbeVectorFactory.ProbeVectorFactory
 
 from . import CodonDictionaries
+CodonDictionaries = CodonDictionaries.CodonDictionaries
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import matplotlib.patches as mpatches
@@ -227,7 +228,7 @@ class poi():
                 self.multiframe_nt_seq.append(self.nt_seq[n:-(3-n)])
         
         cd = CodonDictionaries()
-        smm = SequenceManipMethods(codons_seq)
+        smm = SequenceManipMethods.SequenceManipMethods()
         codons_aa_seq = smm.nt2aa(codons_seq)
         
         for frame in self.multiframe_nt_seq:

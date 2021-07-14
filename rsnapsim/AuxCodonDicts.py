@@ -125,7 +125,7 @@ class AuxCodonDicts():
                                              'AGU':10,'CGU':6,
                                              'UGU':6,'CCA':8,
                                              'AUA':1,'GUA':16,
-                                             'AAC':12,'CAC':18,
+                                             'AAC':12,'CAC':18, #duplicate for doubled up codons
                                              'UAC':7, }
         
         tmpdict = self.__convert_codon_to_anticodon(hg19_trna_gene_number_anticodon)
@@ -234,5 +234,8 @@ class AuxCodonDicts():
     
     
     def load_from_bed(self, bed_file, anticodon=True):
+        return 1
+    
+    def load_freq_from_ccds(self, ccds_fa):
         return 1
         

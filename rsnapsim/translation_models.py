@@ -67,7 +67,7 @@ class TranslateModels:
         Get the fluorescence at steady state
         '''
         self.probe_design_vector =  self.get_fluor_vec()
-        print(self.probe_design_vector)
+       
         #if self.soln is None:
            # print("no solution saved to memory, run self.solve() wtf")
         if soln is None:
