@@ -138,7 +138,13 @@ class DiffusionRateCalc():
         aa_seq = smm.SequenceManipMethods().aa_seq(nt_seq)
         weight_vec = self.aa_sum_vector(aa_seq, probe_loc)
         
-        mw_per_pos = np.zeros((1,len(X)))
+        mw_per_pos = np.zeros( X.shape[:-1] )
+        
+        for i in range(X.shape[0]):  # for each trajectory
+        
+        
+        
+        
         
         
         
