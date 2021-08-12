@@ -45,6 +45,9 @@ model_builder = ModelBuilder.ModelBuilder()
 from . import TranslationSolvers 
 solver = TranslationSolvers.TranslationSolvers()
 
+from . import tRNAmap
+trna_mapper = tRNAmap.tRNAmap()
+
 from . import SSA_Soln
 solution_obj = SSA_Soln
 
