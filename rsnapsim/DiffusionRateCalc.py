@@ -141,19 +141,4 @@ class DiffusionRateCalc():
         mw_per_pos = np.zeros( X.shape[:-1] )
         
         for i in range(X.shape[0]):  # for each trajectory
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-   
-    
-    
+
