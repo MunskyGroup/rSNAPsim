@@ -141,4 +141,11 @@ class DiffusionRateCalc():
         mw_per_pos = np.zeros( X.shape[:-1] )
         
         for i in range(X.shape[0]):  # for each trajectory
+            for j in range(X.shape[1]):
+                mw_per_pos[i,j] = np.sum(X[i,j,:])
+                
+        #for i in range(X.shape[0]):
+            #mw_per_pos[i,:] = np.sum(weight_vec[X[i,:,:]], axis=1)
+                
+        return mw_per_pos
 
