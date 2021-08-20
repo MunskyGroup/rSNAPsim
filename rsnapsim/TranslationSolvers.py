@@ -28,6 +28,7 @@ for root, dirs, files in os.walk(".", topdown=False):
        
        if 'ssa_cpp' in branch:
            path_to_cpp = os.path.join(root, branch)
+         
        if 'generalized_cpp' in branch:
            path_to_gen = os.path.join(root, branch)
        if 'trna_ssa' in branch:
@@ -37,7 +38,7 @@ if path_to_cpp != '':
         cwd = os.getcwd()
         os.chdir(path_to_cpp)
         
-        import ssa_translation
+        #import ssa_translation
         import ssa_translation_lowmem
         os.chdir(cwd)
     except:
@@ -49,10 +50,7 @@ if path_to_gen != '':
         cwd = os.getcwd()
         
         os.chdir(path_to_gen)
-        print('importing C++ models')
-        import ssa_translation_generic
-        import ssa_translation_generic_lowmem
-        print('c++ models loaded successfully')
+        import ssa_translation_lowmem
         os.chdir(cwd)
     except:
         os.chdir(cwd)
@@ -62,9 +60,7 @@ if path_to_trna !='':
         cwd = os.getcwd()
         
         os.chdir(path_to_trna)
-        print('importing C++ tRNA models')
         import ssa_trna
-        print('c++ models loaded successfully')
         os.chdir(cwd)
     except:
         os.chdir(cwd)   
