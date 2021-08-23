@@ -219,6 +219,8 @@ class ModelFactory():
 
             if path[-3:] == 'lib':
                 potential_paths.append(path)
+            if path[-7:] == 'include':
+                potential_paths.append(path)
         eigen_paths = []
         for path in potential_paths:  #in each of these try to find an eigen instillation
             base, _ = os.path.split(path)
@@ -227,6 +229,11 @@ class ModelFactory():
 
                 eigen_paths.append(os.path.join(base, 'Library',
                                                 'include', ''))
+            if os.path.exists(os.path.join(base, 'Eigen')):
+                eigen_paths.append(os.path.join(base,''))
+            if os.path.exists(os.path.join(base, 'eigen3')):
+                eigen_paths.append(os.path.join(base,''))
+                
         if len(eigen_paths) == 0:
             raise EigenMissingError('Eigen is missing, please provide a path'\
                                     ' or if using a conda instillation, use'\

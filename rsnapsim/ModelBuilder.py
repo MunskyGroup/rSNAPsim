@@ -50,9 +50,9 @@ class ModelBuilder():
         self.n_state_reactions = int(state_stoichiometry.shape[0])
         
     
-    def compile_model(self, name, overwrite=True, rules = None):
+    def compile_model(self, name, overwrite=True, rules = None, eigen_path=''):
         mf = ModelFactory()
-        mf.compile_model(name, overwrite=True, rules = rules)
+        mf.compile_model(name, overwrite=True, rules = rules, eigen_path='')
         model = self.get_model(name)
         
     def get_model(self, name):

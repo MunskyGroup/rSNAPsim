@@ -22,7 +22,7 @@ with open('README.md','r') as f:
     long_description = f.read()
 
 #sources = ['ssa_translation.pyx','ssa_translation_c_w.cpp','ssa_translation_lowmem.pyx','ssa_translation_c_w_lowmem.cpp','ssa_translation_lowmem_leaky.pyx','ssa_translation_c_w_lowmem_leaky.cpp','ssa_translation_lowmem_nostats.pyx','ssa_translation_c_w_lowmem_nostats.cpp','ssa_translation_lowmem_leaky_nostats.pyx','ssa_translation_c_w_lowmem_leaky_nostats.cpp','ssa_translation_lowmem_bursting.pyx','ssa_translation_c_w_lowmem_bursting.cpp']
-sources = ['ssa_translation_c_w_full.cpp','ssa_translation_lowmem.pyx','ssa_translation_c_w_lowmem.cpp']
+sources = ['ssa_translation_c_w_full.cpp','ssa_translation_lowmem.pyx','ssa_translation_c_w_lowmem.cpp',  'ssa_translation_generic_lowmem_c_w.cpp', 'ssa_translation_generic_c_w.cpp',  'ssa_trna_lowmem_c_w.cpp', 'ssa_trna_c_w.cpp']
 
 cythonize('*.pyx', language='c++')
 
@@ -56,20 +56,31 @@ except:
 include_list = [sysconfig.get_paths()['include'],np.get_include(),'.', os.getcwd()]
 
 env_location = sysconfig.get_config_vars()['prefix']
+print(env_location)
 potential_eigens = []
 for root, dirs, files in os.walk(env_location):
     for folder in dirs:
         if 'eigen3' in folder:
-            potential_eigens.append(os.path.join(root, folder))
+			
+            potential_eigens.append( os.path.dirname (os.path.join(root, folder)))
 
-if len(potential_eigens) > 0:
-    include_list.append(potential_eigens[0])
+print(potential_eigens)
+final_dirs = []
+for directory in potential_eigens:
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file == 'Dense':
+                final_dirs.append(directory)
+
+print('Located eigen3/Eigen/Dense:')
+print(final_dirs)    
+
+if len(final_dirs) > 0:
+    include_list.append(final_dirs[0])
 else:
     raise DependencyError("Cannot find Eigen installed on enviroment, please conda install eigen or provide a path to eigen with the setup command: python setup.py build_ext --inplace -I[path to eigen, no space after I, no brackets]")
-
-
-         
-setup(name='translation_ssa_cpp',
+     
+setup(name='rsnapsim_ssa_cpp',
       ext_modules=[Extension('ssa_translation_lowmem', 
                 sources, language='c++',
                 include_dirs = include_list ,
@@ -77,12 +88,13 @@ setup(name='translation_ssa_cpp',
                 extra_compile_args= eca)]
     ,cmdclass = {'build_ext': build_ext}
     ,author='William Raymond'
-    ,description= 'mRNA translation Stochastic Simulation Algorithm (SSA) for the rSNAPsim module.'
-    ,version = "0.0.1b0"
+	,author_email='wsraymon@rams.colostate.edu'
+    ,description= 'mRNA translation Stochastic Simulation Algorithms (SSA) for the rSNAPsim module.'
+    ,version = "0.0.16"
     ,long_description = long_description
     ,long_description_content_type='text/markdown'
     ,url = 'https://github.com/MunskyGroup/rSNAPsim'
-    ,install_requires = ['numpy>=1.19.2',"Cython>=0.29.21"]
+    ,install_requires = ['numpy',"Cython>=0.26.0"]
     ,packages=packages
     
     )
