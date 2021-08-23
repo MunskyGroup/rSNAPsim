@@ -271,7 +271,8 @@ class poi():
         x = 1
 
 
-    def visualize_mrna_strand(self, dpi=120, cmap='viridis'):
+    def visualize_mrna_strand(self, dpi=120, cmap='viridis',
+                              additional_features=[]):
         features = [
             GraphicFeature(start=0, end=self.tag_length,
                                    color=self._colors[0], label='Tag'),
@@ -293,6 +294,7 @@ class poi():
                                color=colors[c], linecolor=colors[c]),
                 ]
     
+        features += additional_features
         record = GraphicRecord(sequence_length=self.total_length,
                                features=features)
         
