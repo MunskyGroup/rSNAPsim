@@ -7,6 +7,10 @@ Translated by Will Raymond - 2018/2019
 ------------------------------
 ### **rSNAPsim** - **R**NA **S**equence to **NA**scent **P**rotein **Sim**ulation
 -------------------------------
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+
 ### Project Goal
 
 Provide a Python module that takes nucleotide sequence as an input and does the following: 
@@ -31,17 +35,29 @@ Dependencies:
  * [matplotlib](https://matplotlib.org/)
  * [pandas](https://pandas.pydata.org/)
  * [SnapGene Reader](https://github.com/IsaacLuo/SnapGeneFileReader)
- 
+ * [DnaFeaturesViewer](https://edinburgh-genome-foundry.github.io/DnaFeaturesViewer/index.html)
 -----------------------------------
 ### Instillation 
 
 #### Within a conda enviroment:
 
-```conda install eigen ```
+```
+conda install eigen 
+pip install rsnapsim-ssa-cpp 
+pip install rsnapsim
+```
 
-```pip install -i https://test.pypi.org/simple/ rsnapsim-ssa-cpp ```
 
-```pip install -i https://test.pypi.org/simple/ rsnapsim```
+#### Within a Google Colab:
+
+```
+!apt install libeigen3-dev
+!ln -sf /usr/include/eigen3/Eigen /usr/include/Eigen
+!pip install rsnapsim-ssa-cpp
+!pip install rsnapsim
+!pip install --upgrade rsnapsim 
+```
+
 
 ##### Compilation of the C++ 
 
@@ -53,6 +69,16 @@ The c++ model should attempt to compile when you pip install the ssa-cpp module,
 * gcc not found
 
 -------------------------------------
+
+--------------------
+### Example Colab Notebooks
+
+* Simulating Translation [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1yT0bt39GEB3fS9iO73_a-Bad9uorl_I5?usp=sharing)
+* Model Maker/ Designer [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1l3KXD0MWeH6crGLp2EbmOzNrvJphFyf_?usp=sharing)
+
+
+
+
 
 #### Future work
 
