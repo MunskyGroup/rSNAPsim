@@ -23,9 +23,6 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="rsnapsim", 
-         
-    
-    
     version=verstr,
     author="Dr. Luis Aguilera, William Raymond, Dr. Brian Munsky",
     author_email="wsraymon@rams.colostate.edu",
@@ -34,7 +31,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     #url="githublink",
     packages=setuptools.find_packages(),
-    install_requires = ['BioPython','numpy','scipy','cython','matplotlib','pandas', 'SnapGeneFileReader'],
+    install_requires = ['BioPython','numpy','scipy','cython','matplotlib','pandas', 'SnapGeneFileReader','dna_features_viewer'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

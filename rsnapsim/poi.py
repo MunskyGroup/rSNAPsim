@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import matplotlib.patches as mpatches
 import numpy as np
+from dna_features_viewer import GraphicFeature, GraphicRecord
 
 from . import SequenceManipMethods
 from . import PropensityFactory, ProbeVectorFactory
@@ -62,6 +63,8 @@ class poi():
         self.multiframe_epitopes = []
         self.multiframe_nt_seq = []
         self.multiframe_aa_seq = []
+        self._colors = ['#fa8174', '#b3de69', '#bc82bd','#ccebc4',
+                        '#ffed6f','#81b1d2']
 
 
     @property
@@ -268,7 +271,48 @@ class poi():
         x = 1
 
 
-    def visualize_probe(self, colors=None):
+    def visualize_mrna_strand(self, dpi=120, cmap='viridis'):
+        features = [
+            GraphicFeature(start=0, end=self.tag_length,
+                                   color=self._colors[0], label='Tag'),
+            GraphicFeature(start=self.tag_length, end=self.total_length,
+                                   color=self._colors[1], label='Protein'),
+                    ]
+        
+        probe = self.probe_loc
+        cmap = cm.get_cmap(cmap)
+        color = np.where(probe == 1)[0]
+        location = np.where(probe == 1)[1]
+        
+        ncolors = probe.shape[0]
+        colors = cmap(np.linspace(.01, .95, ncolors))
+        colorlabels = ['Color %d'% i for i in range(ncolors)]
+        for c, loc in zip(color, location):
+            features = features + [
+                GraphicFeature(start=loc, end=loc+2,
+                               color=colors[c], linecolor=colors[c]),
+                ]
+    
+        record = GraphicRecord(sequence_length=self.total_length,
+                               features=features)
+        
+        fig, ax = plt.subplots(1, dpi=dpi)
+        
+        for c in range(ncolors):
+            ax.plot([0, 0], [0,0], color=colors[c])  #fix the legend colors
+
+        
+        colorlabels = ['Color %d'% i for i in range(ncolors)]
+        ax,_ = record.plot(figure_width=6, ax=ax)
+
+        ax.axes.legend(colorlabels, loc=7)
+        ax.text(0, 5, 'Transcript Name: %s' % self.name)
+        ax.text(0, 4, 'Total Length: %d codons' % self.total_length)
+        ax.text(0, 3, 'Seq: %s ...' % self.aa_seq[:10])
+        fig.show()
+
+
+    def visualize_probe(self, colors=None, dpi=120, cmap='viridis'):
         '''
         method to visualize the transcript
 
@@ -283,11 +327,11 @@ class poi():
 
         '''
         probe = self.probe_loc
-        fig, ax = plt.subplots(1)
+        fig, ax = plt.subplots(1, dpi=dpi)
         N = len(self.kelong)
         ncolors = probe.shape[0]
 
-        cmap = cm.get_cmap('gist_rainbow')
+        cmap = cm.get_cmap(cmap)
         if colors == None:
             colors = cmap(np.linspace(.01, .95, ncolors))
 
@@ -317,7 +361,8 @@ class poi():
         ax.set_xlabel('codon')
         ax.axes.legend(colorlabels, loc=7)
         ax.axes.get_yaxis().set_visible(False)
-
+        
+        
         ax.text(0, 5, 'Transcript Name: %s' % self.name)
         ax.text(0, 4, 'Total Length: %d codons' % self.total_length)
         ax.text(0, 3, 'Seq: %s ...' % self.aa_seq[:10])

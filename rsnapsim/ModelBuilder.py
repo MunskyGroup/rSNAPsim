@@ -56,7 +56,6 @@ class ModelBuilder():
         model = self.get_model(name)
         
     def get_model(self, name):
-        print(os.getcwd())
         model = importlib.import_module('rsnapsim.models.%s.%s'%(name,name))
         return model
     
