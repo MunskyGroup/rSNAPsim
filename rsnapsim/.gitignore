@@ -1,0 +1,11 @@
+eigen/
+__pycache__/
+build/
+*.pyc
+*.o
+*.so
+*/.DS_Store
+.DS_Store
+test_files/
+.spyproject
+.tif

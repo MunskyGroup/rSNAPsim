@@ -1,0 +1,1 @@
+extern void translationSSA_generic(double *kelong, double *t_array, int *SSA_result, int N, int Nt,double *inhibitors, int seed, double* SSA_ribtimes,int* nribs, int ribtimesize, int fNt, int* frap_result, int cNt, int* col_result, double* k_add, int n_enters,int n_pauses,int n_stops, int n_jumps );

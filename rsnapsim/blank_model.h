@@ -1,0 +1,2 @@
+extern void generic_ssa_cpp(int* result, int* intensity, int* states, int* Stoich_states, int* Stoich_lattice, double* forward_rates, double* parameters, int* xi_lattice, int* xi_state, double* time_vector, 
+                    double tf, int seed, int Nt, int n_rxns, int n_total_rxns, int n_states, int length, int max_particles, int used_frames,int* probe_location_matrix, int Ncolors);
