@@ -405,6 +405,83 @@ class TranslationSolvers():
                         
         return ssa_obj
     
+    
+    
+    def solve_custom_model(self, model, parameters, kelong, t_array,
+                           stoich_lattice, stoich_states,
+                           xi_lattice, xi_states, n_traj=10,
+                           probe_loc=None, poi=None):
+        
+        
+        
+        n_total_reactions = int(stoich_states.shape[0] + stoich_lattice.shape[0])
+        length = len(kelong)
+    
+        try:
+            probe_loc[0]
+        except:
+            probe_loc = poi.probe_loc
+            
+            
+        #wash inputs:
+        stoich_lattice = stoich_lattice.astype(np.int32)
+        stoich_states = stoich_states.astype(np.int32)
+        xi_lattice = xi_lattice.astype(np.int32)
+        xi_states = xi_states.astype(np.int32)
+        parameters = parameters.astype(np.float)
+        t_array = t_array.astype(np.float)
+        probe_loc = probe_loc.astype(np.int32)
+        
+        Ncolors = probe_loc.shape[0]
+        max_rib = int(len(kelong)/9 + 5)
+        Nt = len(t_array)
+        
+        seeds = np.random.randint(0,0x7fffff, n_traj)
+        st = time.time()
+        all_results = np.zeros([n_traj,  Nt, max_rib,],dtype=np.int32)
+        all_intensities = np.zeros([n_traj,  Nt, Ncolors,],dtype=np.int32)
+        all_states = np.zeros([n_traj,  Nt, max(xi_states.shape),],dtype=np.int32)
+        for i in range(0,n_traj):
+            result = np.zeros([Nt, max_rib,],dtype=np.int32)
+            intensity = np.zeros([Nt, Ncolors,],dtype=np.int32)
+            states = np.zeros([ Nt, max(xi_states.shape),],dtype=np.int32)
+            a = model.run_ssa_cpp(result, intensity, states, stoich_states,
+                                  stoich_lattice, parameters,
+                                  np.array(kelong,dtype=np.float),  t_array,
+                                  xi_lattice, xi_states,
+                                  probe_loc,  length,
+                                  seeds[i], n_total_reactions)
+            all_results[i] = result
+            all_intensities[i] = intensity
+            all_states[i] = states
+        
+        eval_time = time.time()-st
+        
+        
+        
+        ssa_obj = SSA_Soln()
+        
+        
+        ssa_obj.n_traj = n_traj
+        ssa_obj.k = kelong
+        # ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+        #ssa_obj.rib_per_t = rib_per_t.T[startindex:,:]
+        #ssa_obj.rib_mean = np.mean(rib_per_t.T[startindex:,:])
+
+        #ssa_obj.rib_density = rib_density
+        # ssa_obj.rib_means = ribosome_means
+        ssa_obj.intensity_vec = all_intensities.T
+
+        ssa_obj.time = t_array
+        ssa_obj.time_rec = t_array
+        ssa_obj.ribosome_locations = all_results.T
+        ssa_obj.states = all_states.T
+        
+        return ssa_obj
+        
+        
+        
+    
     def solve_ssa(self,ke,t,ki=.33,kt = 10,x0=[],n_traj=100,bins=None,low_memory=True,perturb=[0,0,0],leaky_probes=False,kprobe=np.ones(1),record_stats=False,probe_vec = None, probe_loc=None, kon=1,koff=1,bursting=False, rib_prealloc=200, dynamic_prealloc=False):
         '''
         
