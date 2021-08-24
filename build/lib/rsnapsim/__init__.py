@@ -8,6 +8,13 @@ Created on Thu Nov 29 19:42:52 2018
 from . import CodonDictionaries
 cdict = CodonDictionaries.CodonDictionaries()
 
+from . import AuxCodonDicts
+aux_cdict = AuxCodonDicts.AuxCodonDicts()
+
+from . import DiffusionRateCalc
+diffcalc = DiffusionRateCalc.DiffusionRateCalc()
+
+
 from . import SequenceManipMethods 
 seqmanip = SequenceManipMethods.SequenceManipMethods()
 
@@ -37,6 +44,9 @@ model_builder = ModelBuilder.ModelBuilder()
 
 from . import TranslationSolvers 
 solver = TranslationSolvers.TranslationSolvers()
+
+from . import tRNAmap
+trna_mapper = tRNAmap.tRNAmap()
 
 from . import SSA_Soln
 solution_obj = SSA_Soln

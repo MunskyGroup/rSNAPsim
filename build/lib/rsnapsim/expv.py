@@ -1,10 +1,35 @@
 import numpy as np
 import scipy.sparse.linalg as spl
 
-def expv(t,A,v,tol=1.0e-7,m=30):
+def expv(t,A,v,tol=1.0e-7,m=30, u = 0):
     '''
     a python version of expv from 
     roger sidje's expokit. A should be sparse.
+    
+    https://www.maths.uq.edu.au/expokit/paper.pdf
+    
+    Produces the analytical solution to the Homogenous ODE solutoin
+    
+    dw/dt = A* w(t) with w(0) = v
+    dw/dt = A* w(t) + u with w(0) = v TODO add this <--
+    
+    
+    
+    Parameters
+    ----------
+    t : timepoint to solve
+        time vector to solve the ODE over
+    A : ndarray (states x reactions)
+        The state transition matrix
+    v : ndarray (states x 1)
+        initial state of the system
+
+    Returns
+    -------
+    w - Solution
+    err - Error in approximation
+    hump - bound approximation
+
     '''
     n,n = A.shape 
     if n<m:

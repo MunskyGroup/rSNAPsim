@@ -52,7 +52,7 @@ class ModelBuilder():
     
     def compile_model(self, name, overwrite=True, rules = None, eigen_path=''):
         mf = ModelFactory()
-        mf.compile_model(name, overwrite=True, rules = rules, eigen_path='')
+        mf.compile_model(name, overwrite=True, rules = rules, eigen_path=eigen_path)
         model = self.get_model(name)
         
     def get_model(self, name):

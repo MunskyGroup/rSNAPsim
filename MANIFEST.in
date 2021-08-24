@@ -1,4 +1,7 @@
-recursive-include include *.pxd
-recursive-include include *.pyx
-recursive-include include *.cpp
-recursive-include include *.h
+recursive-exclude rsnapsim/ssa_cpp/*
+recursive-exclude rsnapsim/ssa_cpp
+recursive-exclude trna_ssa *
+recursive-exclude models *
+recursive-exclude test *
+
+prune ssa_cpp/

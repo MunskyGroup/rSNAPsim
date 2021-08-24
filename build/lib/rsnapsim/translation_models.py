@@ -9,7 +9,7 @@ from .generic_solvers import *
 
 
 import scipy as sp
-from . import expv
+from . import expv, expvt
 
 from scipy.sparse.linalg import expm
 
@@ -39,7 +39,7 @@ class TranslateModels:
         if soln is None:
             self.fluorescence = np.dot(self.probe_design_vector,self.soln)
         else:
-            print(soln.shape)
+            
 
             self.fluorescence = np.dot(np.dot(self.probe_design_vector,soln),self.probe_design_vector.T)
         return self.fluorescence 
@@ -67,7 +67,7 @@ class TranslateModels:
         Get the fluorescence at steady state
         '''
         self.probe_design_vector =  self.get_fluor_vec()
-        print(self.probe_design_vector)
+       
         #if self.soln is None:
            # print("no solution saved to memory, run self.solve() wtf")
         if soln is None:
@@ -150,15 +150,14 @@ class TranslateODE(TranslateModels,GenericODE):
         #intensity = np.zeros(len(t))
         soln = np.zeros((self.N+1,len(t) ))
         
-        
-        
+    
         for i in range(1,len(t)):
     
             xv,m,v = expv(t[i]-t[i-1],phi1,xv,tol = 1e-6,m=30) 
 
             soln[:,i] = xv
             #intensity[i] = np.dot(bpv,soln[1:,i])
-        print(soln.shape)
+
         return soln[1:,:]
                     
 
@@ -338,6 +337,11 @@ class TranslateCorrs(TranslateVars):
         '''
         _tmp = np.dot(self.phi,x.reshape(self.N,self.N)) 
         return np.ravel(_tmp.reshape(self.N**2,1) )
+    
+    def full_solve(self):
+        phi = sp.sparse.csc_matrix(self.phi)
+        cc_phi = sp.sparce.csc_matrix(np.zeros((self.N**2,self.N)) )
+    
 
     def faster_solve(self):
         '''
@@ -346,20 +350,30 @@ class TranslateCorrs(TranslateVars):
         '''
         phi = sp.sparse.csc_matrix(self.phi)
         self.tvec = self.gettvec()
+        
         #self.soln = np.zeros((self.N,self.N,len(self.tvec)))
         
         self.soln = sp.sparse.csc_matrix( (self.N*self.N,len(self.tvec)) , dtype=float )
+        
         xi = self.xi.reshape(self.N,self.N)
+  
         xtmp = np.copy(xi)
         self.intensity = np.zeros(len(self.tvec))
  
         self.intensity[0] = self.map_to_fluorescence(xi)
         #print(self.phi)
+        st = time.time()
+        xv = np.array([xtmp[:,0]]).T
+
+ 
+        st = time.time()
         for i in range(1,len(self.tvec)):
             for j in range(self.N):
                 xv = xtmp[:,j] 
                 try:
                     xv,m,v = expv(self.tvec[i]-self.tvec[i-1],phi,xv,tol = 1e-6,m=30)
+                    
+                    
                 except:
                     xv = np.zeros(xv.shape)
                 #xv[np.abs(xv)<1e-8]=0
@@ -370,6 +384,8 @@ class TranslateCorrs(TranslateVars):
                 break
                 self.soln[:,j,i] = xv 
         #self.soln =self.soln.reshape(self.N**2,len(self.tvec))
+    
+        
         return self.intensity 
 
 class TranslateCoarseCorrs(TranslateCorrs):
