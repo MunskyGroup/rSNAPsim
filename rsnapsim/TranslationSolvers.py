@@ -351,7 +351,13 @@ class TranslationSolvers():
         return ssa_obj
 
 
-    def solve_ssa_trna(self,k_index, k_diffusion, k_bind, kelong, k_compl, t,x0=[], k_trna = None, perturb=[0,0,0],leaky_probes=False,kprobe=np.ones(1),probe_vec = None, probe_loc=None, kon=1,koff=1,bursting=False,n_traj=10   ):
+    def solve_ssa_trna(self,k_index, k_diffusion, k_bind, kelong,
+                       k_compl, t,x0=[], k_trna = None,
+                       perturb=[0,0,0],leaky_probes=False,
+                       kprobe=np.ones(1),probe_vec = None, probe_loc=None,
+                       kon=1,koff=1,bursting=False,n_traj=10,
+                       connection_mat=None):
+        
         self.__check_rates_trna(k_index)
 
         ssa_conditions = self.default_conditions
@@ -409,8 +415,12 @@ class TranslationSolvers():
         ssa_conditions['probe_loc'] = probe_loc
 
 
+        try:
+            connection_mat[0]
+            ssa_obj = self.__solve_ssa_trna_connection_mat(k_index,k_trna, k_diffusion,k_bind,kelong, k_compl,t,x0,n_traj,ssa_conditions = ssa_conditions)
 
-        ssa_obj = self.__solve_ssa_trna(k_index,k_trna, k_diffusion,k_bind,kelong, k_compl,t,x0,n_traj,ssa_conditions = ssa_conditions)
+        except:
+            ssa_obj = self.__solve_ssa_trna(k_index,k_trna, k_diffusion,k_bind,kelong, k_compl,t,x0,n_traj,ssa_conditions = ssa_conditions)
 
         return ssa_obj
 
@@ -515,6 +525,7 @@ class TranslationSolvers():
         ssa_obj.time_rec = t_array
         ssa_obj.ribosome_locations = all_results
         ssa_obj.states = all_states
+        ssa_obj.eval_time = eval_time
 
         return ssa_obj
 

@@ -34,6 +34,7 @@ class DiffusionRateCalc():
                         'human 80S': 4.3e6,  #https://pubmed.ncbi.nlm.nih.gov/25901680/
                         'tRNA_base': 25000, #approximation of 76 - 90 nt
                         'GFP': 26870,
+                        'cy3':627.7,
                         'mCherry': 28000,
                         'Fab_blank': 48000,#approximation
                         'MS2CP': 13700,
