@@ -75,7 +75,7 @@ The c++ model should attempt to compile when you pip install the ssa-cpp module,
 
 * Simulating Translation [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1yT0bt39GEB3fS9iO73_a-Bad9uorl_I5?usp=sharing)
 * Model Maker/ Designer [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1l3KXD0MWeH6crGLp2EbmOzNrvJphFyf_?usp=sharing)
-
+* MW/Diffusion Calculations [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/17l7oMcNTaoiR0FSVbc46DEv8DCBG6IFO?usp=sharing)
 
 
 
