@@ -4,4 +4,14 @@ recursive-exclude trna_ssa *
 recursive-exclude models *
 recursive-exclude test *
 
+recursive-include blank_model.pyx
+recursive-include blank_model.cpp
+recursive-include blank_model.h
+
+recursive-include rsnapsim/blank_model.pyx
+recursive-include rsnapsim/blank_model.cpp
+recursive-include rsnapsim/blank_model.h
+
+
+
 prune ssa_cpp/

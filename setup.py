@@ -32,7 +32,7 @@ setuptools.setup(
     #url="githublink",
     packages=setuptools.find_packages(exclude=('ssa_cpp.*','test.*','models.*','trna_ssa.*','ssa_cpp')),
     include_package_data=True,
-    package_data = {"rsnapsim":['*.h', '*.cpp','*.pyx']},
+    package_data = {"rsnapsim":['*.h', '*.cpp','*.pyx','license.txt']},
     install_requires = ['BioPython','numpy','scipy','cython','matplotlib','pandas', 'SnapGeneFileReader','dna_features_viewer'],
     classifiers=[
         "Programming Language :: Python :: 3",

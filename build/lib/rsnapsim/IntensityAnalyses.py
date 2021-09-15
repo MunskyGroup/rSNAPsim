@@ -350,6 +350,8 @@ class IntensityAnalyses():
     #     ssa_obj.full_frags = truefrags
 
 
+    ##TODO Convert excitation of the intensity vector (realistic probe)
+
     def get_g0(self, correlation, mode='interp'):
         '''
 
