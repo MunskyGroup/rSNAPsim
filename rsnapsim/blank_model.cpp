@@ -103,7 +103,7 @@ Eigen::VectorXd propensity_function( const Eigen::MatrixXi& X_compressed,  const
     Eigen::VectorXd wn;
     wn.setZero(n_total_reactions);
 
-    Eigen::MatrixXd forward_rate_matrix(1,max_length);	// make forward_rates
+    Eigen::MatrixXd forward_rate_matrix(1,max_length+1);	// make forward_rates
     forward_rate_matrix.setZero();
 
 	for(int i=0; i < max_length; i++)	{
@@ -322,7 +322,7 @@ void generic_ssa_cpp(int* result, int* intensity, int* states, int* Stoich_state
         t -= log(r1)/a0;
 
         reaction_ind = 1;
-        while (wn.topLeftCorner(1,reaction_ind).sum() < r2*a0)
+        while (wn.head(reaction_ind).sum() < r2*a0)
         {	
             reaction_ind +=1;
         }

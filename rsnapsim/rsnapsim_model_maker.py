@@ -149,10 +149,12 @@ class ModelFactory():
                                 wn(3) = parameters[3];
                             }
                         '''
-
-        #self.eigen_paths = self.find_eigen_path()
-        #print('eigen instillation found...')
-        self.eigen_path=''
+                    
+        try:
+            self.eigen_path = self.find_eigen_path()
+            #print('eigen instillation found...')
+        except:
+            self.eigen_path=''
         self.reserved_model_names = ['build', 'model_maker_cpp', 'models',
                                      'rsnapsim_model_maker']
         self.find_models()
@@ -379,6 +381,7 @@ class ModelFactory():
         None.
 
         '''
+        
         if len(eigen_path) == 0:
             eigen_path = self.eigen_path[0]
 

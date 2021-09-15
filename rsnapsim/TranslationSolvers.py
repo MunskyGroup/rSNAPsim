@@ -460,6 +460,7 @@ class TranslationSolvers():
         all_results = np.zeros([n_traj,  Nt, max_rib,],dtype=np.int32)
         all_intensities = np.zeros([n_traj,  Nt, Ncolors,],dtype=np.int32)
         all_states = np.zeros([n_traj,  Nt, max(xi_states.shape),],dtype=np.int32)
+
         for i in range(0,n_traj):
             result = np.zeros([Nt, max_rib,],dtype=np.int32)
             intensity = np.zeros([Nt, Ncolors,],dtype=np.int32)
@@ -494,8 +495,9 @@ class TranslationSolvers():
             #there was a blank
             except:
                 pass
-
-
+            
+        if validind == 0:
+            validind = 1
         all_results = all_results[:,:,:validind]
 
         for i in range(all_results.shape[0]):
