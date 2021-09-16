@@ -21,6 +21,40 @@ except:
     pass
 
 
+
+
+class Error(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+
+class PathDoesNotExistError(Error):
+    """Exception raised for when trying to save a GB file to a directory 
+    that doesnt exist
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+        
+class AscNumDoesNotExistError(Error):
+    """Exception raised for when trying to pull a gb from an ascession number
+    that doesnt exist
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+        
+        
+        
+
 class SequenceManipMethods():
     '''
     class that handles manipulation methods dealing with sequences
@@ -115,7 +149,7 @@ class SequenceManipMethods():
         return aa
 
 
-    def get_gb_file(self, accession_number, save_dir):
+    def get_gb_file(self, accession_number, save_dir = '.'):
         '''
         A function to poll genbank given an accession number and pull the
         relevant gb file
@@ -133,6 +167,11 @@ class SequenceManipMethods():
 
 
         '''
+        
+        if not os.path.isdir(save_dir):
+            msg = 'Specified save path does not exist, double check the path'\
+            ' specified.'
+            raise PathDoesNotExistError(msg)
 
         Entrez.email = "wsraymon@rams.colostate.edu"
         Entrez.tool = 'SingleMoleculeSimulator'
@@ -147,9 +186,10 @@ class SequenceManipMethods():
             er = True
         time.sleep(2)
         if er == True:
-            print('HTTP Error: Could not find specified ascession ID')
-
-            return
+            msg = 'Cannot find given ascession number for genbank, file re'\
+                'quest failed.'
+            raise AscNumDoesNotExistError(msg)
+            
 
 
         gb_rec = gb_record
@@ -157,7 +197,8 @@ class SequenceManipMethods():
 
         #sequence_str = str(gb_record.seq)
         sequence_name = gb_record.name
-        filename = os.path.join(save_dir, sequence_name, '.gb')
+        
+        filename = os.path.join(save_dir, sequence_name+ '.gb')
         f = open(filename, 'w')
 
 
