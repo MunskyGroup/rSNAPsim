@@ -74,6 +74,9 @@ The c++ model should attempt to compile when you pip install the ssa-cpp module,
 ### Example Colab Notebooks
 
 * Simulating Translation [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1yT0bt39GEB3fS9iO73_a-Bad9uorl_I5?usp=sharing)
+* Simulating Constructs with Different codon usages  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Amy9Mvf0IZDJsy9ZQ3sxAENSFOmiNJMQ?usp=sharing) 
+* Intensity Analyses  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1G0sWY4ul-mAb51JT9F7GfyK49Dkxui9V?usp=sharing) 
+* Harringtonine / FRAP simulations  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1_Y9l_EYIRIUwg7FYgVxoTfb6fYNo5NrJ?usp=sharing) 
 * Model Maker/ Designer [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1l3KXD0MWeH6crGLp2EbmOzNrvJphFyf_?usp=sharing)
 * MW/Diffusion Calculations [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/17l7oMcNTaoiR0FSVbc46DEv8DCBG6IFO?usp=sharing)
 
