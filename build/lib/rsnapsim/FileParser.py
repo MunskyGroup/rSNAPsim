@@ -119,12 +119,13 @@ class FileParser():
             gb_record = SeqIO.read(open(file, "r"), "genbank")
             sequence_str = str(gb_record.seq)
 
-        if extension == 'fasta':
+        if extension == 'fasta' or extension == 'fa':
             fastas = list(SeqIO.parse(file, 'fasta'))
             if len(fastas) > 1:
-                return 'Multiple line fastas not supported'
+                return [self.clean_seq(str(x.seq)) for x in fastas]
             else:
                 sequence_str = (str(fastas[0].seq))
+                
         cleaned_sequence_str = self.clean_seq(sequence_str)
 
         return cleaned_sequence_str
@@ -132,12 +133,12 @@ class FileParser():
     def __check_valid_file(self, file):
         extension = file.split('.')[-1]
 
-        if extension in ['fasta', 'gb', 'txt', 'dna']:
+        if extension in ['fasta', 'gb', 'txt', 'dna','fa']:
             return True
         else:
-            raise FileTypeNotRecognizedError("Unrecognized File '\
-                                             'type, the sequence '\
-                            'file must be a .txt, .dna, .gb, or .fasta")
+            msg = 'Unrecognized File type, the sequence file must be .fasta, '\
+                '.txt, .dna, .gb, or .fa.'
+            raise FileTypeNotRecognizedError(msg)
 
 
 

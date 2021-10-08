@@ -21,6 +21,40 @@ except:
     pass
 
 
+
+
+class Error(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+
+class PathDoesNotExistError(Error):
+    """Exception raised for when trying to save a GB file to a directory 
+    that doesnt exist
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+        
+class AscNumDoesNotExistError(Error):
+    """Exception raised for when trying to pull a gb from an ascession number
+    that doesnt exist
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+        
+        
+        
+
 class SequenceManipMethods():
     '''
     class that handles manipulation methods dealing with sequences
@@ -115,7 +149,7 @@ class SequenceManipMethods():
         return aa
 
 
-    def get_gb_file(self, accession_number, save_dir):
+    def get_gb_file(self, accession_number, save_dir = '.'):
         '''
         A function to poll genbank given an accession number and pull the
         relevant gb file
@@ -133,6 +167,11 @@ class SequenceManipMethods():
 
 
         '''
+        
+        if not os.path.isdir(save_dir):
+            msg = 'Specified save path does not exist, double check the path'\
+            ' specified.'
+            raise PathDoesNotExistError(msg)
 
         Entrez.email = "wsraymon@rams.colostate.edu"
         Entrez.tool = 'SingleMoleculeSimulator'
@@ -147,9 +186,10 @@ class SequenceManipMethods():
             er = True
         time.sleep(2)
         if er == True:
-            print('HTTP Error: Could not find specified ascession ID')
-
-            return
+            msg = 'Cannot find given ascession number for genbank, file re'\
+                'quest failed.'
+            raise AscNumDoesNotExistError(msg)
+            
 
 
         gb_rec = gb_record
@@ -157,7 +197,8 @@ class SequenceManipMethods():
 
         #sequence_str = str(gb_record.seq)
         sequence_name = gb_record.name
-        filename = os.path.join(save_dir, sequence_name, '.gb')
+        
+        filename = os.path.join(save_dir, sequence_name+ '.gb')
         f = open(filename, 'w')
 
 
@@ -240,6 +281,51 @@ class SequenceManipMethods():
 
 
         return orfs
+    
+    def get_codon_list(self, nt_seq):
+        '''
+        
+
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence.
+
+        Returns
+        -------
+        List of codons.
+
+        '''
+        #split codons by 3
+        codons = nt_seq.upper()
+        seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)]
+        return seperated_codons
+    
+    def get_codon_count_dict(self, nt_seq):
+        '''
+        
+        
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence.
+
+        Returns
+        -------
+        dict of codon counts.
+
+        '''
+        #split codons by 3
+        codons = nt_seq.upper()
+        seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)]
+        cdict = {}
+        for i in range(len(seperated_codons)):
+            if seperated_codons[i] in cdict.keys():
+                cdict[seperated_codons[i]] +=1
+            else:
+                cdict[seperated_codons[i]] = 1
+            
+        return cdict
 
     def codon_usage(self, nt_seq, codon_dict=None):
         '''
@@ -288,7 +374,7 @@ class SequenceManipMethods():
 
 
 
-    def get_proteins(self, orfs, seq):
+    def get_proteins(self, orfs, seq, add_tag=True):
         '''
         Parameters
         ----------
@@ -362,12 +448,16 @@ class SequenceManipMethods():
 
 
                 if tag_detected:
-                    self.analyze_protein_w_tags(pr)
+                    self.analyze_protein(pr)
                     pr.tag_added = False
                     proteins_w_tags[str(i+1)].append(pr)
                 else:
-                    self.add_tag_to_protein(pr)
-                    pr.tag_added = True
+                    if add_tag:
+                        self.add_tag_to_protein(pr)
+                        pr.tag_added = True
+                    else:
+                        pr.tag_added = False
+                        self.analyze_protein(pr)
 
 
 
@@ -392,12 +482,13 @@ class SequenceManipMethods():
         POI.nt_seq = cd.tag_full[tag_type] + POI.nt_seq
         POI.aa_seq = self.nt2aa(POI.nt_seq)
 
-        self.analyze_protein_w_tags(POI)
+        self.analyze_protein(POI)
 
 
 
 
-    def analyze_protein_w_tags(self, poi_obj, epitope_loc='front'):
+
+    def analyze_protein(self, poi_obj, epitope_loc='front',):
         cd = self.codon_dicts
         nt_seq = poi_obj.nt_seq
         aa_seq = poi_obj.aa_seq
@@ -444,12 +535,20 @@ class SequenceManipMethods():
                     cd.tag_dict[poi_obj.tag_types[i]], poi_obj.aa_seq)]
 
             gs = gs.replace(aa_tag, '')
-
+            
         poi_obj.gene_seq = gs
         poi_obj.gene_length = len(gs)
         poi_obj.total_length = total_length
-        poi_obj.tag_seq = aa_tag
-        poi_obj.tag_length = len(aa_tag)
+        
+        taglocs = np.array([x for x in poi_obj.tag_epitopes.values()])
+        if taglocs.shape[0] > 0:
+            tag_start,tag_stop = (int(np.min(taglocs)), int(np.max(taglocs)))
+        
+            poi_obj.tag_seq = aa_seq[tag_start:tag_stop]
+            poi_obj.tag_length = len(aa_seq[tag_start:tag_stop])
+        else:
+            poi_obj.tag_seq = ''
+            poi_obj.tag_length = 0
 
         codons = []
         for i in range(0, len(nt_seq), 3):
@@ -461,16 +560,53 @@ class SequenceManipMethods():
         poi_obj.ke = 10
         poi_obj.kt = 10
 
-    def seq_to_protein_obj(self, sequence_str, min_codons=80):
+    def seq_to_protein_obj(self, sequence_str, min_codons=80, add_tag=True):
 
         orfs = self.get_orfs(sequence_str, min_codons=min_codons)
         _, proteins, _ = self.get_proteins(
-            orfs, sequence_str)
+            orfs, sequence_str, add_tag=add_tag)
 
         return proteins
 
 
-    def open_seq_file(self, seqfile, min_codons=80):
+    def get_largest_poi(self,seqfile, min_codons=80, add_tag=True):
+        '''
+        Convenience file to get the largest poi if you know your file 
+        has multiple orfs
+
+        Parameters
+        ----------
+        seqfile : sequence file
+            a file containting sequence data to get a mRNA sequence out of.
+        min_codons : iny, optional
+            minimum contingous codons to consider an ORF. The default is 80.
+        add_tag : bool, optional
+            Add a fluorescent tag if none is found. The default is True.
+
+        Returns
+        -------
+        POI obj.
+
+        '''
+        fp = FileParser.FileParser()
+        sequence_str = fp.get_sequence(seqfile).upper()
+        orfs = self.get_orfs(sequence_str, min_codons=min_codons)
+        protein_strs, proteins, tagged_proteins = self.get_proteins(orfs,
+                                                                    sequence_str,
+                                                                    add_tag=add_tag)
+        
+        sizes = [[len(y) for y in x] for x in protein_strs.values()]
+        maxsize = max([item for sublist in sizes for item in sublist])
+
+        for i in range(3):
+            if maxsize in sizes[i]:
+                frame = i
+                pindex = sizes[i].index(maxsize)
+                
+        return proteins[str(int(i))][pindex]
+
+
+    def open_seq_file(self, seqfile, min_codons=80, add_tag=True):
 
         '''
         Reads a sequence file, either a .txt file or a .gb genbank file
@@ -484,12 +620,42 @@ class SequenceManipMethods():
         #TODO expose this to the user:
         #sequence_name = fp.get_name(seqfile)
         #sequence_description = fp.get_description(seqfile)
-        sequence_str = fp.get_sequence(seqfile).upper()
+        
+        sequence_str = fp.get_sequence(seqfile)
+        if isinstance(sequence_str, str):
+            sequence_str = sequence_str.upper()
+            orfs = self.get_orfs(sequence_str, min_codons=min_codons)
+    
+            protein_strs, proteins, tagged_proteins = self.get_proteins(orfs,
+                                                                        sequence_str,
+                                                                        add_tag=add_tag)
+        if isinstance(sequence_str, list):
+            
+            #multiple sequence fasta detected, split them up and handle them 
+            #seperately, then merge them into the dictionaries later
+            ps_list = []
+            pro_list = []
+            tagd_list = []
+            for sequence in sequence_str:
+                sequence = sequence.upper()
+                orfs = self.get_orfs(sequence, min_codons=min_codons)
+                
+                protein_strs, proteins, tagged_proteins = self.get_proteins(orfs,
+                                                                            sequence,
+                                                                            add_tag=add_tag)
+                ps_list.append(protein_strs)
+                pro_list.append(proteins)
+                tagd_list.append(tagged_proteins)
+                
+            # compress the dictionaries by keys
+            flatten_dict = lambda dictionary: [[item for sublist in [y[x] for y in dictionary]
+                                                for item in sublist] for x in ['1','2','3']]
+            
 
-
-        orfs = self.get_orfs(sequence_str, min_codons=min_codons)
-
-        protein_strs, proteins, tagged_proteins = self.get_proteins(orfs, sequence_str)
+            protein_strs = {i: flatten_dict(ps_list)[int(i)-1] for i in ['1','2','3']}
+            proteins = {i: flatten_dict(pro_list)[int(i)-1] for i in ['1','2','3']}
+            tagged_proteins = {i: flatten_dict(tagd_list)[int(i)-1] for i in ['1','2','3']}
+                
         return protein_strs, proteins, tagged_proteins, sequence_str
 
 

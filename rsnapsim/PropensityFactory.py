@@ -101,7 +101,8 @@ class PropensityFactory():
 
         if codon_freq_bias_dict is None:
             codon_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
-
+        else:
+            codon_dict = codon_freq_bias_dict
         codons = nt_seq.upper()
 
         genelength = int(len(codons)/3)

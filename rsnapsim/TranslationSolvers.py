@@ -127,7 +127,8 @@ class TranslationSolvers():
             pass
 
 
-    def solve_ballistic_model(self, ki,ke, poi=None, tag= None):
+    def solve_ballistic_model(self, ki,ke, nt_seq=None,
+                              length=None, poi=None, tag= None):
         '''
 
         Given a iniation rate and set of elongation rates,
@@ -160,21 +161,32 @@ class TranslationSolvers():
 
         '''
 
-        if poi == None:
-            poi = self._poi
+        if nt_seq == None:
+            nt_seq = poi.nt_seq
+            
         if tag == None:
-            colors = np.where((poi.probe_loc)== 1)[0]
-            locs = np.where((poi.probe_loc)== 1)[1]
-            tags = []
-            for i in range(0,max(colors)+1):
-
-                tags.append(locs[np.where(colors == i)].tolist())
-
+            if poi ==None:
+                tags = []
+            else:
+                colors = np.where((poi.probe_loc)== 1)[0]
+                locs = np.where((poi.probe_loc)== 1)[1]
+                tags = []
+                for i in range(0,max(colors)+1):
+    
+                    tags.append(locs[np.where(colors == i)].tolist())
+        
+        #parse out stop codons
+        if nt_seq[-3:].lower() in ['taa', 'tag', 'tga' ,'uga' ,'uaa', 'uag']:
+            nt_seq = nt_seq[:-3]
+        L = len(nt_seq)
 
         tau_analyticals = []
         mean_analyticals = []
         var_analyticals = []
-
+        
+        
+        ke_analytical = L*ke / np.sum(self.__get_ui(nt_seq[:-3]))
+        tau_analytical = (L )/ke_analytical  #analytical tau ie autocovariance time
         for tag in tags:
 
 
@@ -183,17 +195,13 @@ class TranslationSolvers():
             L_after_tag = L - tag[-1]
             L_tag = int((tag[-1] - tag[0]) / 2)
 
-            ke_analytical = L*ke / np.sum(self.__get_ui(poi.nt_seq[:-3]))
-
-            tau_analytical = (L )/ke_analytical  #analytical tau ie autocovariance time
             mean_analytical = ki*tau_analytical * (1.-Lm/float(L)) # mean intensity
             var_analytical = ki*tau_analytical * (1.-Lm/float(L))**2  #var intensity
-
-            tau_analyticals.append(tau_analytical)
+          
             mean_analyticals.append(mean_analytical)
             var_analyticals.append(var_analytical)
 
-        return tau_analyticals,mean_analyticals,var_analyticals
+        return tau_analytical,mean_analyticals,var_analyticals
 
 
     def invert_ballistic(self,tau_measured, mu_I, poi= None):
@@ -1391,7 +1399,8 @@ class TranslationSolvers():
 
         probe_vec = ssa_conditions['probe_vec']
 
-        colors = self.colors
+        colors = int(probe_vec.shape[0])
+        print(probe_vec.shape)
 
 
         if ssa_conditions['bursting'] == False:
@@ -1445,7 +1454,7 @@ class TranslationSolvers():
                 intime = float(intime)
                 seed = seeds[i]
                 colors = int(colors)
-
+            print(colors)
             ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, kelong,frapresult, t, ki, kt, evf, evi, intime, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
 
