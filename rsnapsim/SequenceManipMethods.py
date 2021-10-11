@@ -362,7 +362,7 @@ class SequenceManipMethods():
         cai_codons = []
         for i in range(0, len(nt_seq), 3):
             synonmous_codons = self.codon_dicts.aa_table_r[
-                self.codon_dicts.aa_table[codon_dict[nt_seq[i:i+3]]]]
+                self.codon_dicts.aa_table[nt_seq[i:i+3]]]
 
             max_freq = max([codon_dict[x] for x in synonmous_codons])
 
