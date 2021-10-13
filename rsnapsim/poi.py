@@ -164,7 +164,7 @@ class poi():
         for i in range(len(list(self.tag_epitopes))):
             pv[i, [self.tag_epitopes[list(self.tag_epitopes.keys())[i]]]] = 1
         pv = np.cumsum(pv, axis=1)
-        return pv
+        return pv.astype(np.int32)
 
     @property
     def probe_loc(self):
@@ -177,7 +177,7 @@ class poi():
             binary vector of epitope locations over Ncolor x L of the transcript.
 
         '''
-        pv = np.zeros((len(list(self.tag_epitopes)), self.total_length))
+        pv = np.zeros((len(list(self.tag_epitopes)), self.total_length), dtype = np.int32)
         for i in range(len(list(self.tag_epitopes))):
             pv[i, [self.tag_epitopes[list(self.tag_epitopes.keys())[i]]]] = 1
         return pv

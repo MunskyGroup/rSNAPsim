@@ -27,3 +27,14 @@ ccount = rss.seqmanip.get_codon_count_dict(wt_spike.nt_seq)
 
 opt_spike = rss.seqmanip.optimize_ntseq(wt_spike.nt_seq)
 deopt_spike = rss.seqmanip.deoptimize_ntseq(wt_spike.nt_seq)
+
+
+t = np.linspace(0,2000,2001)
+ki = .033
+rss.solver.protein= wt_spike
+blank_probe = np.zeros([1,len(wt_spike.kelong)],dtype=int)
+#blank_probe[0,1] = 1
+blank_vec = np.cumsum(blank_probe,axis=1)
+
+wt_traj = rss.solver.solve_ssa(wt_spike.kelong,t,ki=ki,n_traj=1, probe_loc=blank_probe, probe_vec=blank_vec,low_memory=False )
+
