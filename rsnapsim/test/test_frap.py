@@ -6,8 +6,12 @@ Created on Wed Oct 13 00:48:19 2021
 """
 import os
 cwd = os.getcwd()
-os.chdir('../../..')
+os.chdir('../..')
 
+print(os.getcwd())
+import sys
+sys.path.append( os.getcwd())
+print(sys.path)
 import rsnapsim as rss
 from rsnapsim import seqmanip
 
@@ -31,6 +35,6 @@ kdm5b = rss.seqmanip.seq_to_protein_obj(kdm5b)['1'][0]
 import numpy as np
 t = np.linspace(0,2000,2000)
 rss.protein = bactin
-ssa_soln = rss.solver.solve_ssa(bactin.kelong,t,perturb=[1,0,500,700], low_memory=True, n_traj=10, probe_loc=bactin.probe_loc.astype(np.int32), probe_vec=bactin.probe_vec.astype(np.int32) )
+ssa_soln = rss.solver.solve_ssa(bactin.kelong,t,perturb=[0,1,500,700], low_memory=True, n_traj=100, probe_loc=bactin.probe_loc.astype(np.int32), probe_vec=bactin.probe_vec.astype(np.int32) )
 
 plt.plot(ssa_soln.intensity_vec[0])

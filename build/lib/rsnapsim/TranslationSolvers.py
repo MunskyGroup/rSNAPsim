@@ -557,10 +557,10 @@ class TranslationSolvers():
 
     def solve_ssa(self, ke, t, ki=.33, kt = 10,
                   x0=[], n_traj=100, bins=None, low_memory=True,
-                  perturb=[0,0,0], leaky_probes=False, kprobe=np.ones(1),
+                  perturb=[0,0,0,0], leaky_probes=False, kprobe=np.ones(1),
                   record_stats=False, probe_vec=None, probe_loc=None,
                   kon=1, koff=1, bursting=False, rib_prealloc=200,
-                  dynamic_prealloc=False):
+                  dynamic_prealloc=False, photobleaching=False, photobleaching_rate=0.0):
         '''
 
         Solve a stochastic simulation of ribosomes on an mRNA transcript
@@ -646,7 +646,8 @@ class TranslationSolvers():
         ssa_conditions['bursting'] = bursting
         ssa_conditions['ribosome_preallocation'] = rib_prealloc
         ssa_conditions['dynamic_rib_prealloc'] = dynamic_prealloc
-
+        ssa_conditions['photobleaching'] = photobleaching
+        ssa_conditions['photobleaching_rate'] = photobleaching_rate
         provided_probe = False
 
         try:
@@ -1453,6 +1454,8 @@ class TranslationSolvers():
         intime = ssa_conditions['perturb'][2]
         intime_stop = ssa_conditions['perturb'][3]
         non_consider_time = ssa_conditions['burnin']
+        photobleaching_rate = ssa_conditions['photobleaching_rate']
+        photobleaching = ssa_conditions['photobleaching']
 
         st = time.time()
 
@@ -1463,13 +1466,13 @@ class TranslationSolvers():
 
 
             if i == 0: #detect any int64
-                inputs = [result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime), float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib]
+                inputs = [result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime), float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib, photobleaching_rate, photobleaching]
                 wash_inputs = self.__check_input_memview(inputs)
 
             if wash_inputs:
                 #check memview so all given variables are in int32 if integer for C
-                inputs = [result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime),float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib]
-                result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime,intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib = self.__check_memview(inputs)
+                inputs = [result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime),float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib, photobleaching_rate, photobleaching]
+                result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime,intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib, photobleaching_rate, photobleaching = self.__check_memview(inputs)
             else:
                 kelong = k[1:-1]
                 ki = k[0]
@@ -1481,7 +1484,7 @@ class TranslationSolvers():
                 seed = seeds[i]
                 colors = int(colors)
            
-            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime,intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib)
+            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime,intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib, photobleaching_rate, photobleaching)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
 
             all_results[i, :, :] = result.T
@@ -1558,6 +1561,8 @@ class TranslationSolvers():
         ssa_obj.time_rec = t[startindex:]
         ssa_obj.start_time = non_consider_time
         ssa_obj.start_index = int(startindex)
+        ssa_obj.photobleaching = photobleaching
+        ssa_obj.photobleaching_rate = photobleaching_rate
 
 
 
@@ -1631,7 +1636,9 @@ class TranslationSolvers():
         intime = ssa_conditions['perturb'][2]
         intime_stop = ssa_conditions['perturb'][3]
         non_consider_time = ssa_conditions['burnin']
-
+        photobleaching_rate = ssa_conditions['photobleaching_rate']
+        photobleaching = ssa_conditions['photobleaching']
+        
         st = time.time()
 
         for i in range(n_traj):
@@ -1640,13 +1647,13 @@ class TranslationSolvers():
             result,ribtimes,_,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
             ribloc = np.zeros((N_rib,len(t)), dtype=np.int32)
             if i == 0: #detect any int64
-                inputs = [ribloc,result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime), float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib]
+                inputs = [ribloc,result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime), float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib, photobleaching_rate, photobleaching]
                 wash_inputs = self.__check_input_memview(inputs)
 
             if wash_inputs:
                 #check memview so all given variables are in int32 if integer for C
-                inputs = [ribloc,result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime), float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib]
-                ribloc,result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime,intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib = self.__check_memview(inputs)
+                inputs = [ribloc,result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime), float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib, photobleaching_rate, photobleaching]
+                ribloc,result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime,intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib, photobleaching_rate, photobleaching = self.__check_memview(inputs)
             else:
                 kelong = k[1:-1]
                 ki = k[0]
@@ -1659,7 +1666,7 @@ class TranslationSolvers():
                 colors = int(colors)
 
             
-            ssa_translation_lowmem.run_SSA_full(ribloc, result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime, intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags)
+            ssa_translation_lowmem.run_SSA_full(ribloc, result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime, intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, photobleaching_rate, photobleaching)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
 
             all_results[i, :, :] = result.T
@@ -1761,6 +1768,8 @@ class TranslationSolvers():
         ssa_obj.collisions = collisions
         ssa_obj.ribosome_locations = all_rib_loc
         ssa_obj.ribtimes = all_ribtimes
+        ssa_obj.photobleaching = photobleaching
+        ssa_obj.photobleaching_rate = photobleaching_rate
 
 
         try:
