@@ -8,7 +8,9 @@ Translated by Will Raymond - 2018/2019
 ### **rSNAPsim** - **R**NA **S**equence to **NA**scent **P**rotein **Sim**ulation
 -------------------------------
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![PyPI version](https://badge.fury.io/py/rsnapsim.svg)](https://badge.fury.io/py/rsnapsim)
+
+ssa c++ library [![PyPI version](https://badge.fury.io/py/rsnapsim-ssa-cpp.svg)](https://badge.fury.io/py/rsnapsim-ssa-cpp)
 
 
 ### Project Goal
