@@ -13,6 +13,9 @@ Translated by Will Raymond - 2018/2019
 ssa c++ library [![PyPI version](https://badge.fury.io/py/rsnapsim-ssa-cpp.svg)](https://badge.fury.io/py/rsnapsim-ssa-cpp)
 
 
+![alt text](https://github.com/MunskyGroup/rSNAPsim/blob/packaged/rsnapsim/docs/images/rsnapsim_figure1_tmp.png?raw=true)
+
+
 ### Project Goal
 
 Provide a Python module that takes nucleotide sequence as an input and does the following: 
