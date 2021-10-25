@@ -8,6 +8,7 @@ import re
 import time
 import os
 import numpy as np
+import itertools as it
 from . import CodonDictionaries
 from . import FileParser
 from . import poi as POI
@@ -53,7 +54,18 @@ class AscNumDoesNotExistError(Error):
         self.message = message
         
         
-        
+class UnrecognizedFlagError(Error):
+    """Exception raised for when trying to pull a gb from an ascession number
+    that doesnt exist
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+                
 
 class SequenceManipMethods():
     '''
@@ -659,6 +671,160 @@ class SequenceManipMethods():
         return protein_strs, proteins, tagged_proteins, sequence_str
 
 
+    def get_kmer_freq(self, nt_seq, kmer_length, substrings=False):
+        '''
+        return the K-mer frequency of a nuclotide sequence
+    
+        seq = 'AACGTACGTAGCTCATG...'
+        
+        kmer_dict with length 3 = 
+        
+        {'AAA':1, 'AAC': 2, 'AAG':0 ...}
+        
+
+        Parameters
+        ----------
+        nt_seq : str
+            nuclotide sequence to get kmers from.
+        kmer_length : int
+            DESCRIPTION.
+        substrings : bool, optional
+            generate kmers for all lower length kmers as well, ie
+            for k = 3, 2, and 1 instead of just 3. The default is False.
+
+        Returns
+        -------
+        kmer_freq_vec : 1darray
+            kmer frequency per k-mer key.
+        kmer_ind : list of str
+            list of keys for the k-mer frequency vector.
+
+        '''
+          
+        nt_seq = nt_seq.upper()
+        unique_char = list(set(nt_seq))
+
+        combos =[x for x in it.product(unique_char, repeat=kmer_length)]   
+        if substrings:
+            for n in range(kmer_length-1, 0, -1):
+                combos += [x for x in it.product(unique_char, repeat=n)] 
+        kmer_ind = [''.join(y) for y in combos]
+
+        kmer_freq_vec = np.zeros(len(combos)).astype(int)
+        for i in range(len(nt_seq)-kmer_length):
+            kmer_freq_vec[kmer_ind.index(nt_seq[i:i+kmer_length])] += 1
+        if substrings:
+            for n in range(kmer_length-1, 0, -1):
+                for i in range(len(nt_seq)-n):
+                    kmer_freq_vec[kmer_ind.index(nt_seq[i:i+n])] += 1            
+
+        return kmer_freq_vec, kmer_ind
+    
+    
+    def clean_nt_seq(self, nt_seq, upper=True, sub_dict=None, t_or_u='u',
+                     random_sub=False):
+        '''
+        Return an mrna sequence of lowercase a,u,c,g from IPUAC substitutions
+
+        .. warning:: this code will replace substitutive nucleotides with
+        preferential order a, g , u , c. for example: N (any base) is set
+        to A, W (T,U, or A) is set to A, S (C or G) is set to G
+
+
+
+        Parameters
+        ----------
+        seq : str
+            sequence string.
+
+        Returns
+        -------
+        seq : str
+            cleaned sequence str (only lowercase a,u,c,g).
+
+        '''
+        if sub_dict == None:
+            sub_dict = self.codon_dicts.ipuac_nt_t
+
+        seq = nt_seq.lower()
+
+        if random_sub:
+            new_str = []
+            for i in range(len(seq)):
+                if seq[i] not in ['a','t','g','c','u']:
+                    idx = np.random.randint( len(sub_dict[seq[i]])   )
+                    new_str += [sub_dict[seq[i]][idx] , ]
+                else:
+                    new_str += [seq[i], ]
+            seq = ''.join(new_str)
+        else:
+            for key in sub_dict.keys():
+                seq = seq.replace(key, sub_dict[key][0])
+        
+        if t_or_u in ['u','U']:
+            seq = seq.replace('t', 'u')
+        elif t_or_u in ['t','T']:
+            seq = seq.replace('u', 't')
+        else:
+            msg = "Cannot recognize the flag for t_or_u, please use 'u' or 't'"\
+                " to indicate which letter to use for the sequence."
+            raise UnrecognizedFlagError(msg)
+            
+        if upper:
+            seq = seq.upper()
+        else:
+            seq = seq.lower()
+        return seq
+
+    
+    def get_kmer_freq_dict(self, nt_seq, kmer_length, substrings=False ):
+        '''
+        Get K-mer frequency as a dictionary, for example
+        
+        seq = 'AACGTACGTAGCTCATG...'
+        
+        kmer_dict with length 3 = 
+        
+        {'AAA':1, 'AAC': 2, 'AAG':0 ...}
+        
+        
+
+        Parameters
+        ----------
+        nt_seq : str
+            DESCRIPTION.
+        kmer_length : int
+            size kmers to generate.
+        substrings : bool, optional
+            generate kmers for all lower length kmers as well, ie
+            for k = 3, 2, and 1 instead of just 3. The default is False.
+        
+        Returns
+        -------
+        dict
+            dictionary of kmer frequencies.
+
+        '''
+        kmer_freq, kmer_key = self.get_kmer_freq(nt_seq, kmer_length, substrings=substrings)
+        return  dict(zip(kmer_key, kmer_freq))
+
+    def get_gc_content(self, nt_seq):
+        '''
+        Get the GC content of a nucleotide sequence
+
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence.
+
+        Returns
+        -------
+        GC content float (percentage).
+
+        '''
+        nt_seq = nt_seq.upper()
+        return float((nt_seq.count('G') + nt_seq.count('C')))/len(nt_seq)
+        
 
     def get_tag_loc(self, aa_seq, tag, epitope_loc='front'):
         cd = self.codon_dicts
