@@ -673,6 +673,25 @@ class SequenceManipMethods():
 
     
     def get_cai(self, nt_seq, codon_dict=None):
+        '''
+        get codon adaptation index (CAI)
+
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence.
+        codon_dict : dict, optional
+            codon frequency dictionary. The default is None.
+
+        Returns
+        -------
+        float
+            codon adaptation index of the sequence.
+
+        '''
+        if codon_dict == None:
+            codon_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
+            
         cai_codons = []
         for i in range(0, len(nt_seq), 3):
             synonmous_codons = self.codon_dicts.aa_table_r[
@@ -686,17 +705,25 @@ class SequenceManipMethods():
         
     def codon_usage(self, nt_seq, codon_dict=None):
         '''
-        Analyzes codon useage from the nucleotide sequence
+        return codon adaptation index (CAI) as well as codon sensitivity and
+        cai per codon.
+            
 
-        *args*
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence.
+        codon_dict : dict, optional
+            codon frequency dict. The default is None.
 
-            **nt_seq**,  nucleotide sequence as a string
-
-        *returns*
-
-            **codon_sensitivity**, a list of codon sensitivity for the nucleotide sequence
-
-            **cai**, cai value
+        Returns
+        -------
+        codon_sensitivity : list
+            how codon sensitive a sequence is per codon.
+        cai : float
+            codon adaptation index.
+        cai_codons : list
+            codon adaptation index per codon in the sequence.
 
         '''
 
@@ -1172,11 +1199,31 @@ class SequenceManipMethods():
         
 
     def get_tag_loc(self, aa_seq, tag, epitope_loc='front'):
-        cd = self.codon_dicts
+        '''
+        
 
+        Parameters
+        ----------
+        aa_seq : str
+            amino acid sequence.
+        tag : str
+            amino acid epitope sequence.
+        epitope_loc : str, optional
+            where to consider the binary epitope, at the front, back or middle . The default is 'front'.
+
+        Returns
+        -------
+        list
+            list of binary tag locations per codon.
+
+        '''
+        cd = self.codon_dicts
+        epitope_loc = epitope_loc.lower()
         if epitope_loc == 'front':
             offset = 0
         if epitope_loc == 'middle':
+            offset = int(len(tag)/2)
+        if epitope_loc == 'center':
             offset = int(len(tag)/2)
         if epitope_loc == 'back':
             offset = len(tag)

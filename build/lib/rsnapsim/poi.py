@@ -184,6 +184,21 @@ class poi():
 
 
     @property
+    def gc_content(self):
+        '''
+        GC content of the mRNA NT sequence
+
+        Returns
+        -------
+        gc_content : float
+            percentage gc content
+
+        '''
+
+        s = self.nt_seq.upper()
+        return float((s.count('G') + s.count('C')))/len(s)
+
+    @property
     def all_k(self):
         '''
         All propensities for simulation

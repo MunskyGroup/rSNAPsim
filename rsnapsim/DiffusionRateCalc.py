@@ -35,6 +35,7 @@ class DiffusionRateCalc():
                         'tRNA_base': 25000, #approximation of 76 - 90 nt
                         'GFP': 26870,
                         'cy3':627.7,
+                        'Cy3':627.7,
                         'mCherry': 28000,
                         'Fab_blank': 48000,#approximation
                         'MS2CP': 13700,
@@ -216,8 +217,13 @@ class DiffusionRateCalc():
                 warnings.warn(msg)
                 fluorophore_weight = [fluorophore_weight[0]]*probe_loc.shape[0]
 
-        probe_mw = probe_loc * np.array([np.sum(fluorophore_weight)
-                                         + fab_weight])
+
+        fluorophore_weight = [self.mw_table[x] for x in fluorophore_weight if isinstance(x,str)]
+
+        
+        probe_mw = (np.array([fluorophore_weight]).T + fab_weight) * np.atleast_2d(probe_loc)
+        #probe_mw = probe_loc * np.array([np.sum(fluorophore_weight)
+                                         #+ fab_weight])
 
 
         aa_mw = np.array([self.aa_table_mw[x] for x in aa_seq])
@@ -280,7 +286,12 @@ class DiffusionRateCalc():
         mw_per_pos = np.zeros(ribosome_position_tensor.shape[:-1])
 
         for i in range(ribosome_position_tensor.shape[0]):
-            mw_per_pos[i,:] = np.sum(weight_vec[
-                ribosome_position_tensor[i,:,:]], axis=1)
+            
+            for j in range(ribosome_position_tensor.shape[1]):
+                if np.sum(ribosome_position_tensor[i,j,:])!=0:
+                    valid_inds = ribosome_position_tensor[i,j,:][ribosome_position_tensor[i,j,:] !=0].flatten()
+                    mw_per_pos[i,j] = np.sum(weight_vec[valid_inds ])
+                else:
+                    mw_per_pos[i,j] = 0 #no ribosome bound
 
         return mw_per_pos + base_mw

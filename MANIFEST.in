@@ -3,6 +3,8 @@ recursive-exclude rsnapsim/ssa_cpp
 recursive-exclude trna_ssa *
 recursive-exclude models *
 recursive-exclude test *
+recursive-exclude test_files *
+recursive-exclude paper_figures *
 
 recursive-include blank_model.pyx
 recursive-include blank_model.cpp

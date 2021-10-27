@@ -8,7 +8,9 @@ import re
 import time
 import os
 import numpy as np
+import itertools as it
 from . import CodonDictionaries
+from . import AuxCodonDicts
 from . import FileParser
 from . import poi as POI
 
@@ -53,7 +55,18 @@ class AscNumDoesNotExistError(Error):
         self.message = message
         
         
-        
+class UnrecognizedFlagError(Error):
+    """Exception raised for when trying to pull a gb from an ascession number
+    that doesnt exist
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+                
 
 class SequenceManipMethods():
     '''
@@ -62,6 +75,7 @@ class SequenceManipMethods():
     def __init__(self, sequence=''):
         self.sequence = sequence
         self.codon_dicts = CodonDictionaries.CodonDictionaries()
+        self.aux_dicts = AuxCodonDicts.AuxCodonDicts()
         #get the codon dictionaries
 
 
@@ -327,19 +341,389 @@ class SequenceManipMethods():
             
         return cdict
 
+    
+    def __check_trna_gene_dict(self,trna_gene_dict):
+      '''
+      check if a dictionary's anticodons are written in 5'-->3' 
+      or 3'-->5' order
+    
+      Returns: index of the 5' anticodon, bool flipped
+      '''
+      try: 
+        tmp_keys = list(trna_gene_dict.keys())  #get the trna dictionary keys
+        tmp_keys_lower = [x.lower() for x in tmp_keys] #get the lower strings of them
+        ala_key = tmp_keys[tmp_keys_lower.index('ala')] #get the ALA key
+        alanines = trna_gene_dict[ala_key]
+        if len(set([x[0] for x in alanines])) == 1: # if they are oriented 3' to 5' ie all starting with C's 
+            flipped = False
+            anti_codon_3rd_nt = 2
+        elif len(set([x[0] for x in alanines])) == 3:
+            flipped = True
+            anti_codon_3rd_nt = 0
+        else:
+            ValueError('could not recognize what this dictionary is')
+      except:
+        anti_codon_3rd_nt = 0
+        flipped= True
+      return anti_codon_3rd_nt, flipped
+
+    def __default_tai_dicts(self):
+        '''
+        get the default tai_dicts
+        '''
+        wobble_rules = {'A':['U','C','G','A'],
+            'C':['G'],
+            'G':['C','U'],
+            'U':['A','G','C','U'],
+            'I':['A','C','U']}    
+        
+        bp_rules = {'A':'U', 'G':'C','C':'G','U':'A'}
+        
+        sij_dict = {'A:U':0, 'A:A':.5, 'A:G':.5, 'A:C':.5,
+                      'C:G':0,
+                      'G:C':0, 'G:U':.41,
+                      'U:A':0, 'U:G':.68, 'U:C':.5, 'U:U':.5,
+                      'I:U':0, 'I:C':.28, 'I:A':.99,
+                      'L:A':.89, }        
+        
+        return bp_rules, wobble_rules, sij_dict
+      
+        
+    def get_tai_weights(self, nt_seq,
+                        tRNA_gene_copy_dict = None,
+                        alt_stopcodons = ['UAG','UGA','UAA'],
+                        bp_rules = None,
+                        wobble_rules = None, 
+                        anticodon_order='5->3',
+                        sij_dict = None,
+                        ignore_start_codon=True):
+        '''
+        get the tRNA Adaptation Index (tAI) weights for an arbitrary:
+            
+        * base pairing dictionary
+        * wobble pairng dictionary
+        * sij interaction dictionary
+        * tRNA gene copy number dictionary
+
+        Parameters
+        ----------
+        nt_seq : str
+            Nucleotide sequence.
+        tRNA_gene_copy_dict : dict, optional
+            tRNA gene copy count by anticodon key. The default is None.
+            If left blank automatically uses hg19 tRNA counts from gTRNAdb,
+            stored in aux_cdict.hg19_tRNA_GCN_by_anticodon
+        alt_stopcodons : list, optional
+            list of stop codons to remove / not consider for TAI. 
+            The default is ['UAG','UGA','UAA'].
+        bp_rules : dict, optional
+            base pair rules. The default is {A:U, G:C, C:G, U:A}.
+        wobble_rules : dict, optional
+            allowed wobble pairing rules. The default is 
+                {'A':['U','C','G','A'],
+                'C':['G'],
+                'G':['C','U'],
+                'U':['A','G','C','U'],
+                'I':['A','C','U']}.
+        anticodon_order : str, optional
+            '5->3' or '3->5' ordering for the keys of
+            the tRNA gene copy number dict. The default is '5->3'.
+        sij_dict : dict, optional
+            wobble base pair efficiencies 0 = 100% efficent (1-sij). The default is
+             {'A:U':0, 'A:A':.5, 'A:G':.5, 'A:C':.5,
+                'C:G':0,
+                'G:C':0, 'G:U':.41,
+                'U:A':0, 'U:G':.68, 'U:C':.5, 'U:U':.5,
+                'I:U':0, 'I:C':.28, 'I:A':.99,
+                'L:A':.89, }
+        ignore_start_codon : bool, optional
+            ignore the first ATG for calculating tAI. The default is True.
+
+        Returns
+        -------
+        dict
+            codon to tAI weight dictionary.
+
+        '''
+        
+        bases = ['A','G','C','U']
+        all_3mers = [''.join(i) for i in it.product(bases, repeat = 3)]
+        
+        if tRNA_gene_copy_dict == None:
+            tRNA_gene_copy_dict = self.aux_dicts.hg19_tRNA_GCN_by_anticodon
+        
+        #get the bp/ wobble rules if specified
+        if bp_rules == None:
+            bp_rules = {'A':'U', 'G':'C','C':'G','U':'A'}
+        if wobble_rules == None:
+            wobble_rules = {'A':['U','C','G','A'],
+            'C':['G'],
+            'G':['C','U'],
+            'U':['A','G','C','U'],
+            'I':['A','C','U']}    
+        
+        
+        #remove stop codons
+        for stop in alt_stopcodons:
+            all_3mers.remove(stop)
+        
+        #available trna anticodons from the dictionary given
+        available_genes = sorted(list(tRNA_gene_copy_dict.keys()))
+        
+        #get matches based on the bp/wobble rules and a given codon
+        def generate_matches(codon,bp_rules, bp_wobble_rules):
+            frnt = bp_rules[codon.upper()[0]] + bp_rules[codon.upper()[1]] 
+            return [frnt + x for x in bp_wobble_rules[codon.upper()[2]]] 
+        
+        #anti_codon_3rd_nt, flipped = check_trna_gene_dict(trna_gene_dict)
+        if anticodon_order=='5->3':
+            anti_codon_3rd_nt = 0
+            flipped=True
+          
+        codon_to_species = {}
+        for i in range(len(all_3mers)): #for every codon
+            codon =  all_3mers[i]  
+            match_ids = []
+            #get all anticodons that match
+            for anticodon in available_genes: 
+                if flipped: #flip the anticodon if needed
+                    matches = generate_matches(anticodon[::-1], bp_rules, wobble_rules)
+                    if codon in matches:
+                        match_ids =match_ids + [anticodon]
+                else:
+                    matches =  generate_matches(anticodon, bp_rules, wobble_rules)
+                    if codon in matches:
+                        match_ids =match_ids + [anticodon]
+            
+            codon_to_species[codon] = match_ids 
+
+ 
+        Wi = {}
+          
+        #interaction efficiency weight dictionary 5' anticodon to 3' codon
+        # 0 = 100% efficent 
+        if sij_dict==None:
+          sij_dict = {'A:U':0, 'A:A':.5, 'A:G':.5, 'A:C':.5,
+                        'C:G':0,
+                        'G:C':0, 'G:U':.41,
+                        'U:A':0, 'U:G':.68, 'U:C':.5, 'U:U':.5,
+                        'I:U':0, 'I:C':.28, 'I:A':.99,
+                        'L:A':.89, }
+          
+        codons_given = list(tRNA_gene_copy_dict.keys()) #available anticodons
+        codons_to_remove = alt_stopcodons
+        codons_given = [x for x in codons_given if x not in codons_to_remove]
+          
+        #sanity check, check if anticodon is 5'->3' or 3'->5'
+        anti_codon_3rd_nt, flipped = self.__check_trna_gene_dict(tRNA_gene_copy_dict) 
+        
+        for codon in codon_to_species:
+            weight = 0
+              # Wi = sumj[ (1-sij)*tGCNj]
+            for anticodon in codon_to_species[codon]:
+                sij = sij_dict[ (str(anticodon[anti_codon_3rd_nt]) + ':' + str(codon[2]))]
+                weight += (1-sij)*tRNA_gene_copy_dict[anticodon]
+              
+            Wi[codon] = weight #store the weights
+          
+        #get nonzero weights
+        Wi_nonzero = np.array(list(Wi.values()))[np.array(list(Wi.values()))!=0] 
+        wmean = self.geomean(Wi_nonzero) #geometric mean of nonzero weights
+        wmax = np.max(Wi_nonzero) #max weight
+        wi = {}
+        #if the key = 0 set it to geomean of nonzero weights
+        for key in Wi.keys(): 
+            if Wi[key] !=0:
+                wi[key] = Wi[key]/wmax
+            else:
+                wi[key] = wmean
+            #return the weight dictionary
+        return wi
+
+        
+    def get_metric_from_weights(self, nt_seq, weight_dict,
+                alt_stopcodons = ['UAG','UGA','UAA'],
+                ignore_start_codon=True):
+        '''
+        given an arbitrary dictionary of weights per codon, calculate 
+        geometric mean of those weights from a sequence.
+
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence.
+        weight_dict : dict
+            dict of weights with keys being codons.
+        alt_stopcodons : list, optional
+            DESCRIPTION. The default is ['UAG','UGA','UAA'].
+        ignore_start_codon : bool, optional
+            ignore the start codon when calculating the metric. The default is True.
+
+        Returns
+        -------
+        float
+            geometric mean of the weights per codon in the sequence.
+        metric_codons : list
+            list of weights per codon.
+
+        '''
+        
+     
+        mRNA_sequence_str = nt_seq.upper().replace('T','U') 
+        #convert the sequence to uppercase and use U
+        #codons_to_remove = ['UGA', 'UAG','UAA'] #remove stop codons
+        #get codons from the sequeence and remove stops
+        codons = [mRNA_sequence_str[i:i+3] for i in range(0, len(mRNA_sequence_str), 3)]
+        codons = [x for x in codons if x not in alt_stopcodons]
+        if ignore_start_codon: #ignore the start codon if needed
+            codons = codons[1:]
+        metric_codons = [] #get the list of tai per codon
+        for i in range(len(codons)):
+            metric_codons = metric_codons + [weight_dict[codons[i]],]
+        #return geometric mean of that list of tai per codons
+        
+        return self.geomean(metric_codons), metric_codons
+
+    def get_tai(self, nt_seq, tRNA_gene_copy_dict=None,
+                sij_dict=None,
+                alt_stopcodons = ['UAG','UGA','UAA'],
+                bp_rules = None,
+                wobble_rules = None, 
+                anticodon_order='5->3',
+                ignore_start_codon=True):
+        
+        '''
+        get the tRNA Adaptation Index (tAI) weights for an arbitrary:
+            
+        * base pairing dictionary
+        * wobble pairng dictionary
+        * sij interaction dictionary
+        * tRNA gene copy number dictionary
+
+        Parameters
+        ----------
+        nt_seq : str
+            Nucleotide sequence.
+        tRNA_gene_copy_dict : dict, optional
+            tRNA gene copy count by anticodon key. The default is None.
+            If left blank automatically uses hg19 tRNA counts from gTRNAdb,
+            stored in aux_cdict.hg19_tRNA_GCN_by_anticodon
+        alt_stopcodons : list, optional
+            list of stop codons to remove / not consider for TAI. 
+            The default is ['UAG','UGA','UAA'].
+        bp_rules : dict, optional
+            base pair rules. The default is {A:U, G:C, C:G, U:A}.
+        wobble_rules : dict, optional
+            allowed wobble pairing rules. The default is 
+                {'A':['U','C','G','A'],
+                'C':['G'],
+                'G':['C','U'],
+                'U':['A','G','C','U'],
+                'I':['A','C','U']}.
+        anticodon_order : str, optional
+            '5->3' or '3->5' ordering for the keys of
+            the tRNA gene copy number dict. The default is '5->3'.
+        sij_dict : dict, optional
+            wobble base pair efficiencies 0 = 100% efficent (1-sij). The default is
+             {'A:U':0, 'A:A':.5, 'A:G':.5, 'A:C':.5,
+                'C:G':0,
+                'G:C':0, 'G:U':.41,
+                'U:A':0, 'U:G':.68, 'U:C':.5, 'U:U':.5,
+                'I:U':0, 'I:C':.28, 'I:A':.99,
+                'L:A':.89, }
+        ignore_start_codon : bool, optional
+            ignore the first ATG for calculating tAI. The default is True.
+
+        Returns
+        -------
+        float
+            geometric mean of the tAI weights per codon in the sequence.
+        tai_codons : list
+            list of tAI weights per codon.
+
+        '''
+        
+        
+        tai_weight_dict = self.get_tai_weights(nt_seq,
+                               tRNA_gene_copy_dict=tRNA_gene_copy_dict,   
+                               alt_stopcodons=alt_stopcodons,
+                               bp_rules=bp_rules,
+                               wobble_rules=wobble_rules,
+                               anticodon_order=anticodon_order,
+                               ignore_start_codon=ignore_start_codon,
+                               sij_dict=sij_dict)
+        
+        
+        mRNA_sequence_str = nt_seq.upper().replace('T','U') 
+        #convert the sequence to uppercase and use U
+        if alt_stopcodons == None:
+            alt_stopcodons = ['UAG','UGA','UAA']
+        #codons_to_remove = ['UGA', 'UAG','UAA'] #remove stop codons
+        #get codons from the sequeence and remove stops
+        codons = [mRNA_sequence_str[i:i+3] for i in range(0, len(mRNA_sequence_str), 3)]
+        codons = [x for x in codons if x not in alt_stopcodons]
+        if ignore_start_codon: #ignore the start codon if needed
+            codons = codons[1:]
+        tai_codons = [] #get the list of tai per codon
+        for i in range(len(codons)):
+            tai_codons = tai_codons + [tai_weight_dict[codons[i]],]
+        #return geometric mean of that list of tai per codons
+        
+        return self.geomean(tai_codons), tai_codons
+
+    
+    def get_cai(self, nt_seq, codon_dict=None):
+        '''
+        get codon adaptation index (CAI)
+
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence.
+        codon_dict : dict, optional
+            codon frequency dictionary. The default is None.
+
+        Returns
+        -------
+        float
+            codon adaptation index of the sequence.
+
+        '''
+        if codon_dict == None:
+            codon_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
+            
+        cai_codons = []
+        for i in range(0, len(nt_seq), 3):
+            synonmous_codons = self.codon_dicts.aa_table_r[
+                self.codon_dicts.aa_table[nt_seq[i:i+3]]]
+
+            max_freq = max([codon_dict[x] for x in synonmous_codons])
+
+            cai_codons.append(codon_dict[nt_seq[i:i+3]] /max_freq)
+
+        return self.geomean(cai_codons)
+        
     def codon_usage(self, nt_seq, codon_dict=None):
         '''
-        Analyzes codon useage from the nucleotide sequence
+        return codon adaptation index (CAI) as well as codon sensitivity and
+        cai per codon.
+            
 
-        *args*
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence.
+        codon_dict : dict, optional
+            codon frequency dict. The default is None.
 
-            **nt_seq**,  nucleotide sequence as a string
-
-        *returns*
-
-            **codon_sensitivity**, a list of codon sensitivity for the nucleotide sequence
-
-            **cai**, cai value
+        Returns
+        -------
+        codon_sensitivity : list
+            how codon sensitive a sequence is per codon.
+        cai : float
+            codon adaptation index.
+        cai_codons : list
+            codon adaptation index per codon in the sequence.
 
         '''
 
@@ -659,13 +1043,187 @@ class SequenceManipMethods():
         return protein_strs, proteins, tagged_proteins, sequence_str
 
 
+    def get_kmer_freq(self, nt_seq, kmer_length, substrings=False):
+        '''
+        return the K-mer frequency of a nuclotide sequence
+    
+        seq = 'AACGTACGTAGCTCATG...'
+        
+        kmer_dict with length 3 = 
+        
+        {'AAA':1, 'AAC': 2, 'AAG':0 ...}
+        
+
+        Parameters
+        ----------
+        nt_seq : str
+            nuclotide sequence to get kmers from.
+        kmer_length : int
+            DESCRIPTION.
+        substrings : bool, optional
+            generate kmers for all lower length kmers as well, ie
+            for k = 3, 2, and 1 instead of just 3. The default is False.
+
+        Returns
+        -------
+        kmer_freq_vec : 1darray
+            kmer frequency per k-mer key.
+        kmer_ind : list of str
+            list of keys for the k-mer frequency vector.
+
+        '''
+          
+        nt_seq = nt_seq.upper()
+        unique_char = list(set(nt_seq))
+
+        combos =[x for x in it.product(unique_char, repeat=kmer_length)]   
+        if substrings:
+            for n in range(kmer_length-1, 0, -1):
+                combos += [x for x in it.product(unique_char, repeat=n)] 
+        kmer_ind = [''.join(y) for y in combos]
+
+        kmer_freq_vec = np.zeros(len(combos)).astype(int)
+        for i in range(len(nt_seq)-kmer_length):
+            kmer_freq_vec[kmer_ind.index(nt_seq[i:i+kmer_length])] += 1
+        if substrings:
+            for n in range(kmer_length-1, 0, -1):
+                for i in range(len(nt_seq)-n):
+                    kmer_freq_vec[kmer_ind.index(nt_seq[i:i+n])] += 1            
+
+        return kmer_freq_vec, kmer_ind
+    
+    
+    def clean_nt_seq(self, nt_seq, upper=True, sub_dict=None, t_or_u='u',
+                     random_sub=False):
+        '''
+        Return an mrna sequence of lowercase a,u,c,g from IPUAC substitutions
+
+        .. warning:: this code will replace substitutive nucleotides with
+        preferential order a, g , u , c. for example: N (any base) is set
+        to A, W (T,U, or A) is set to A, S (C or G) is set to G
+
+
+
+        Parameters
+        ----------
+        seq : str
+            sequence string.
+
+        Returns
+        -------
+        seq : str
+            cleaned sequence str (only lowercase a,u,c,g).
+
+        '''
+        if sub_dict == None:
+            sub_dict = self.codon_dicts.ipuac_nt_t
+
+        seq = nt_seq.lower()
+
+        if random_sub:
+            new_str = []
+            for i in range(len(seq)):
+                if seq[i] not in ['a','t','g','c','u']:
+                    idx = np.random.randint( len(sub_dict[seq[i]])   )
+                    new_str += [sub_dict[seq[i]][idx] , ]
+                else:
+                    new_str += [seq[i], ]
+            seq = ''.join(new_str)
+        else:
+            for key in sub_dict.keys():
+                seq = seq.replace(key, sub_dict[key][0])
+        
+        if t_or_u in ['u','U']:
+            seq = seq.replace('t', 'u')
+        elif t_or_u in ['t','T']:
+            seq = seq.replace('u', 't')
+        else:
+            msg = "Cannot recognize the flag for t_or_u, please use 'u' or 't'"\
+                " to indicate which letter to use for the sequence."
+            raise UnrecognizedFlagError(msg)
+            
+        if upper:
+            seq = seq.upper()
+        else:
+            seq = seq.lower()
+        return seq
+
+    
+    def get_kmer_freq_dict(self, nt_seq, kmer_length, substrings=False ):
+        '''
+        Get K-mer frequency as a dictionary, for example
+        
+        seq = 'AACGTACGTAGCTCATG...'
+        
+        kmer_dict with length 3 = 
+        
+        {'AAA':1, 'AAC': 2, 'AAG':0 ...}
+        
+        
+
+        Parameters
+        ----------
+        nt_seq : str
+            DESCRIPTION.
+        kmer_length : int
+            size kmers to generate.
+        substrings : bool, optional
+            generate kmers for all lower length kmers as well, ie
+            for k = 3, 2, and 1 instead of just 3. The default is False.
+        
+        Returns
+        -------
+        dict
+            dictionary of kmer frequencies.
+
+        '''
+        kmer_freq, kmer_key = self.get_kmer_freq(nt_seq, kmer_length, substrings=substrings)
+        return  dict(zip(kmer_key, kmer_freq))
+
+    def get_gc_content(self, nt_seq):
+        '''
+        Get the GC content of a nucleotide sequence
+
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence.
+
+        Returns
+        -------
+        GC content float (percentage).
+
+        '''
+        nt_seq = nt_seq.upper()
+        return float((nt_seq.count('G') + nt_seq.count('C')))/len(nt_seq)
+        
 
     def get_tag_loc(self, aa_seq, tag, epitope_loc='front'):
-        cd = self.codon_dicts
+        '''
+        
 
+        Parameters
+        ----------
+        aa_seq : str
+            amino acid sequence.
+        tag : str
+            amino acid epitope sequence.
+        epitope_loc : str, optional
+            where to consider the binary epitope, at the front, back or middle . The default is 'front'.
+
+        Returns
+        -------
+        list
+            list of binary tag locations per codon.
+
+        '''
+        cd = self.codon_dicts
+        epitope_loc = epitope_loc.lower()
         if epitope_loc == 'front':
             offset = 0
         if epitope_loc == 'middle':
+            offset = int(len(tag)/2)
+        if epitope_loc == 'center':
             offset = int(len(tag)/2)
         if epitope_loc == 'back':
             offset = len(tag)
@@ -675,7 +1233,7 @@ class SequenceManipMethods():
 
     @staticmethod
     def geomean(iterable):
-        '''geometric mean used for codon sensitivity calculations
+        '''equal weight geometric mean used for codon sensitivity calculations
         '''
         a = np.array(iterable)
-        return a.prod()**(1.0/len(a))
+        return np.exp(np.sum(np.log(a))/len(a)   )
