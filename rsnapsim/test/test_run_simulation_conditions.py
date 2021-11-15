@@ -69,8 +69,8 @@ n_traj = 10
 probe_loc = np.zeros((1,len(forward_rates))).astype(int)
 probe_vec = np.zeros((1,len(forward_rates))).astype(int)
 
-probe_loc[0,0] =0
-probe_vec[0,0] =0
+probe_loc[0,0] =1
+probe_vec[0,0] =1
  
 rss.solver.solve_ssa(forward_rates, t_array,
                      ki=.033, kt=10, n_traj=n_traj, probe_loc=probe_loc,
