@@ -111,6 +111,399 @@ class SequenceManipMethods():
         return opt_seq
 
 
+
+    def __get_rate_uniform_opt_dicts(self, nt_seq, codon_dict=None, stop_codons=['UAG','UAA','UGA']):
+        if codon_dict is None:
+            codon_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
+            
+        
+        only_u_dict = {}
+        n_keys = 0
+        for key in codon_dict.keys():
+            if 'T' not in key.upper():
+                only_u_dict[key.upper()] = codon_dict[key]
+                n_keys += 1
+                
+        
+        n = 1/n_keys
+        
+        #worst_norm = eqiv to [60/61 + 1/61 * 60], 
+        #a vector of N length with 1 codon making up 100% of the sequence and the rest 0,
+        #the least possible even percentage
+        worst_norm = (n_keys-1)/n_keys + (1/n_keys)*(n_keys-1)
+
+        for x in stop_codons: #remove stop codons
+            only_u_dict.pop(x)
+
+        valid_key = list(only_u_dict.keys())
+        
+        test_seq = FileParser.FileParser().clean_seq(nt_seq)
+        codons = [test_seq[i:i+3] for i in range(0, len(test_seq), 3)] 
+        codonkey, codoncount = np.unique(codons,return_counts=True)
+    
+        keys_to_add = np.array([ x for  x in valid_key if x not in codonkey])
+        vals_to_add = np.zeros(len(keys_to_add))
+        
+        split_str = '.'.join(codons)
+        a_table = self.codon_dicts.aa_table_r
+        
+        opt_dict = {}
+        seq_dict = {}
+        ccc_dict = {}
+        worst_dict = {}
+        opt_dict_aa = {}
+        listsum = 0
+        for key in a_table.keys():
+            
+            if key != '*':
+                codon_list = [x for x in a_table[key] if 'T' not in x]
+                
+                values = [only_u_dict[x] for x in codon_list]
+                codon_cnts = [split_str.upper().count(x) for x in codon_list ]
+                listsum += len(codon_cnts)
+                
+                porportion = np.array(values)/sum(values)
+                worst_count = np.zeros(len(codon_cnts)).astype(int)
+                worst_count[np.argmin(values)] = int(np.sum(codon_cnts))
+                
+                guessed_dist = porportion*np.sum(codon_cnts)
+                new_codons = np.ceil(np.array(values)/sum(values)*np.sum(codon_cnts))
+    
+                if sum(new_codons) != sum(codon_cnts):
+                    diff = sum(new_codons) - sum(codon_cnts)
+                    order = np.argsort(new_codons)[::-1] 
+                    
+                    while diff > 0:
+                        new_codons[order[0]] -= 1
+                        diff -= 1
+                        
+                new_codons = new_codons.astype(int).tolist()
+                
+                for i in range(len(codon_list)):
+                    opt_dict[codon_list[i]] = new_codons[i] 
+                    
+                for i in range(len(codon_list)):
+                    seq_dict[codon_list[i]] = codon_cnts[i] 
+                    
+                for i in range(len(codon_list)):
+                    worst_dict[codon_list[i]] = worst_count[i] 
+                            
+                ccc_dict[key] = codon_list
+                opt_dict_aa[key] = new_codons
+        # if len(keys_to_add) !=0:
+        #     codonkey = np.append(codonkey,keys_to_add)
+        #     codoncount = np.append(codoncount,vals_to_add)
+    
+        # codon_per = codoncount/(len(test_seq)/3)
+    
+        # test_metric = 1  - np.sum(np.abs((codon_per-n))) / worst_norm
+        
+        
+        optkeys = list(opt_dict.keys())
+        
+        seq_arr = np.array([seq_dict[x] for x in optkeys])
+        opt_arr = np.array([opt_dict[x] for x in optkeys])
+        worst_arr =  np.array([worst_dict[x] for x in optkeys])
+        
+        worst_err = np.sum(np.abs(opt_arr - worst_arr))
+        seq_err = np.sum(np.abs(opt_arr - seq_arr))
+        
+             
+        
+        return opt_dict_aa, ccc_dict, seq_dict, opt_dict, worst_dict, opt_dict
+
+    def get_rate_uniform_metric(self, nt_seq, codon_dict=None, stop_codons=['UAG','UAA','UGA']):
+
+        opt_dict_aa, ccc_dict, seq_dict, opt_dict, worst_dict, opt_dict = self.__get_rate_uniform_opt_dicts(nt_seq,codon_dict=codon_dict,
+                                                          stop_codons=stop_codons)
+        
+        optkeys = list(opt_dict.keys())
+        
+        seq_arr = np.array([seq_dict[x] for x in optkeys])
+        opt_arr = np.array([opt_dict[x] for x in optkeys])
+        worst_arr =  np.array([worst_dict[x] for x in optkeys])
+        
+        worst_err = np.sum(np.abs(opt_arr - worst_arr))
+        seq_err = np.sum(np.abs(opt_arr - seq_arr))
+        
+        metric = 1 - seq_err/worst_err    
+    
+        return metric
+
+
+
+    def rate_uniform_optimize_ntseq(self, nt_seq, codon_dict=None, random_placement=True, stop_codons =['UAG','UAA','UGA']):
+        '''
+        Rate uniform optimization, given a set of codons of usage:
+            [10,5,13,1]
+        with rate values of:
+            [1, 5, 15, 2]  
+        set the relative porpotions of usage to:
+            [1/23, 5/23, 13/23, 2/23]
+        for a new codon usage of :
+            [1,5,13,2]
+        
+
+        Parameters
+        ----------
+        nt_seq : TYPE
+            DESCRIPTION.
+        codon_dict : TYPE, optional
+            DESCRIPTION. The default is None.
+        random_placement : TYPE, optional
+            DESCRIPTION. The default is True.
+        stop_codons : TYPE, optional
+            DESCRIPTION. The default is ['UAG','UAA','UGA'].
+
+        Returns
+        -------
+        opt_seq : TYPE
+            DESCRIPTION.
+
+        '''
+        
+        
+        test_seq = FileParser.FileParser().clean_seq(nt_seq).upper().replace('t','u')
+        
+        
+        self.get_codon_uniform_metric(nt_seq,codon_dict=codon_dict, stop_codons=stop_codons )
+        
+        
+        opt_dict_aa, ccc_dict, _,_,_,_, = self.__get_rate_uniform_opt_dicts(nt_seq,codon_dict=codon_dict,
+                                                                  stop_codons=stop_codons)
+        
+        cd = [test_seq[i:i+3] for i in range(0, len(test_seq), 3)]
+        new_cd = []
+        placement_dict = {}
+        keys = list(opt_dict_aa.keys())
+        for i in range(len(keys)):
+            placement_dict[keys[i]] = -1
+        
+        for i in range(len(cd)):
+            
+            aa = self.codon_dicts.aa_table[cd[i]]
+            
+            if aa != '*':
+                if random_placement: # randomly place the new codons
+                    
+                    val_left = 0
+                    while val_left == 0: 
+                        ind = np.random.randint(len(opt_dict_aa[aa]))
+                        val_left = opt_dict_aa[aa][ind]
+                        
+                    codons_left = opt_dict_aa[aa]
+                    codons_left[ind] = codons_left[ind] - 1
+                    opt_dict_aa[aa] = codons_left
+                    new_cd = new_cd + [ccc_dict[aa][ind], ]
+
+                else:  # cycle through new codons and place them 
+                    codons_left = opt_dict_aa[aa]
+                    codon_L = len(opt_dict_aa[aa])
+                    val_left = 0
+                    ind = placement_dict[aa]
+                    while val_left == 0:
+                        ind+=1
+                        ind %= codon_L
+                        val_left = opt_dict_aa[aa][ind]
+                        
+                    
+                    codons_left[ind] = codons_left[ind] - 1
+                    opt_dict_aa[aa] = codons_left
+                    new_cd = new_cd + [ccc_dict[aa][ind], ]
+                    placement_dict[aa] = ind 
+                    
+            else:
+                new_cd = new_cd + [cd[i]]
+        opt_seq = ''.join(new_cd)
+        
+        return opt_seq
+
+
+
+    def __get_codon_uniform_opt_dicts(self, nt_seq, codon_dict=None, stop_codons=['UAG','UAA','UGA']):
+        if codon_dict is None:
+            codon_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
+        only_u_dict = {}
+        n_keys = 0
+        for key in codon_dict.keys():
+            if 'T' not in key.upper():
+                only_u_dict[key.upper()] = codon_dict[key]
+                n_keys += 1
+                
+       
+        n = 1/n_keys
+        
+        #worst_norm = eqiv to [60/61 + 1/61 * 60], 
+        #a vector of N length with 1 codon making up 100% of the sequence and the rest 0,
+        #the least possible even percentage
+        worst_norm = (n_keys-1)/n_keys + (1/n_keys)*(n_keys-1)
+
+        for x in stop_codons: #remove stop codons
+
+            only_u_dict.pop(x)
+
+        valid_key = list(only_u_dict.keys())
+        
+        test_seq = FileParser.FileParser().clean_seq(nt_seq).upper()
+        codons = [test_seq[i:i+3] for i in range(0, len(test_seq), 3)] 
+        codonkey, codoncount = np.unique(codons,return_counts=True)
+    
+        keys_to_add = np.array([ x for  x in valid_key if x not in codonkey])
+        vals_to_add = np.zeros(len(keys_to_add))
+    
+        if len(keys_to_add) !=0:
+            codonkey = np.append(codonkey,keys_to_add)
+            codoncount = np.append(codoncount,vals_to_add)
+    
+        codon_per = codoncount/(len(test_seq)/3)
+        
+
+        new_codon_dict = dict(zip([x.upper() for x  in codonkey], [int(x) for x in codoncount]))
+        
+        split_str = '.'.join(codons)
+        
+        a_table = self.codon_dicts.aa_table_r
+        
+        seq_dict = {}
+        ccc_dict = {}
+        
+        opt_dict_aa = {}
+        listsum = 0
+        for key in a_table.keys():
+            
+            if key != '*':
+                codon_list = [x for x in a_table[key] if 'T' not in x]
+                
+                values = [only_u_dict[x] for x in codon_list]
+                codon_cnts = [split_str.upper().count(x) for x in codon_list ]
+                    
+                for i in range(len(codon_list)):
+                    seq_dict[codon_list[i]] = codon_cnts[i] 
+                
+                #create the flattest distribution of codons here
+                flat = int(np.floor(sum(codon_cnts) / len(codon_cnts)))
+                remainder  = sum(codon_cnts) % len(codon_cnts)
+                
+                new_codons = [flat,]*len(codon_cnts)
+                inds = np.argsort(np.abs(values - np.mean(values))).tolist()
+                for i in range(remainder):
+                    new_codons[inds[i]] +=1
+                    
+                ccc_dict[key] = codon_list
+                opt_dict_aa[key] = new_codons        
+        
+
+        return codon_per, new_codon_dict, worst_norm, n, ccc_dict, opt_dict_aa
+
+
+    def get_codon_uniform_metric(self,nt_seq, codon_dict=None, stop_codons=['UAG', 'UAA','UGA']):
+        '''
+        Codon Uniform Metric:
+            
+        .. math::
+            UM =  1 - \frac{\sum_{i=0}^{N codons} | \frac{# codon_i}{L} - \frac{1}{N codons} |}{ \frac{N codons-1}{N codons} - \frac{1}{N codons}*(N codons - 1) }
+
+        This effectively sets the metric between 0 and 1, where 1 is the theoretical                                                   
+        
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence string.
+        codon_dict : dict, optional
+            Dictionary of codon with its scaling rate. The default is Human nakumura codon frequency (CAI).
+        stop_codons : list, optional
+            List of stop codons to ignore. The default is ['UAG', 'UAA','UGA'].
+
+        Returns
+        -------
+        test_metric : float
+            0-1 uniform metric.
+
+        '''
+        codon_per, _,worst_norm, n, _,_, = self.__get_codon_uniform_opt_dicts(nt_seq, codon_dict=codon_dict, stop_codons=stop_codons)
+        test_metric = 1  - np.sum(np.abs((codon_per-n))) / worst_norm
+        return test_metric
+
+    def codon_uniform_optimize_ntseq(self, nt_seq, codon_dict=None, random_placement=True, stop_codons=['UAG', 'UAA','UGA']):
+        '''
+        Optimize a sequence so its codons are used as uniformly as possible ie:
+        
+        an original sequence has [4,10,6,1] usage of synonomous codons for a given AA
+        this will set that usage to [6,5,5,5], remainders are distributed preferntially to the 
+        closest values to that amino acids average rate in the codon dictionary.
+
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence.
+        codon_dict : dict, optional
+            codon to rate dictionary to optimize over. The default is None.
+        random_placement : bool, optional
+            randomly place the new codons or cyclically place them, 
+            ie we have a new set of . The default is True.
+        stop_codons : list, optional
+            list of stop codons to ignore during optimization. The default is ['UAG', 'UAA','UGA'].
+
+        Returns
+        -------
+        opt_seq : str
+            optomized nucleotide sequence.
+
+        '''
+        test_seq = FileParser.FileParser().clean_seq(nt_seq).upper().replace('t','u')
+        _, codon_dict, _, _, ccc_dict, opt_dict_aa = self.__get_codon_uniform_opt_dicts(nt_seq, codon_dict=codon_dict, stop_codons=stop_codons)
+        
+
+        a_table = self.codon_dicts.aa_table
+
+        cd = [test_seq[i:i+3] for i in range(0, len(test_seq), 3)]
+        new_cd = []
+        
+        placement_dict = {}
+        keys = list(opt_dict_aa.keys())
+        for i in range(len(keys)):
+            placement_dict[keys[i]] = -1
+        
+        for i in range(len(cd)):
+            
+            aa = self.codon_dicts.aa_table[cd[i]]
+            
+            if aa != '*':
+                if random_placement: # randomly place the new codons
+                    
+                    val_left = 0
+                    while val_left == 0: 
+                        ind = np.random.randint(len(opt_dict_aa[aa]))
+                        val_left = opt_dict_aa[aa][ind]
+                        
+                    codons_left = opt_dict_aa[aa]
+                    codons_left[ind] = codons_left[ind] - 1
+                    opt_dict_aa[aa] = codons_left
+                    new_cd = new_cd + [ccc_dict[aa][ind], ]
+
+                else:  # cycle through new codons and place them 
+                    codons_left = opt_dict_aa[aa]
+                    codon_L = len(opt_dict_aa[aa])
+                    val_left = 0
+                    ind = placement_dict[aa]
+                    while val_left == 0:
+                        ind+=1
+                        ind %= codon_L
+                        val_left = opt_dict_aa[aa][ind]
+                        
+                    
+                    codons_left[ind] = codons_left[ind] - 1
+                    opt_dict_aa[aa] = codons_left
+                    new_cd = new_cd + [ccc_dict[aa][ind], ]
+                    placement_dict[aa] = ind 
+                    
+            else:
+                new_cd = new_cd + [cd[i]]
+
+        opt_seq = ''.join(new_cd)
+        
+        return opt_seq
+
     def deoptimize_ntseq(self, nt_seq, deopt_dict=None):
 
         '''
@@ -672,6 +1065,7 @@ class SequenceManipMethods():
         return self.geomean(tai_codons), tai_codons
 
     
+
     def get_cai(self, nt_seq, codon_dict=None):
         '''
         get codon adaptation index (CAI)
@@ -981,13 +1375,13 @@ class SequenceManipMethods():
         
         sizes = [[len(y) for y in x] for x in protein_strs.values()]
         maxsize = max([item for sublist in sizes for item in sublist])
-
+        
         for i in range(3):
             if maxsize in sizes[i]:
                 frame = i
                 pindex = sizes[i].index(maxsize)
                 
-        return proteins[str(int(i))][pindex]
+        return proteins[str(int(frame+1))][pindex]
 
 
     def open_seq_file(self, seqfile, min_codons=80, add_tag=True):
