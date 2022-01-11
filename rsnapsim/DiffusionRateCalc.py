@@ -34,6 +34,8 @@ class DiffusionRateCalc():
                         'human 80S': 4.3e6,  #https://pubmed.ncbi.nlm.nih.gov/25901680/
                         'tRNA_base': 25000, #approximation of 76 - 90 nt
                         'GFP': 26870,
+                        'cy3':627.7,
+                        'Cy3':627.7,
                         'mCherry': 28000,
                         'Fab_blank': 48000,#approximation
                         'MS2CP': 13700,
@@ -186,7 +188,7 @@ class DiffusionRateCalc():
             molecular weight over position for a ribosome.
 
         '''
-
+        
         if isinstance(ribosome, str):
             base_rib = self.mw_table[ribosome]
         else:
@@ -199,14 +201,15 @@ class DiffusionRateCalc():
 
         if isinstance(fluorophore, str):
             fluorophore_weight = self.mw_table[fluorophore]
-            fluorophore_weight = [fluorophore_weight]*probe_loc.shape[0]
+            fluorophore_weight = [fluorophore_weight]*np.atleast_2d(probe_loc).shape[0]
+     
         else:
             fluorophore_weight = fluorophore
             if not isinstance(fluorophore_weight, list):
                 fluorophore_weight = [fluorophore_weight]
 
-            if len(fluorophore_weight) >= probe_loc.shape[0]:
-                fluorophore_weight = fluorophore_weight[:probe_loc.shape[0]]
+            if len(fluorophore_weight) >=np.atleast_2d(probe_loc).shape[0]:
+                fluorophore_weight = fluorophore_weight[:np.atleast_2d(probe_loc).shape[0]]
             else:
                 msg = 'warning: Provided probe location vector implies there'\
                       ' is more than one color, however only one fluorophore'\
@@ -215,8 +218,15 @@ class DiffusionRateCalc():
                 warnings.warn(msg)
                 fluorophore_weight = [fluorophore_weight[0]]*probe_loc.shape[0]
 
-        probe_mw = probe_loc * np.array([np.sum(fluorophore_weight)
-                                         + fab_weight])
+        for i in range(len(fluorophore_weight)):
+            if isinstance(fluorophore_weight[i],str):
+                fluorophore_weight[i] = self.mw_table[fluorophore_weight[i]]
+        #fluorophore_weight = [self.mw_table[x] for x in fluorophore_weight if isinstance(x,str)]
+
+    
+        probe_mw = (np.array([fluorophore_weight]).T + fab_weight) * np.atleast_2d(probe_loc)
+        #probe_mw = probe_loc * np.array([np.sum(fluorophore_weight)
+                                         #+ fab_weight])
 
 
         aa_mw = np.array([self.aa_table_mw[x] for x in aa_seq])
@@ -279,7 +289,12 @@ class DiffusionRateCalc():
         mw_per_pos = np.zeros(ribosome_position_tensor.shape[:-1])
 
         for i in range(ribosome_position_tensor.shape[0]):
-            mw_per_pos[i,:] = np.sum(weight_vec[
-                ribosome_position_tensor[i,:,:]], axis=1)
+            
+            for j in range(ribosome_position_tensor.shape[1]):
+                if np.sum(ribosome_position_tensor[i,j,:])!=0:
+                    valid_inds = ribosome_position_tensor[i,j,:][ribosome_position_tensor[i,j,:] !=0].flatten()
+                    mw_per_pos[i,j] = np.sum(weight_vec[valid_inds ])
+                else:
+                    mw_per_pos[i,j] = 0 #no ribosome bound
 
         return mw_per_pos + base_mw

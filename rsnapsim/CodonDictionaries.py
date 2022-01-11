@@ -41,6 +41,28 @@ class CodonDictionaries():
 
 
     def __init__(self):
+        
+        # a, g , u , c. #order of replacement if non random
+        self.ipuac_nt_t = {'a':['a'], 't':['t'], 'u':['u'], 'c':['c'],
+                         'w':['a','t'], 's':['g','c'], 'm':['a','c'],
+                         'k':['g','t'], 'r':['a','g'], 'y':['t','c'],
+                         'b':['g','t','c'], 'd':['a','g','t'],
+                         'h':['a','t','c'], 'v':['a','g','c'],
+                         'n':['a','t','g','c'], 'Ψ':['u'],
+            
+            }
+        
+        self.ipuac_nt_u = {'a':['a'], 't':['t'], 'u':['u'], 'c':['c'],
+                         'w':['a','u'], 's':['g','c'], 'm':['a','c'],
+                         'k':['g','u'], 'r':['a','g'], 'y':['u','c'],
+                         'b':['g','u','c'], 'd':['a','g','u'],
+                         'h':['a','u','c'], 'v':['a','g','c'],
+                         'n':['a','u','g','c'], 'Ψ':['u'],
+            
+            }
+                
+        
+        
         self.tag_dict = {'T_SunTag':'EELLSKNYHLENEVARLKK',
                          'T_Flag':'DYKDDDDK',
                          'T_Hemagglutinin':'YPYDVPDYA'}

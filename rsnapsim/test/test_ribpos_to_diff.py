@@ -21,10 +21,7 @@ bactin = poi_objs['1'][0]
 soln = rsnapsim.solver.solve_ssa(pro.kelong, t,n_traj=1,ki=.033, low_memory=False)
 
 X = soln.ribosome_locations
-
 bactin_mrna_blank_mw = rsnapsim.diffcalc.calculate_rna_strand_base_mw(bactin.nt_seq, n_loops=24, fluorophore=0, coat_protein=0 )
-
-print(bactin_mrna_blank_mw)
 aa_mw_vec = rsnapsim.diffcalc.calculate_single_rib_mw(bactin.aa_seq,bactin.probe_loc,)
 
 

@@ -2,7 +2,7 @@
 """
 Created on Thu Dec 17 17:52:28 2020
 
-@author: willi
+@author: Micheal May, Zach Fox and Will Raymond
 """
 import numpy as np
 from scipy.sparse.linalg import expm

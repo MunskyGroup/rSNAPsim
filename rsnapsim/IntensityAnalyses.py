@@ -58,165 +58,6 @@ class IntensityAnalyses():
         return acf
 
 
-    def get_fragments(self, position_tensor, total_length=None):
-        #TODO
-        '''
-        ..TODO refactor this code!!
-        
-        Get individual ribosome trajectories for kymograph generation
-
-        .. warning:: This is not perfect process, if the time resolution of a
-        simulation is too coarse this will not be able to rebuild ribosome
-        trajectories. This will fail if ribosomes are moving fast enough 
-        between timesteps to pass previously recorded positions.
-
-        Parameters
-        ----------
-        position_tensor : ndarray
-            Ribosome position tensor:  Nribosomes x Ntime, accessed from
-            SSA_Soln.solutions if a full statistical model was run.
-        total_length : int, optional
-            Length of the transcript. If left blank it will use the maximum
-            detected ribosome position
-
-        Returns
-        -------
-        fragtimes : ndarray
-            N_ribosomes x N_longest_time. The individual trajectory times
-            for the positions fragments
-        fragarray : ndarray
-            N_ribosomes x N_position. The individual ribosome trajectory
-            positions
-
-        '''
-        if total_length == None:
-            total_length = np.max(position_tensor)
-
-        fragmented_trajectories = []
-        fragtimes = []
-        maxlen = 0
-
-        fragmentspertraj = []
-        solutions = [position_tensor]
-        nsteps = position_tensor.shape[0]
-        k = 0
-
-
-        ind = np.zeros(position_tensor.shape[1]).astype(int)
-        for i in range(position_tensor.shape[1]):
-          tmp = np.where(position_tensor[:, i] == 0)[0]
-          if len(tmp) > 0:
-            ind[i] = np.where(position_tensor[:, i] == 0)[0][0]
-          else:
-            ind[i] = position_tensor.shape[0]-1
-
-        changes = ind[1:] - ind[:-1]
-        addindexes = np.where(changes > 0)[0]
-        subindexes = np.where(changes < 0)[0]
-
-        sub = solutions[k][:, 1:] - solutions[k][:, :-1]
-        neutralindexes = np.unique(np.where(sub < 0)[1])
-        neutralindexes = np.setxor1d(neutralindexes, subindexes)
-
-        for index in neutralindexes:
-            pre = solutions[k][:, index]
-            post = solutions[k][:, index+1]
-            changecount = 0
-            while len(np.where(post - pre < 0)[0]) > 0:
-
-                post = np.append([total_length], post)
-                pre = np.append(pre, 0)
-
-                changecount += 1
-
-            for i in range(changecount):
-                addindexes = np.sort(np.append(addindexes, index))
-                subindexes = np.sort(np.append(subindexes, index))
-
-            changes[index] = -changecount
-            ind[index] += changecount
-
-
-        for index in np.where(np.abs(changes) > 1)[0]:
-            if changes[index] < 0:
-                for i in range(np.abs(changes[index])-1):
-                    subindexes = np.sort(np.append(subindexes, index))
-            else:
-                for i in range(np.abs(changes[index])-1):
-                    addindexes = np.sort(np.append(addindexes, index))
-
-        truefrags = len(subindexes)
-
-
-
-
-        if len(subindexes) < len(addindexes):
-            subindexes = np.append(
-                subindexes, (
-                    np.ones((
-                        len(addindexes) - len(subindexes)))*(nsteps-1)).astype(int))
-
-
-        fragmentspertraj.append(len(subindexes))
-
-        for m in range(min(len(subindexes), len(addindexes))):
-            traj = solutions[k][:, addindexes[m]:subindexes[m]+1]
-            traj_ind = changes[addindexes[m]:subindexes[m]+1]
-
-            startind = ind[addindexes[m]]
-            minusloc = [0] + np.where(traj_ind < 0)[0].astype(int).tolist()
-            fragment = np.array([])
-
-
-
-            iterind = startind
-
-            if subindexes[m]-addindexes[m] > 0:
-                if len(minusloc) > 1:
-                    if m <= truefrags:
-                        for n in range(len(minusloc)-1):
-                            iterind = iterind + int(min(0, traj_ind[minusloc[n]]))
-
-                            fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten())
-
-                        fragment = np.append(fragment, traj[0, minusloc[-1]+1:].flatten())
-
-                    else:
-                        for n in range(len(minusloc)-1):
-
-                            iterind = iterind + min(0, traj_ind[minusloc[n]])
-
-                            fragment = np.append(fragment, traj[iterind, minusloc[n]+1:minusloc[n+1]+1].flatten())
-
-
-                        fragment = np.append(fragment, traj[m-truefrags, minusloc[-1]+1:].flatten())
-
-
-
-                else:
-
-                    fragment = solutions[k][startind][addindexes[m]:subindexes[m]+1].flatten()
-
-
-
-                fragtimes.append(addindexes[m]+1)
-
-
-                fragmented_trajectories.append(fragment)
-                #if m <= truefrags:
-                    #kes.append(genelength/truetime[len(fragment)])
-
-                if len(fragment) > maxlen:
-                    maxlen = len(fragment)
-
-
-        fragarray = np.zeros((len(fragmented_trajectories), maxlen))
-        for i in range(len(fragmented_trajectories)):
-            fragarray[i][0:len(fragmented_trajectories[i])] = fragmented_trajectories[i]
-
-        return fragtimes, fragarray
-
-
 
     # def get_frags_ssa_obj(self,ssa_obj, total_length = None):
 
@@ -349,6 +190,8 @@ class IntensityAnalyses():
     #     ssa_obj.frag_per_traj = fragmentspertraj
     #     ssa_obj.full_frags = truefrags
 
+
+    ##TODO Convert excitation of the intensity vector (realistic probe)
 
     def get_g0(self, correlation, mode='interp'):
         '''
@@ -608,7 +451,7 @@ class IntensityAnalyses():
         n_traj = intensity_vec.shape[2]
 
         for n in range(colors):
-            if norm in ['Individual', 'I', 'individual', 'ind']:
+            if norm in ['Individual', 'I', 'individual', 'ind','i']:
                 for i in range(intensity_vec.shape[2]):
                     ivec = intensity_vec[n, :, i]
                     autocorr_vec[n, :, i] = self.get_acc2(
@@ -649,13 +492,138 @@ class IntensityAnalyses():
         err_autocorr =  1.0/np.sqrt(n_traj)*np.std(autocorr, ddof=1, axis=2)
         return autocorr, err_autocorr
 
+    @staticmethod
+    def standardize_signal(signal, axis=0, norm='global'):
+        '''
+        Perform standardization to set signal mean to 0 with unit variance of 
+        1. This can be applied globally or individually to each trajectory
+        with the flag norm ='global' or norm='indiv'
 
+        Parameters
+        ----------
+        signal : ndarray
+            intensity or signal array.
+        axis : int, optional
+            axis to apply the standardization over. The default is 0.
+        norm : str, optional
+            apply this using global mean ('global') and var or individual trajectory
+            mean and var ('indiv'). The default is 'global'.
+
+        Raises
+        ------
+        UnrecognizedNormalizationError
+            Throws an error if the norm is not global or individual.
+
+        Returns
+        -------
+        ndarray
+            standardized array over axis desired.
+
+        '''
+        if norm in ['global', 'Global', 'g', 'G']:
+            return (signal - np.mean(signal)) / np.std(signal)
+        if norm in ['Individual', 'I', 'individual', 'ind','indiv','i']:
+            return (signal - np.mean(signal, axis=axis)) / np.std(signal,axis=axis)
+        else:
+            msg = 'unrecognized normalization, please use '\
+                  'individual, global, or none for norm arguement'
+            raise UnrecognizedNormalizationError(msg)    
+            
+    #sets individual 0-1
+    @staticmethod
+    def minmax_signal(signal, axis=0, norm='global'):
+        '''
+        normalize a singal by its min and max, leaving trajectories from 0 to 1
+        This can be applied globally or individually to each trajectory
+        with the flag norm ='global' or norm='indiv'
+
+        Parameters
+        ----------
+        signal : ndarray
+            intensity or signal array.
+        axis : int, optional
+            axis to apply the standardization over. The default is 0.
+        norm : str, optional
+            apply this using global mean ('global') and var or individual trajectory
+            mean and var ('indiv'). The default is 'global'.
+
+        Raises
+        ------
+        UnrecognizedNormalizationError
+            Throws an error if the norm is not global or individual.
+
+        Returns
+        -------
+        ndarray
+            minmaxed array over axis desired.
+
+        '''
+        if norm in ['global', 'Global', 'g', 'G']:
+            return (signal -  np.min(signal) ) / ( np.max(signal)  - np.min(signal) )
+        if norm in ['Individual', 'I', 'individual', 'ind','indiv','i']:
+            return (signal -  np.min(signal,axis=axis) ) / ( np.max(signal,axis=axis)  - np.min(signal,axis=axis) )
+        else:
+            msg = 'unrecognized normalization, please use '\
+                  'individual, global, or none for norm arguement'
+            raise UnrecognizedNormalizationError(msg)    
+
+    @staticmethod
+    def minmax_quantile_signal(signal, axis=0, norm='global', quantile=.95, max_outlier=1.5):
+        '''
+        normalize a singal by its min and max from a quantile,
+        leaving trajectories from 0 to 1 at that quantile. Set all outliers
+        over a maximum to max_outlier.
+        This can be applied globally or individually to each trajectory
+        with the flag norm ='global' or norm='indiv'
+
+        Parameters
+        ----------
+        signal : ndarray
+            intensity or signal array.
+        axis : int, optional
+            axis to apply the standardization over. The default is 0.
+        norm : str, optional
+            apply this using global mean ('global') and var or individual trajectory
+            mean and var ('indiv'). The default is 'global'.
+        quantile : float (0-1)
+            the % quantile to set to the new 1
+        max_outlier : float
+            the maximum value to use for any outlier after normalization
+
+        Raises
+        ------
+        UnrecognizedNormalizationError
+            Throws an error if the norm is not global or individual.
+
+        Returns
+        -------
+        ndarray
+            minmaxed per quantile array over axis desired.
+
+        '''
+        if norm in ['global', 'Global', 'g', 'G']:
+            
+            max_95 = np.quantile(signal, quantile)
+            sig = (signal -  np.min(signal) ) / ( max_95  - np.min(signal) )
+            return np.minimum(sig,max_outlier)
+        
+        if norm in ['Individual', 'I', 'individual', 'ind','indiv','i']:
+            
+            max_95 = np.quantile(signal, quantile,axis=axis)
+            sig = (signal -  np.min(signal,axis=axis) ) / ( max_95 - np.min(signal,axis=axis) )
+            return np.minimum(sig,max_outlier)
+        
+        else:
+            msg = 'unrecognized normalization, please use '\
+                  'individual, global, or none for norm arguement'
+            raise UnrecognizedNormalizationError(msg)    
+            
+            
+    '''
 
     def get_autocorr2(self, intensity_vec, time_vec, totalSimulationTime,
                       geneLength, normalization='Individual'):
-        '''
-        returns the autocorrelations
-        '''
+
 
         autocorr_vec = np.zeros((intensity_vec.shape))
 
@@ -695,3 +663,4 @@ class IntensityAnalyses():
         ke_exp = np.round(geneLength/dwelltime, 1)
 
         return autocorr, mean_autocorr, error_autocorr, dwelltime, ke_exp
+    '''

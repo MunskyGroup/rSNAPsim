@@ -7,6 +7,9 @@ Created on Thu Dec 17 17:34:04 2020
 import numpy as np
 from . import IntensityAnalyses
 from . import PropensityFactory, ProbeVectorFactory
+
+inta = IntensityAnalyses.IntensityAnalyses
+
 import scipy as sci
 import copy
 import time
@@ -128,10 +131,11 @@ class TranslationOptimization():
         
         
     def intensity_fun(self,x):
-        self.solver_obj._poi.ke_mu = x[1]
-        self.solver_obj._poi.ki = x[0]
-        ssa_soln = self.solver_obj.solve_ssa_set_conditions()
-        return ssa_soln.intensity_vec
+        return self.model_fun(x).intensity_vec
+        #self.solver_obj._poi.ke_mu = x[1]
+        #self.solver_obj._poi.ki = x[0]
+        #ssa_soln = self.solver_obj.solve_ssa_set_conditions()
+        #return ssa_soln.intensity_vec
     
     def autocovariance_fun(self,intensity,norm='ind'):
         acov,err_acov = self._int_a.get_autocov(intensity,norm=norm)        
@@ -176,7 +180,9 @@ class TranslationOptimization():
         return sci.optimize.basinhopping(objfun,self.initial_params,minimizer_kwargs =minimizer_kwargs,**kwargs)
     
     
-    def methast(self, optfun, optfun_type, niter=1000, burnin=100, stepsize=None,mut_rate=.3, disp=False, logspace=True, proposal = None):
+    def methast(self, optfun, optfun_type,
+                niter=1000,
+                burnin=100, stepsize=None,mut_rate=.3, disp=False, logspace=True, proposal = None):
         '''
 
         Parameters
@@ -326,12 +332,10 @@ class TranslationOptimization():
         
         return obj_sum
     
-    def run_optimization(self, objective_fun_list, method ,model = None, data = None, intensity_fun = None,**kwargs):
+    def run_optimization(self, objective_fun_list, method , model_fun, data = None, intensity_fun = None,**kwargs):
         if isinstance(objective_fun_list,str):
             objective_fun_list = [objective_fun_list]
         
-        if model == None:
-            model = self.solver_obj
         if data == None:
             data = self.data_obj
         if intensity_fun == None:
@@ -340,7 +344,7 @@ class TranslationOptimization():
         obj_fun = self.combined_objective
                 
         method_fun = self.methods[method]
-        
+        self.model_fun = model_fun
         self.chain = OptChain()
         
         self.chain.parchain = self.initial_params
@@ -538,7 +542,7 @@ class IntensityData():
         self.times = t
         
          
-    def get_stats(self):
+    def get_stats(self, histogram_bins=30):
         if self.ragged == False:
             self.I_mu = np.mean(self.intensity_vec,axis=2)
             self.I_var = np.mean(self.intensity_vec,axis=2)
@@ -575,7 +579,13 @@ class IntensityData():
                 #mean_ac_data_norm = mean_ac_data[1:-1]/mean_ac_data[0]
                 return lag_time[0:self.max_lag_output], mean_ac_data[0:self.max_lag_output], std_ac_data[0:self.max_lag_output]
             
-        
+            sim_acov, sim_acov_err = inta().get_autocov(self.intensity_vec,norm='ind')
+            sim_acc, sim_acc_err =  inta().get_autocorr(sim_acov)
+            self.acorr = sim_acc
+            self.acorr_err = sim_acc_err
+            self.histogram = np.histogram(self.intensity_vec,bins=histogram_bins)[0]
+            self.histogram_bins = np.histogram(self.intensity_vec,bins=histogram_bins)[1]
+
     def load_data(self, file):
         extension = file.split('.')[-1]
         if extension in ['xls', 'xlsx']:

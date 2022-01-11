@@ -1,1 +1,0 @@
-extern void translationSSA(double *kelong, double *t_array, int Nt, double kbind, double kcompl, int* SSA_intensity, int N, int FRAP, int Inhibitor, double inhibit_time, int seed, int fNt, int* frap_result,  int* x0, int r_footprint,int* SSA_probe, int Ncolor );

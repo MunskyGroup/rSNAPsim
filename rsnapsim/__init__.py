@@ -21,6 +21,9 @@ seqmanip = SequenceManipMethods.SequenceManipMethods()
 from . import IntensityAnalyses
 inta = IntensityAnalyses.IntensityAnalyses()
 
+from . import RibosomeAnalyses
+riba = RibosomeAnalyses.RibosomeAnalyses()
+
 from . import IntensityAnalysesRagged
 inta_r = IntensityAnalysesRagged.IntensityAnalysesRagged()
 

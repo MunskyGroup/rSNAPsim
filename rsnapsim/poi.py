@@ -164,7 +164,7 @@ class poi():
         for i in range(len(list(self.tag_epitopes))):
             pv[i, [self.tag_epitopes[list(self.tag_epitopes.keys())[i]]]] = 1
         pv = np.cumsum(pv, axis=1)
-        return pv
+        return pv.astype(np.int32)
 
     @property
     def probe_loc(self):
@@ -177,11 +177,26 @@ class poi():
             binary vector of epitope locations over Ncolor x L of the transcript.
 
         '''
-        pv = np.zeros((len(list(self.tag_epitopes)), self.total_length))
+        pv = np.zeros((len(list(self.tag_epitopes)), self.total_length), dtype = np.int32)
         for i in range(len(list(self.tag_epitopes))):
             pv[i, [self.tag_epitopes[list(self.tag_epitopes.keys())[i]]]] = 1
         return pv
 
+
+    @property
+    def gc_content(self):
+        '''
+        GC content of the mRNA NT sequence
+
+        Returns
+        -------
+        gc_content : float
+            percentage gc content
+
+        '''
+
+        s = self.nt_seq.upper()
+        return float((s.count('G') + s.count('C')))/len(s)
 
     @property
     def all_k(self):
@@ -271,7 +286,8 @@ class poi():
         x = 1
 
 
-    def visualize_mrna_strand(self, dpi=120, cmap='viridis'):
+    def visualize_mrna_strand(self, dpi=120, cmap='viridis',
+                              additional_features=[]):
         features = [
             GraphicFeature(start=0, end=self.tag_length,
                                    color=self._colors[0], label='Tag'),
@@ -293,6 +309,7 @@ class poi():
                                color=colors[c], linecolor=colors[c]),
                 ]
     
+        features += additional_features
         record = GraphicRecord(sequence_length=self.total_length,
                                features=features)
         
