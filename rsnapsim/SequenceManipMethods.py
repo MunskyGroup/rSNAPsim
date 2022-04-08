@@ -53,7 +53,42 @@ class AscNumDoesNotExistError(Error):
 
     def __init__(self, message):
         self.message = message
+
+class MismatchError(Error):
+    """Exception raised for when trying to pull a gb from an ascession number
+    that doesnt exist
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
         
+class UnrecognizedAAError(Error):
+    """Exception raised for when trying to pull a gb from an ascession number
+    that doesnt exist
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+class UnrecognizedCodonError(Error):
+    """Exception raised for when trying to pull a gb from an ascession number
+    that doesnt exist
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message, index):
+        self.message = message
         
 class UnrecognizedFlagError(Error):
     """Exception raised for when trying to pull a gb from an ascession number
@@ -102,9 +137,25 @@ class SequenceManipMethods():
 
         codons = nt_seq.upper()
         seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
-        aa = [self.codon_dicts.aa_table[x] for x in seperated_codons]
+        
+        aa = []
+        for i in range(len(seperated_codons)):
+            try:
+                aa += [self.codon_dicts.aa_table[seperated_codons[i]],]
+            except KeyError as err:
+                msg = 'Unrecognized codon: "%s", provide an entry for this'\
+                    ' codon and its value in '\
+                    'the optimization dictionary.'%seperated_codons[i]
+                raise UnrecognizedCodonError(msg)
+            
+        
         opt_seq = ''
         for i in range(0, len(aa)):
+            if aa[i] not in self.codon_dicts.aa_table_r:
+                msg = 'Unrecognized Amino acid %s at index %i'%(aa[i], i)
+                raise UnrecognizedAAError(msg)
+                
+            
             ind = np.argmax([opt_dict[x] for x in self.codon_dicts.aa_table_r[aa[i]]])
             opt_codon = self.codon_dicts.aa_table_r[aa[i]][ind]
             opt_seq = opt_seq + opt_codon

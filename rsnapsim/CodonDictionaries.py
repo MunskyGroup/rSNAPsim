@@ -62,15 +62,27 @@ class CodonDictionaries():
             }
                 
         
-        
+        #some common epitopes used for protein fluorescent tagging
         self.tag_dict = {'T_SunTag':'EELLSKNYHLENEVARLKK',
                          'T_Flag':'DYKDDDDK',
-                         'T_Hemagglutinin':'YPYDVPDYA'}
-
+                         'T_Hemagglutinin':'YPYDVPDYA',
+                         'T_Myc':'EQKLISEEDL',
+                         'T_Strep':'WSHPQFEK',
+                         'T_Hist':'HHHHHH',
+                         'T_V5':'GKPIPNPLLGLDST',
+                         'T_TC':'CCPGCC'}
+        
+        #some default colors for those tags
         self.tag_colors = {'T_SunTag':'green',
                            'T_Flag':'blue',
-                           'T_Hemagglutinin':'blue'}
-
+                           'T_Hemagglutinin':'blue',
+                           'T_Myc':'green',
+                           'T_Strep':'green',
+                           'T_Hist':'green',
+                           'T_V5':'green',
+                           'T_TC':'green'}
+        
+        #Full NT sequences of tags if known
         self.tag_full = {'T_Flag':('ATGGACTACAAGGACGACGACGACAAAGGTGAC'
                                    'TACAAAGATGATGACGATAAAGGCGACTATA'
                                    'AGGACGATGACGACAAGGGCGGAAACTCACTGA'
@@ -106,10 +118,10 @@ class CodonDictionaries():
 
         self.aa_keys = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I',
                         'L', 'K', 'M', 'F',
-                        'P', 'S', 'T', 'W', 'Y', 'V', '*']
+                        'P', 'S', 'T', 'W', 'Y', 'V', '*', 'X'] #* is stop, X is unspecified
 
         self.codon_types = dict(zip(
-            self.aa_keys, np.ones((1, 21)).flatten().astype(int).tolist()))
+            self.aa_keys, np.ones((1, 22)).flatten().astype(int).tolist()))
 
         self.aa_table = {
             'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
