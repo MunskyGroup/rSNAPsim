@@ -54,49 +54,61 @@ class FileParser():
                         'aguagcugagcaucaucuaug'
 
 
-    def clean_seq(self, seq):
+    def clean_seq(self, nt_sequence):
         '''
         Return an mrna sequence of lowercase a,u,c,g from IPUAC substitutions
 
-        .. warning:: this code will replace substitutive nucleotides with
-        preferential order a, g , u , c. for example: N (any base) is set
-        to A, W (T,U, or A) is set to A, S (C or G) is set to G
+        .. warning:: 
+            this code will replace substitutive nucleotides with
+            preferential order a, g , u , c. for example: N (any base) is set
+            to A, W (T, U, or A) is set to A, S (C or G) is set to G
 
+        .. warning:: 
+            this code will replace any modified nucleotides such as Ψ'
+            or m6a to a,u,g,c. The code is not configured for modified nucleotides
+            in this version.
 
 
         Parameters
         ----------
         seq : str
-            sequence string.
+            nucleotide sequence string to convert to only a, u, g, or c..
 
         Returns
         -------
         seq : str
-            cleaned sequence str (only lowercase a,u,c,g).
+            cleaned nucleotide sequence str (only lowercase a,u,c,g).
 
         '''
-        seq = seq.lower()
+        nt_sequence = nt_sequence.lower()
 
         for key in self.sub_dict.keys():
-            seq = seq.replace(key, self.sub_dict[key])
+            nt_sequence = nt_sequence.replace(key, self.sub_dict[key])
 
-        seq = seq.replace('t', 'u')
-        return seq
+        nt_sequence = nt_sequence.replace('t', 'u')
+        return nt_sequence
 
 
     def get_sequence(self, file):
         '''
-        get a nucleotide sequence
+        given a txt, dna, fasta, or gb file, get the nucleotide sequence data 
+        out of the file and into a string.
+        
+        Valid file types: 
+            * fasta
+            * gb (genbank)
+            * dna (snapgene)
+            * txt (text)
 
         Parameters
         ----------
-        file : path
-            Path to the file to open.
+        file : str
+            string of the path to the file to open
 
         Returns
         -------
-        str
-            mRNA sequence string.
+        cleaned_sequence_str : str
+            nucleotide sequence string.
 
         '''
         self.__check_valid_file(file)
@@ -144,7 +156,14 @@ class FileParser():
 
     def get_name(self, file_path):
         '''
-        attempt to find the transcript name from a file
+        attempt to find the transcript name from a file, if the name cannot
+        be found from the file, this function will return "unknown"
+
+        Valid file types: 
+            * fasta
+            * gb (genbank)
+            * dna (snapgene)
+            * txt (text)
 
         Parameters
         ----------
@@ -153,7 +172,7 @@ class FileParser():
 
         Returns
         -------
-        str
+        name : str
             transcript name or "unknown".
 
         '''
@@ -192,6 +211,14 @@ class FileParser():
         '''
         Attempt to find the text description from a file
 
+
+        Valid file types: 
+            * fasta
+            * gb (genbank)
+            * dna (snapgene)
+            * txt (text)
+
+
         Parameters
         ----------
         file_path : str
@@ -199,7 +226,7 @@ class FileParser():
 
         Returns
         -------
-        str
+        description : str
             transcript description or "unknown".
 
         '''

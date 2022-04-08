@@ -193,10 +193,10 @@ class IntensityAnalyses():
 
     ##TODO Convert excitation of the intensity vector (realistic probe)
 
-    def get_g0(self, correlation, mode='interp'):
+    def get_g0(self, covariance, mode='interp'):
         '''
-
-
+        return the normalization point for autocorrelations, g0 delay
+    
         Parameters
         ----------
         correlation : ndarray
@@ -205,9 +205,13 @@ class IntensityAnalyses():
             the type of G0 shot noise to return,
 
             * 'Interp' - will interpolate the g0 position from the G1, G2, and G3 points.
+            
             * 'g1' - (second point) g1 will be returned
+            
             * 'g0' - g0 will be returned (first point)
+            
             * 'max' -maximum of the correlation will be returned
+            
             The default is 'interp'.
 
         Returns
@@ -218,17 +222,17 @@ class IntensityAnalyses():
         '''
         if mode.lower() in ['interp', 'inter', 'extrapolate', 'interpolate']:
             X = [1, 2, 3, 4]
-            V = correlation[:, X, :]
+            V = covariance[:, X, :]
             G0 = np.interp(0, X, V)
 
         if mode.lower() in ['g1', '1']:
-            G0 = correlation[:, 1, :]
+            G0 = covariance[:, 1, :]
 
         if mode.lower() in ['g0', '0']:
-            G0 = correlation[:, 0, :]
+            G0 = covariance[:, 0, :]
 
         if mode.lower() in ['max', 'maximum']:
-            G0 = np.max(correlation, axis=1)
+            G0 = np.max(covariance, axis=1)
         return G0
 
     def normalize_cc(self, correlation, mode='global_max'):
@@ -277,34 +281,45 @@ class IntensityAnalyses():
     def get_crosscorr(self, intensity_vecs, norm='indiv', g0='indiv_center'):
         '''
         return a cross correlation tensor from an intensity tensor of (ncolor, ntime, ntraj)
-
+    
+        Given signals :math:`Signals X(t), Y(t)`:
+            
+        .. math:: 
+            ACOV(t, \tau) = cov(X_{t}, Y_{\tau}) = E{X_{t}, Y_{\tau}} 
+        
         Parameters
         ----------
         intensity_vecs : ndarray
             (ncolor, ntime, ntraj) intensity tensor.
         norm : str, optional
             Normalization to apply,
+            
             * global - subtract by the global intensity mean for the correlation
+            
             * indiv - subtract by each trajectory's mean for the correlation
+            
             * raw - do no mean subtraction
+            
             The default is 'indiv'.
         g0 : str, optional
             point to normalize the correlation by after correlating
+            
             * global_middle - divide the correlation by the average of the center point of all trajectories
+            
             * indiv_middle - divide the correlation trajectories by their individual center point
+            
             * global_max - divide the correlation trajectories by the global max point
+            
             * indiv_max - divide the correlation trajectories by their individual max point
+            
             * raw - do not divide by a point.
 
         Returns
         -------
         cross_corr : ndarray
             cross correlation tensor,  size (ncolor**2, 2*ntime-1, ntraj).
-        err_crosscorr : TYPE
+        err_crosscorr : ndarray
             cross correlation standard error estimation.
-
-            .. math:: \sigma_{cc} = \frac{\sigma}{\sqrt(n_{trajectories})}
-
         inds : list
             indices describing which colors were correlated with which.
 
@@ -381,11 +396,10 @@ class IntensityAnalyses():
     #     return crosscorr_vec, mean_autocorr
 
 
+    '''
     def get_autocorr_norm(self, intensity_vec, time_vec,
                           geneLength, normalization='Individual'):
-        '''
-        returns the autocorrelations
-        '''
+
 
         autocorr_vec = np.zeros((intensity_vec.shape))
 
@@ -441,10 +455,55 @@ class IntensityAnalyses():
         ke_exp = np.round(geneLength/dwelltime, 1)
 
         return normalized_autocorr, mean_autocorr, error_autocorr, dwelltime, ke_exp
+    '''
 
 
+    def get_autocov(self, intensity_vec, norm='global'):
+        '''
+        Return the autocovariance of an intensity vector as defined by:
+        
+        .. math:: 
+            
+            ACOV(t, \tau) = cov(X_{t}, X_{\tau}) = E{X_{t}, X_{\tau}} 
+        
+        There are also several normalization options:
+            
+        Raw - perform no normalization to each intensity trajectory
+        
+        Global - subtract the global intensity mean and divide by global
+        variance
+        
+        .. math:: 
+            
+            \mu_I = E(Intensity) \\
+            \sigma_I^2 = V(Intensity) \\
+            X_{normalized} = (X(t) - \mu_I) / \sigma_I^2            
 
-    def get_autocov(self, intensity_vec, norm='raw'):
+        Individual - subtact each trajectory by its mean and divide by
+        its variance
+
+        .. math:: 
+            
+            X_{normalized} = (X_{i}(t) - E(X_{i}(t))) / V(X_{i}(t))   
+
+        Parameters
+        ----------
+        intensity_vec : ndarray
+            intensity tensor of shape (ncolor, ntimes, ntraj).
+        norm : str, optional
+            normalization to use, 'raw' for no normalization, 'global' to 
+            normalize by the gobal intensity moments, 
+            'individual' to normalize each trajectory by
+            its individual moments. The default is 'global'.
+
+        Returns
+        -------
+        autocorr_vec : ndarray
+            returns autorcovariance array of size (ncolor, ntime-1, ntraj).
+        autocorr_err : ndarray
+            returns autorcovariance SEM array of size (ncolor, ntime-1, ntraj).
+
+        '''
         autocorr_vec = np.zeros((intensity_vec.shape))
         autocorr_err = np.zeros((intensity_vec.shape))
         colors = intensity_vec.shape[0]
@@ -478,17 +537,64 @@ class IntensityAnalyses():
         return autocorr_vec, autocorr_err
 
 
-    def get_autocorr(self, autocov, g0='G0'):
+    def get_autocorr(self, autocov, norm_type='interp', norm = 'individual'):
         '''
-        normalize the autocovariance over g0
+        Given an autocovariance tensor, normalize to the autocorrelation
+        
+        .. math:: 
+            
+            ACORR(X(t)) = ACOV(X(t)) / Normalization Constant
+            
+        where Normalization constant is defined as the delay to divide all 
+        autocrrelations by:
+            
+            * G0 - the first delay without shot noise correction
+            
+            * G1 - the second delay of the autocorrelation
+            
+            * interp - interpolated G0, take G1-4 and calculate the G0 without shot noise
+            
+            
+        norm = global will normalize the autocovariance by the global average normalization_constant
+        norm = individual will normalize each trajectory by its own normalization_constant
+            
+        Parameters
+        ----------
+        autocov : ndarray
+            autocovariance tensor of shape (Ncolor, Ntimes, Ntrajectories).
+        norm_type : str, optional
+            Delay to normalize by, G0, G1 or interp for interpolated G0. The default is 'interp'.
+        norm : str, optional
+            globally normalize autocovariance or individually normalize.
+            Normalize each trajectory by its own g0 or by the global g0. 
+            The default is 'individual'
+
+        Returns
+        -------
+        autocorr : ndarray
+            autocorrelation tensor of shape (Ncolor, Ntimes, Ntrajectories).
+        err_autocorr : ndarray
+            SEM autocorrelation tensor of shape (Ncolor, Ntimes, Ntrajectories).
+
         '''
         autocorr = np.copy(autocov)
         n_traj = autocorr.shape[-1]
 
-        g0 = self.get_g0(autocov, g0)
-        for n in range(autocov.shape[0]):
-            autocorr[n] = autocorr[n]/g0[n]
-
+        if norm_type.lower() in ['individual','indiv','i']:
+            g0 = self.get_g0(autocov, norm)
+            for n in range(autocov.shape[0]):
+                autocorr[n] = autocorr[n]/g0[n]
+        elif norm_type.lower() in ['global','g']:
+            g0 = self.get_g0(autocov, norm)
+            g0_mean = np.mean(g0)
+            for n in range(autocov.shape[0]):
+                autocorr[n] = autocorr[n]/g0_mean     
+                
+        else: 
+        
+            msg = 'unrecognized normalization, please use '\
+                  'individual, or global for norm arguement'
+            raise UnrecognizedNormalizationError(msg)                
         err_autocorr =  1.0/np.sqrt(n_traj)*np.std(autocorr, ddof=1, axis=2)
         return autocorr, err_autocorr
 
@@ -537,6 +643,18 @@ class IntensityAnalyses():
         This can be applied globally or individually to each trajectory
         with the flag norm ='global' or norm='indiv'
 
+
+        .. code-block::
+            
+            #global normalization
+            S_95= np.quantile(0.95)
+            S_normalized = (S - np.min(S)) / (np.max(S) - np.min(S))
+            
+            #individual normalization
+            S_95= np.quantile(0.95)
+            S_normalized = (S - np.min(S,axis=axis)) / (np.max(S,axis=axis) - np.min(S,axis=axis))
+        
+
         Parameters
         ----------
         signal : ndarray
@@ -575,6 +693,18 @@ class IntensityAnalyses():
         over a maximum to max_outlier.
         This can be applied globally or individually to each trajectory
         with the flag norm ='global' or norm='indiv'
+        
+        
+        .. code-block::
+            
+            #global normalization
+            S_95= np.quantile(0.95)
+            S_normalized = (S - np.min(S)) / (np.quantile(0.95) - np.min(S))
+            
+            #individual normalization
+            S_95= np.quantile(0.95)
+            S_normalized = (S - np.min(S,axis=axis)) / (np.quantile(0.95) - np.min(S,axis=axis))
+        
 
         Parameters
         ----------
