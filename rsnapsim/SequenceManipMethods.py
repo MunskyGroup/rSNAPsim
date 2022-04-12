@@ -13,6 +13,8 @@ from . import CodonDictionaries
 from . import AuxCodonDicts
 from . import FileParser
 from . import poi as POI
+from . import custom_errors as custom_err
+import warnings
 
 try:
     from Bio import SeqIO
@@ -23,7 +25,7 @@ except:
     pass
 
 
-
+'''
 
 class Error(Exception):
     """Base class for exceptions in this module."""
@@ -102,6 +104,7 @@ class UnrecognizedFlagError(Error):
     def __init__(self, message):
         self.message = message
                 
+'''
 
 class SequenceManipMethods():
     '''
@@ -114,7 +117,7 @@ class SequenceManipMethods():
         #get the codon dictionaries
 
 
-    def optimize_ntseq(self, nt_seq, opt_dict=None):
+    def optimize_ntseq(self, nt_seq, opt_dict=None, nt2aa_dict=None):
         '''
         Optimizes a nucleotide sequence
 
@@ -124,7 +127,8 @@ class SequenceManipMethods():
             nucleotide sequence string
         opt_dict : dictionary, optional
             a user defined dictionary to optimize over. The default is None.
-
+        nt2aa_dict : dictionary, optional
+            a user defined dictionary to convert nucleotide codons to amino acids. The default is None.
         Returns
         -------
         opt_seq : str
@@ -134,30 +138,41 @@ class SequenceManipMethods():
 
         if opt_dict is None:
             opt_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
+        if nt2aa_dict is None:
+            nt2aa_dict = self.codon_dicts.aa_table
+            aa2nt_dict = self.codon_dicts.aa_table_r
 
+        else:
+            aa2nt_dict = {v: k for k, v in nt2aa_dict.items()}
+
+        
+        self.__check_sequence_multiple_of_3(nt_seq)
         codons = nt_seq.upper()
         seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
         
         aa = []
         for i in range(len(seperated_codons)):
             try:
-                aa += [self.codon_dicts.aa_table[seperated_codons[i]],]
-            except KeyError as err:
-                msg = 'Unrecognized codon: "%s", provide an entry for this'\
-                    ' codon and its value in '\
-                    'the optimization dictionary.'%seperated_codons[i]
-                raise UnrecognizedCodonError(msg)
-            
+                aa += [nt2aa_dict[seperated_codons[i]],]
+            except KeyError:
+                msg = 'Unrecognized codon to amino acid: "%s", at index %i provide an entry for this'\
+                    ' codon and its amino acid in '\
+                    'the nt2aa dictionary.'%(seperated_codons[i],i)
+                raise custom_err.UnrecognizedAAError(msg)
+                
+            try:
+                opt_dict[seperated_codons[i]]
+            except KeyError:
+                msg = 'Unrecognized codon to optimize: "%s", at index %i provide an entry for this'\
+                    ' codon and its amino acid in '\
+                    'the optimization dictionary.'%(seperated_codons[i],i) 
+                raise custom_err.UnrecognizedCodonError(msg)
         
         opt_seq = ''
         for i in range(0, len(aa)):
-            if aa[i] not in self.codon_dicts.aa_table_r:
-                msg = 'Unrecognized Amino acid %s at index %i'%(aa[i], i)
-                raise UnrecognizedAAError(msg)
-                
             
-            ind = np.argmax([opt_dict[x] for x in self.codon_dicts.aa_table_r[aa[i]]])
-            opt_codon = self.codon_dicts.aa_table_r[aa[i]][ind]
+            ind = np.argmax([opt_dict[x] for x in aa2nt_dict[aa[i]]])
+            opt_codon = aa2nt_dict[aa[i]][ind]
             opt_seq = opt_seq + opt_codon
         return opt_seq
 
@@ -264,7 +279,48 @@ class SequenceManipMethods():
         return opt_dict_aa, ccc_dict, seq_dict, opt_dict, worst_dict, opt_dict
 
     def get_rate_uniform_metric(self, nt_seq, codon_dict=None, stop_codons=['UAG','UAA','UGA']):
+        '''
+        Rate Uniform Metric:
+            
+        This sets the metric between 0 and 1, where 1 is the theoretical evenest usage
+        of codons porportional to rates of a given sequence.     
 
+        Example:
+            
+            for each codon:
+
+                Rate uniform optimization, given a set of codons of usage:
+                    [10,5,13,1] sum = 23
+                with rate values of:
+                    [1, 5, 15, 2]  
+                set the relative porpotions of usage to:
+                    [1/23, 5/23, 13/23, 2/23]
+                Theoretical evenest usage of codons is:
+                    [1,5,13,2]       
+                Theoretical worst usage of codons is:
+                    [23,0,0,0]          
+                    
+                rank proprotional distance of given sequence vs the worst possible usage
+                1 - abs(sequence_counts - evenest_counts) / abs(worst_counts - evenest_counts)
+                
+                1 - ([10,5,13,1] - [1,5,13,2])/([23,0,0,0] - [1,5,13,2]) 
+                                                     
+        
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence string.
+        codon_dict : dict, optional
+            Dictionary of codon with its scaling rate. The default is Human nakumura codon frequency (CAI).
+        stop_codons : list, optional
+            List of stop codons to ignore. The default is ['UAG', 'UAA','UGA'].
+
+        Returns
+        -------
+        codon_uniform_metric : float
+            0-1 uniform metric.
+
+        '''
         opt_dict_aa, ccc_dict, seq_dict, opt_dict, worst_dict, opt_dict = self.__get_rate_uniform_opt_dicts(nt_seq,codon_dict=codon_dict,
                                                           stop_codons=stop_codons)
         
@@ -283,7 +339,7 @@ class SequenceManipMethods():
 
 
 
-    def rate_uniform_optimize_ntseq(self, nt_seq, codon_dict=None, random_placement=True, stop_codons =['UAG','UAA','UGA']):
+    def optimize_ntseq_rate_uniform(self, nt_seq, codon_dict=None, random_placement=True, stop_codons =['UAG','UAA','UGA']):
         '''
         Rate uniform optimization, given a set of codons of usage:
             [10,5,13,1]
@@ -454,7 +510,8 @@ class SequenceManipMethods():
         .. math::
             UM =  1 - \frac{\sum_{i=0}^{N codons} | \frac{# codon_i}{L} - \frac{1}{N codons} |}{ \frac{N codons-1}{N codons} - \frac{1}{N codons}*(N codons - 1) }
 
-        This effectively sets the metric between 0 and 1, where 1 is the theoretical                                                   
+        This sets the metric between 0 and 1, where 1 is the theoretical evenest usage
+        of codons of a given sequence.                                                  
         
         Parameters
         ----------
@@ -467,7 +524,7 @@ class SequenceManipMethods():
 
         Returns
         -------
-        test_metric : float
+        codon_uniform_metric : float
             0-1 uniform metric.
 
         '''
@@ -475,7 +532,7 @@ class SequenceManipMethods():
         test_metric = 1  - np.sum(np.abs((codon_per-n))) / worst_norm
         return test_metric
 
-    def codon_uniform_optimize_ntseq(self, nt_seq, codon_dict=None, random_placement=True, stop_codons=['UAG', 'UAA','UGA']):
+    def optimize_ntseq_codon_uniform(self, nt_seq, codon_dict=None, random_placement=True, stop_codons=['UAG', 'UAA','UGA']):
         '''
         Optimize a sequence so its codons are used as uniformly as possible ie:
         
@@ -555,7 +612,7 @@ class SequenceManipMethods():
         
         return opt_seq
 
-    def deoptimize_ntseq(self, nt_seq, deopt_dict=None):
+    def deoptimize_ntseq(self, nt_seq, deopt_dict=None, nt2aa_dict=None):
 
         '''
         Optimizes a nucleotide sequence
@@ -576,13 +633,40 @@ class SequenceManipMethods():
 
         if deopt_dict is None:
             deopt_dict = self.codon_dicts.human_codon_frequency_bias_nakamura
+        if nt2aa_dict is None:
+            nt2aa_dict = self.codon_dicts.aa_table
+            aa2nt_dict = self.codon_dicts.aa_table_r
+
+        else:
+            aa2nt_dict = {v: k for k, v in nt2aa_dict.items()}
+
+        
+        self.__check_sequence_multiple_of_3(nt_seq)
         codons = nt_seq.upper()
         seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
-        aa = [self.codon_dicts.aa_table[x] for x in seperated_codons]
+        
+        aa = []
+        for i in range(len(seperated_codons)):
+            try:
+                aa += [nt2aa_dict[seperated_codons[i]],]
+            except KeyError:
+                msg = 'Unrecognized codon to amino acid: "%s", at index %i provide an entry for this'\
+                    ' codon and its amino acid in '\
+                    'the nt2aa dictionary.'%(seperated_codons[i],i)
+                raise custom_err.UnrecognizedAAError(msg)
+                
+            try:
+                deopt_dict[seperated_codons[i]]
+            except KeyError:
+                msg = 'Unrecognized codon to optimize: "%s", at index %i provide an entry for this'\
+                    ' codon and its amino acid in '\
+                    'the deoptimization dictionary.'%(seperated_codons[i],i) 
+                raise custom_err.UnrecognizedCodonError(msg)
+
         opt_seq = ''
         for i in range(0, len(aa)):
-            ind = np.argmin([deopt_dict[x] for x in self.codon_dicts.aa_table_r[aa[i]]])
-            opt_codon = self.codon_dicts.aa_table_r[aa[i]][ind]
+            ind = np.argmin([deopt_dict[x] for x in aa2nt_dict[aa[i]]])
+            opt_codon = aa2nt_dict[aa[i]][ind]
             opt_seq = opt_seq + opt_codon
         return opt_seq
 
@@ -600,6 +684,7 @@ class SequenceManipMethods():
             amino acid sequence.
 
         '''
+        self.__check_sequence_multiple_of_3(nt_seq)
         aa = ''
         nt_seq = nt_seq.upper()
         for i in range(0, len(nt_seq), 3):
@@ -629,7 +714,7 @@ class SequenceManipMethods():
         if not os.path.isdir(save_dir):
             msg = 'Specified save path does not exist, double check the path'\
             ' specified.'
-            raise PathDoesNotExistError(msg)
+            raise custom_err.PathDoesNotExistError(msg)
 
         Entrez.email = "wsraymon@rams.colostate.edu"
         Entrez.tool = 'SingleMoleculeSimulator'
@@ -646,7 +731,7 @@ class SequenceManipMethods():
         if er == True:
             msg = 'Cannot find given ascession number for genbank, file re'\
                 'quest failed.'
-            raise AscNumDoesNotExistError(msg)
+            raise custom_err.AscNumDoesNotExistError(msg)
             
 
 
@@ -1504,7 +1589,8 @@ class SequenceManipMethods():
         nt_seq : str
             nuclotide sequence to get kmers from.
         kmer_length : int
-            DESCRIPTION.
+            the length of the K-mer to generate, for example 3 would generate
+            a 3-mer vector of counts of AAA, AAC, AAG... 
         substrings : bool, optional
             generate kmers for all lower length kmers as well, ie
             for k = 3, 2, and 1 instead of just 3. The default is False.
@@ -1518,21 +1604,30 @@ class SequenceManipMethods():
 
         '''
           
+        
         nt_seq = nt_seq.upper()
         unique_char = list(set(nt_seq))
+        total_combos = 0
+        for i in range(2,kmer_length+1):
+            total_combos += len(unique_char)**(i-1)
 
-        combos =[x for x in it.product(unique_char, repeat=kmer_length)]   
+        if total_combos > 1e5:
+            msg = 'Memory Warning: you have requested %i total combinations of subsequences, this'\
+            ' will create large array and may take lots of memory.'%total_combos
+            warnings.warn(msg)
+
+        combos =[x for x in it.product(unique_char, repeat=kmer_length)] 
         if substrings:
             for n in range(kmer_length-1, 0, -1):
                 combos += [x for x in it.product(unique_char, repeat=n)] 
         kmer_ind = [''.join(y) for y in combos]
 
         kmer_freq_vec = np.zeros(len(combos)).astype(int)
-        for i in range(len(nt_seq)-kmer_length):
+        for i in range(len(nt_seq)-len(nt_seq)%kmer_length - kmer_length + 1):
             kmer_freq_vec[kmer_ind.index(nt_seq[i:i+kmer_length])] += 1
         if substrings:
             for n in range(kmer_length-1, 0, -1):
-                for i in range(len(nt_seq)-n):
+                for i in range(len(nt_seq)- len(nt_seq)%n - n + 1):
                     kmer_freq_vec[kmer_ind.index(nt_seq[i:i+n])] += 1            
 
         return kmer_freq_vec, kmer_ind
@@ -1585,7 +1680,7 @@ class SequenceManipMethods():
         else:
             msg = "Cannot recognize the flag for t_or_u, please use 'u' or 't'"\
                 " to indicate which letter to use for the sequence."
-            raise UnrecognizedFlagError(msg)
+            raise custom_err.UnrecognizedFlagError(msg)
             
         if upper:
             seq = seq.upper()
@@ -1682,3 +1777,12 @@ class SequenceManipMethods():
         '''
         a = np.array(iterable)
         return np.exp(np.sum(np.log(a))/len(a)   )
+    
+    @staticmethod
+    def __check_sequence_multiple_of_3(sequence):
+        if len(sequence) %3 !=0:
+            msg = 'Given nucleotide/codon Sequence is not a multiple of 3, double check'\
+                ' the sequence provided.'
+            raise custom_err.InvalidSequenceLengthError(msg)
+        else:
+            return True
