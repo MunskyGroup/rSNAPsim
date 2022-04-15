@@ -5,20 +5,7 @@ Created on Thu Dec 17 11:50:56 2020
 @author: William Raymond
 """
 import numpy as np
-
-class Error(Exception):
-    """Base class for exceptions in this module."""
-    pass
-
-class UnrecognizedNormalizationError(Error):
-    """Exception raised for errors in the input.
-
-    Attributes:
-        message -- explanation of the error
-    """
-
-    def __init__(self, message):
-        self.message = message
+from . import custom_errors as custom_err
 
 
 class IntensityAnalyses():
@@ -278,7 +265,7 @@ class IntensityAnalyses():
         return norm_cor
 
 
-    def get_crosscorr(self, intensity_vecs, norm='indiv', g0='indiv_center'):
+    def get_crosscorr(self, intensity_vecs, norm='indiv', g0='indiv_center', scale_fix=False):
         '''
         return a cross correlation tensor from an intensity tensor of (ncolor, ntime, ntraj)
     
@@ -325,16 +312,31 @@ class IntensityAnalyses():
 
         '''
 
-        ncolors = intensity_vecs.shape[0]
-        time_pts = intensity_vecs.shape[1]
-        traj = intensity_vecs.shape[2]
-        cross_corr = np.zeros((ncolors**2, time_pts*2-1, traj))
-
         i = 0
         k = 0
         inds = []
 
+        if isinstance(intensity_vecs,np.ndarray):
+            ncolors = intensity_vecs.shape[0]
+            time_pts = intensity_vecs.shape[1]
+            traj = intensity_vecs.shape[2]
+            cross_corr = np.zeros((ncolors**2, time_pts*2-1, traj))
+            
+        # check for jagged arrays
+        if isinstance(intensity_vecs, list):
+            if not self.__check_jagged_array(intensity_vecs):
+               intensity_vec = np.array(intensity_vecs)
+            else:
+                #jagged array detected, calculate the acov and return with zero padding
+                cross_corr, err_crosscorr, inds = self.__calculate_ccov_jagged_array(intensity_vecs, norm=norm, scale_fix=scale_fix)
+                return cross_corr, err_crosscorr, inds
+            
 
+        if scale_fix:
+            scale_array = np.hstack( [np.linspace(1, time_pts, time_pts)[1:] / time_pts, [1], np.linspace(1, time_pts, time_pts)[::-1][1:] / time_pts] )
+        else:
+            scale_array = 1
+            
         for n in range(intensity_vecs.shape[0]):
             for m in range(intensity_vecs.shape[0]):
                 iv1 = intensity_vecs[n].T
@@ -352,20 +354,20 @@ class IntensityAnalyses():
                     if norm in ['Individual', 'I', 'individual', 'ind', 'indiv']:
                         cross_corr[k, :, i] = np.correlate(
                             iv1[i, :]-np.mean(iv1[i, :]),
-                            iv2[i, :]-np.mean(iv2[i, :]), 'full')/time_pts
+                            iv2[i, :]-np.mean(iv2[i, :]), 'full')/time_pts/scale_array
 
                     elif norm in ['global', 'Global', 'g', 'G']:
                         cross_corr[k, :, i] = np.correlate(
-                            iv1[i, :]-global_mean1, iv2[i, :]-global_mean2, 'full')/time_pts
+                            iv1[i, :]-global_mean1, iv2[i, :]-global_mean2, 'full')/time_pts/scale_array
 
                     elif norm in ['raw', 'Raw', None, 'none', 'None']:
                         cross_corr[k, :, i] = np.correlate(
-                            iv1[i, :], iv2[i, :], 'full')/time_pts
+                            iv1[i, :], iv2[i, :], 'full')/time_pts/scale_array
 
                     else:
                         msg = 'unrecognized normalization, please use '\
                               'individual, global, or none for norm arguement'
-                        raise UnrecognizedNormalizationError(msg)
+                        raise custom_err.UnrecognizedNormalizationError(msg)
                         
 
                 k += 1
@@ -458,7 +460,7 @@ class IntensityAnalyses():
     '''
 
 
-    def get_autocov(self, intensity_vec, norm='global'):
+    def get_autocov(self, intensity_vec, norm='global', scale_fix=False):
         '''
         Return the autocovariance of an intensity vector as defined by:
         
@@ -495,6 +497,10 @@ class IntensityAnalyses():
             normalize by the gobal intensity moments, 
             'individual' to normalize each trajectory by
             its individual moments. The default is 'global'.
+        scale_fix : bool, optional
+            rescale the autocovariance function to ignore the zero padding, 
+            that is divide all lags by the percentage of that total length. Default is 'False'
+            Example: G(t=N) / ((signal_length - N) / signal_length )
 
         Returns
         -------
@@ -504,28 +510,46 @@ class IntensityAnalyses():
             returns autorcovariance SEM array of size (ncolor, ntime-1, ntraj).
 
         '''
-        autocorr_vec = np.zeros((intensity_vec.shape))
-        autocorr_err = np.zeros((intensity_vec.shape))
-        colors = intensity_vec.shape[0]
-        n_traj = intensity_vec.shape[2]
+        
+        if isinstance(intensity_vec,np.ndarray):
+            autocorr_vec = np.zeros((intensity_vec.shape))
+            autocorr_err = np.zeros((intensity_vec.shape))
+            colors = intensity_vec.shape[0]
+            n_traj = intensity_vec.shape[2]
+            t = intensity_vec.shape[1]
+            
+        # check for jagged arrays
+        if isinstance(intensity_vec, list):
+            if not self.__check_jagged_array(intensity_vec):
+               intensity_vec = np.array(intensity_vec)
+            else:
+                #jagged array detected, calculate the acov and return with zero padding
+                autocorr_vec, autocorr_err = self.__calculate_acov_jagged_array(intensity_vec, norm=norm, scale_fix=scale_fix)
+                return autocorr_vec, autocorr_err 
+            
 
+        if scale_fix:
+            scale_array = np.linspace(1, t, t)[::-1] / t
+        else:
+            scale_array = 1
+        
         for n in range(colors):
             if norm in ['Individual', 'I', 'individual', 'ind','i']:
                 for i in range(intensity_vec.shape[2]):
                     ivec = intensity_vec[n, :, i]
                     autocorr_vec[n, :, i] = self.get_acc2(
-                        (ivec - np.mean(ivec))/np.var(ivec))
+                        (ivec - np.mean(ivec))/np.var(ivec))/scale_array
 
             elif norm in ['global', 'Global', 'g', 'G']:
                 global_mean = np.mean(intensity_vec[n])
                 global_var = np.var(intensity_vec[n])
                 for i in range(intensity_vec.shape[2]):
                     autocorr_vec[n, :, i] = self.get_acc2(
-                        (intensity_vec[n, :, i]-global_mean)/global_var )
+                        (intensity_vec[n, :, i]-global_mean)/global_var )/scale_array
             elif norm in ['raw', 'Raw']:
                 for i in range(intensity_vec.shape[2]):
                     autocorr_vec[n, :, i] = self.get_acc2(
-                        intensity_vec[n, :, i])
+                        intensity_vec[n, :, i]) /scale_array
             else:
                 print('unrecognized normalization,'/
                       ' please use individual, global, or none')
@@ -594,7 +618,7 @@ class IntensityAnalyses():
         
             msg = 'unrecognized normalization, please use '\
                   'individual, or global for norm arguement'
-            raise UnrecognizedNormalizationError(msg)                
+            raise custom_err.UnrecognizedNormalizationError(msg)                
         err_autocorr =  1.0/np.sqrt(n_traj)*np.std(autocorr, ddof=1, axis=2)
         return autocorr, err_autocorr
 
@@ -633,7 +657,7 @@ class IntensityAnalyses():
         else:
             msg = 'unrecognized normalization, please use '\
                   'individual, global, or none for norm arguement'
-            raise UnrecognizedNormalizationError(msg)    
+            raise custom_err.UnrecognizedNormalizationError(msg)    
             
     #sets individual 0-1
     @staticmethod
@@ -683,7 +707,145 @@ class IntensityAnalyses():
         else:
             msg = 'unrecognized normalization, please use '\
                   'individual, global, or none for norm arguement'
-            raise UnrecognizedNormalizationError(msg)    
+            raise custom_err.UnrecognizedNormalizationError(msg)    
+            
+            
+    def __check_jagged_array(self,list_of_lists):
+        _,t_sizes,_ = self.__check_jagged_array_sizes(list_of_lists)
+        if len(set(t_sizes)) ==1:
+            return False
+        else:
+            return True
+
+    def __check_jagged_array_sizes(self,list_of_lists):
+        color_size = len(list_of_lists)
+        t_sizes = []
+        n_traj = len(list_of_lists[0])
+        for i in range(color_size):
+            for j in range(n_traj):
+                t_sizes.append(len(list_of_lists[i][j]))
+        return color_size, t_sizes, n_traj
+    
+    
+    def __calculate_ccov_jagged_array(self, intensity_vecs, norm='global', g0='indiv_center', scale_fix=False):
+        
+        colors, t_sizes, n_traj = self.__check_jagged_array_sizes(intensity_vecs)
+        
+        cross_corr = np.zeros([colors**2, np.max(t_sizes)*2-1, n_traj])
+        center = int(np.ceil((np.max(t_sizes)*2-1 )/2) )
+        total_size = np.max(t_sizes)*2-1 
+        scale_array = 1
+        k = 0
+        inds = []
+        
+        
+        for n in range(colors):
+            for m in range(colors):
+                inds.append((n, m))
+                
+                
+
+                if norm in ['global', 'Global', 'g', 'G']:
+                    global_mean1 = np.mean([np.mean(x) for x in  intensity_vecs[n]])
+                    global_mean2 = np.mean([np.mean(x) for x in  intensity_vecs[m]])
+
+                # slen = np.correlate(iv1[i]-np.mean(iv1[i]),iv2[i]-np.mean(iv2[i]),'full').shape[0]
+                # crosscorr_vec = np.zeros((iv1.shape[0],slen))
+
+                for i in range(n_traj):
+                    
+                    iv1 = intensity_vecs[n][i]
+                    iv2 = intensity_vecs[m][i]
+                
+                   
+                    time_pts = min(len(iv1), len(iv2)) #sweep the smaller sized array
+                    if scale_fix:
+                        scale_array = np.hstack( [np.linspace(1, time_pts, time_pts)[1:] / time_pts, [1], np.linspace(1, time_pts, time_pts)[::-1][1:] / time_pts] )
+                    else:
+                        scale_array = 1
+                    
+                    if norm in ['Individual', 'I', 'individual', 'ind', 'indiv']:
+                        corr = np.correlate(
+                            iv1-np.mean(iv1),
+                            iv2-np.mean(iv2), 'full')/time_pts/scale_array
+                        corr_len = len(corr)
+                        start = int((total_size -  corr_len)/2)
+                        stop = total_size-start
+                        cross_corr[k,start:stop  , i] = corr
+
+                    elif norm in ['global', 'Global', 'g', 'G']:
+                        cross_corr[k, center-time_pts+1:center+time_pts, i] = np.correlate(
+                            iv1-global_mean1, iv2-global_mean2, 'full')/time_pts/scale_array
+
+                    elif norm in ['raw', 'Raw', None, 'none', 'None']:
+                        cross_corr[k, center-time_pts+1:center+time_pts, i] = np.correlate(
+                            iv1,iv2, 'full')/time_pts/scale_array
+
+                    else:
+                        msg = 'unrecognized normalization, please use '\
+                              'individual, global, or none for norm arguement'
+                        raise custom_err.UnrecognizedNormalizationError(msg)
+                        
+
+                k += 1
+        if g0 != None:
+            cross_corr = self.normalize_cc(cross_corr, mode=g0)
+
+        err_crosscorr = 1.0/np.sqrt(n_traj)*np.std(cross_corr, ddof=1, axis=2)
+
+        return cross_corr, err_crosscorr, inds        
+        
+
+    
+    def __calculate_acov_jagged_array(self,list_of_lists, norm='global', scale_fix=False,):
+        
+        colors, t_sizes, n_traj = self.__check_jagged_array_sizes(list_of_lists)
+        
+        acov_array = np.zeros([colors, np.max(t_sizes), n_traj])
+        scale_array = 1
+        
+        
+        for n in range(colors):
+            if norm in ['Individual', 'I', 'individual', 'ind','i']:
+                for i in range(n_traj):
+                    if scale_fix:
+                        scale_array = np.linspace(1, t_sizes[n*n_traj + i], t_sizes[n*n_traj + i])[::-1] / t_sizes[n*n_traj + i]
+                    ivec = np.array(list_of_lists[n][i]).flatten()
+                    acov_array[n, :t_sizes[n*n_traj + i], i] = self.get_acc2(
+                        (ivec - np.mean(ivec))/np.var(ivec))/scale_array
+
+            elif norm in ['global', 'Global', 'g', 'G']:
+                
+                global_mean = np.mean([np.mean(x) for x in list_of_lists[n]])
+                global_var = np.mean([np.var(x) for x in list_of_lists[n]])
+                
+                for i in range(n_traj):
+                    if scale_fix:
+                        scale_array = np.linspace(1, t_sizes[n*n_traj + i], t_sizes[n*n_traj + i])[::-1] / t_sizes[n*n_traj + i]
+                                        
+                    ivec = np.array(list_of_lists[n][i]).flatten()
+                    acov_array[n, :t_sizes[n*n_traj + i], i] = self.get_acc2(
+                        (ivec-global_mean)/global_var )/scale_array
+                    
+            elif norm in ['raw', 'Raw']:
+                for i in range(n_traj):
+                    if scale_fix:
+                        scale_array = np.linspace(1, t_sizes[n*n_traj + i], t_sizes[n*n_traj + i])[::-1] / t_sizes[n*n_traj + i]
+                    
+                    ivec = np.array(list_of_lists[n][i]).flatten()
+                    acov_array[n, :t_sizes[n*n_traj + i], i] = self.get_acc2(
+                        ivec) /scale_array
+            else:
+                print('unrecognized normalization,'/
+                      ' please use individual, global, or none')
+                return
+
+        acov_error = 1.0/np.sqrt(n_traj)*np.std(
+            acov_array, ddof=1, axis=2)
+
+        return acov_array, acov_error
+        
+
 
     @staticmethod
     def minmax_quantile_signal(signal, axis=0, norm='global', quantile=.95, max_outlier=1.5):
@@ -746,7 +908,7 @@ class IntensityAnalyses():
         else:
             msg = 'unrecognized normalization, please use '\
                   'individual, global, or none for norm arguement'
-            raise UnrecognizedNormalizationError(msg)    
+            raise custom_err.UnrecognizedNormalizationError(msg)    
             
             
     '''
