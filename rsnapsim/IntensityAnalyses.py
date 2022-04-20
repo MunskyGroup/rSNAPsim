@@ -44,6 +44,37 @@ class IntensityAnalyses():
                     acf[i] = acf[i-1]
         return acf
 
+    @staticmethod
+    def get_acc(data, trunc=False, axis=0):
+        '''
+        return autocorrelation from a data vector via Fourier transform
+
+        Parameters
+        ----------
+        data : ndarray
+            numpy array of data to get the correlation from.
+        trunc : bool, optional
+            Remove non zero entries and only return decreasing entries.
+            The default is False.
+
+        Returns
+        -------
+        autocorrelation : ndarray
+            autocorrelation function.
+
+        '''
+
+        N = data.shape[axis]
+        fvi = np.fft.fft(data, n=2*N, axis=axis)
+        acf = np.multiply(fvi,np.conjugate(fvi))
+        acf = np.fft.ifft(acf,axis=0)
+        acf = np.real(acf[:N])/float(N)
+        if trunc:
+            acf[acf < 0] = 0
+            for i in range(1, len(acf)):
+                if acf[i] > acf[i-1]:
+                    acf[i] = acf[i-1]
+        return acf
 
 
     # def get_frags_ssa_obj(self,ssa_obj, total_length = None):
@@ -529,6 +560,62 @@ class IntensityAnalyses():
             
 
         if scale_fix:
+            scale_array = (np.linspace(1, t, t)[::-1] / t)[:,np.newaxis]
+        else:
+            scale_array = 1
+        
+        for n in range(colors):
+            if norm in ['Individual', 'I', 'individual', 'ind','i']:
+                
+                ivec = (intensity_vec[n, :, :])
+                ivec = (ivec - np.mean(ivec,axis=0))/np.var(ivec,axis=0)
+                autocorr_vec[n, :, :] = np.divide(self.get_acc(ivec,axis=0),scale_array)
+                
+
+            elif norm in ['global', 'Global', 'g', 'G']:
+                ivec = (intensity_vec[n, :, :])
+                ivec = (ivec - np.mean(ivec))/np.var(ivec)
+                autocorr_vec[n, :, :] =  np.divide(self.get_acc(ivec,axis=0),scale_array)
+                    
+                    
+            elif norm in ['raw', 'Raw']:
+                ivec = (intensity_vec[n, :, :])
+                autocorr_vec[n, :, :] = np.divide(self.get_acc(ivec,axis=0),scale_array)
+                
+            else:
+                msg = 'Unrecognized normalization,'\
+                      ' please use individual, global, or none'
+                raise custom_err.UnrecognizedNormalizationError(msg)
+                
+
+        autocorr_err = 1.0/np.sqrt(n_traj)*np.std(
+            autocorr_vec, ddof=1, axis=2)
+
+        return autocorr_vec, autocorr_err
+
+
+    '''
+    OLD ACOV
+    def get_autocov(self, intensity_vec, norm='global', scale_fix=False):
+        
+        if isinstance(intensity_vec,np.ndarray):
+            autocorr_vec = np.zeros((intensity_vec.shape))
+            autocorr_err = np.zeros((intensity_vec.shape))
+            colors = intensity_vec.shape[0]
+            n_traj = intensity_vec.shape[2]
+            t = intensity_vec.shape[1]
+            
+        # check for jagged arrays
+        if isinstance(intensity_vec, list):
+            if not self.__check_jagged_array(intensity_vec):
+               intensity_vec = np.array(intensity_vec)
+            else:
+                #jagged array detected, calculate the acov and return with zero padding
+                autocorr_vec, autocorr_err = self.__calculate_acov_jagged_array(intensity_vec, norm=norm, scale_fix=scale_fix)
+                return autocorr_vec, autocorr_err 
+            
+
+        if scale_fix:
             scale_array = np.linspace(1, t, t)[::-1] / t
         else:
             scale_array = 1
@@ -551,15 +638,16 @@ class IntensityAnalyses():
                     autocorr_vec[n, :, i] = self.get_acc2(
                         intensity_vec[n, :, i]) /scale_array
             else:
-                print('unrecognized normalization,'/
-                      ' please use individual, global, or none')
-                return
+                msg = 'Unrecognized normalization,'\
+                      ' please use individual, global, or none'
+                raise custom_err.UnrecognizedNormalizationError(msg)
+                
 
         autocorr_err = 1.0/np.sqrt(n_traj)*np.std(
             autocorr_vec, ddof=1, axis=2)
 
         return autocorr_vec, autocorr_err
-
+    '''
 
     def get_autocorr(self, autocov, norm_type='interp', norm = 'individual'):
         '''
@@ -732,7 +820,7 @@ class IntensityAnalyses():
         colors, t_sizes, n_traj = self.__check_jagged_array_sizes(intensity_vecs)
         
         cross_corr = np.zeros([colors**2, np.max(t_sizes)*2-1, n_traj])
-        center = int(np.ceil((np.max(t_sizes)*2-1 )/2) )
+        center = np.max(t_sizes)-1
         total_size = np.max(t_sizes)*2-1 
         scale_array = 1
         k = 0

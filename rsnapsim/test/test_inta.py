@@ -215,117 +215,117 @@ class TestIntA(unittest.TestCase):
 ##############################################################################            
 # cross correlation Tests
 
-    def test_autocov_ind(self):
+    def test_cc_ind(self):
         
         #Check individual normalization
-        acov, acov_error = inta.get_autocov(example_signal,norm='ind')
-        mean_acov = np.mean(acov[0],axis=1)
+        cc, cc_error, ind = inta.get_crosscorr(example_signal_cc,norm='ind', g0 = 'indiv_center', scale_fix=False)
+        mean_acov = np.mean(cc[0],axis=1)
         
         #cycle values where the autocorrelation function for color 1 should be decorrelated
-        x = [int(6.28/freq1)*x + int(6.28/freq1/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq1)*x + 15 for x in [1,2,3,4]]
         sum_cycles = np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
-        mean_acov = np.mean(acov[1],axis=1)
+        mean_acov = np.mean(cc[3],axis=1)
         
         #cycle values where the autocorrelation function for color 2 should be decorrelated
-        x = [int(6.28/freq2)*x + int(6.28/freq2/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq2)*x + 17 for x in [1,2,3,4]]
         sum_cycles += np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
         
         self.assertAlmostEqual(sum_cycles, 0, delta=.3)
         
-    def test_autocov_global(self):
+    def test_cc_global(self):
         
         #Check Global normalization
-        acov, acov_error = inta.get_autocov(example_signal,norm='global')
-        mean_acov = np.mean(acov[0],axis=1)
+        cc, cc_error, ind = inta.get_crosscorr(example_signal_cc, norm='global', g0 = 'indiv_center', scale_fix=False)
+        mean_acov = np.mean(cc[0],axis=1)
         
         #cycle values where the autocorrelation function for color 1 should be decorrelated
-        x = [int(6.28/freq1)*x + int(6.28/freq1/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq1)*x + 15 for x in [1,2,3,4]]
         sum_cycles = np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
-        mean_acov = np.mean(acov[1],axis=1)
+        mean_acov = np.mean(cc[3],axis=1)
         
         #cycle values where the autocorrelation function for color 2 should be decorrelated
-        x = [int(6.28/freq2)*x + int(6.28/freq2/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq2)*x + 17 for x in [1,2,3,4]]
         sum_cycles += np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
         
         self.assertAlmostEqual(sum_cycles, 0, delta=.3)
         
-    def test_autocov_ind_scalefix(self):
+    def test_cc_ind_scalefix(self):
         
         #Check Global normalization
-        acov, acov_error = inta.get_autocov(example_signal,norm='ind',scale_fix=True)
-        mean_acov = np.mean(acov[0],axis=1)
+        cc, cc_error, ind = inta.get_crosscorr(example_signal_cc, norm='ind', g0 = 'indiv_center', scale_fix=True)
+        mean_acov = np.mean(cc[0],axis=1)
         
         #cycle values where the autocorrelation function for color 1 should be decorrelated
-        x = [int(6.28/freq1)*x + int(6.28/freq1/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq1)*x + 15 for x in [1,2,3,4]]
         sum_cycles = np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
-        mean_acov = np.mean(acov[1],axis=1)
+        mean_acov = np.mean(cc[3],axis=1)
         
         #cycle values where the autocorrelation function for color 2 should be decorrelated
-        x = [int(6.28/freq2)*x + int(6.28/freq2/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq2)*x + 17 for x in [1,2,3,4]]
         sum_cycles += np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
         
         self.assertAlmostEqual(sum_cycles, 0, delta=.3)
 
 
-    def test_autocov_jagged_ind(self):
+    def test_cc_jagged_ind(self):
         #Check individual normalization
-        acov, acov_error = inta.get_autocov(example_signal_ragged,norm='ind')
-        mean_acov = np.mean(acov[0],axis=1)
+        cc, cc_error, ind = inta.get_crosscorr(example_signal_ragged_cc, norm='ind', g0 = 'indiv_center', scale_fix=False)
+        mean_acov = np.mean(cc[0],axis=1)
         
         #cycle values where the autocorrelation function for color 1 should be decorrelated
-        x = [int(6.28/freq1)*x + int(6.28/freq1/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq1)*x + 13 for x in [1,2,3,4]]
         sum_cycles = np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
-        mean_acov = np.mean(acov[1],axis=1)
+        mean_acov = np.mean(cc[3],axis=1)
         
         #cycle values where the autocorrelation function for color 2 should be decorrelated
-        x = [int(6.28/freq2)*x + int(6.28/freq2/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq2)*x + 17 for x in [1,2,3,4]]
         sum_cycles += np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
         
-        self.assertAlmostEqual(sum_cycles, 0, delta=.3)
+        self.assertAlmostEqual(sum_cycles, 0, delta=.5)
 
-    def test_autocov_jagged_global(self):
+    def test_cc_jagged_global(self):
         #Check Global normalization
-        acov, acov_error = inta.get_autocov(example_signal_ragged,norm='global')
-        mean_acov = np.mean(acov[0],axis=1)
+        cc, cc_error, ind = inta.get_crosscorr(example_signal_ragged_cc, norm='global', g0 = 'indiv_center', scale_fix=False)
+        mean_acov = np.mean(cc[0],axis=1)
         
         #cycle values where the autocorrelation function for color 1 should be decorrelated
-        x = [int(6.28/freq1)*x + int(6.28/freq1/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq1)*x + 13 for x in [1,2,3,4]]
         sum_cycles = np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
-        mean_acov = np.mean(acov[1],axis=1)
+        mean_acov = np.mean(cc[3],axis=1)
         
         #cycle values where the autocorrelation function for color 2 should be decorrelated
-        x = [int(6.28/freq2)*x + int(6.28/freq2/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq2)*x + 17 for x in [1,2,3,4]]
         sum_cycles += np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
         
-        self.assertAlmostEqual(sum_cycles, 0, delta=.3)
+        self.assertAlmostEqual(sum_cycles, 0, delta=.5)
         
-    def test_autocov_jagged_ind_scalefix(self):
+    def test_cc_jagged_ind_scalefix(self):
         #Check Global normalization
-        acov, acov_error = inta.get_autocov(example_signal_ragged,norm='ind',scale_fix=True)
-        mean_acov = np.mean(acov[0],axis=1)
+        cc, cc_error, ind = inta.get_crosscorr(example_signal_ragged_cc, norm='ind', g0 = 'indiv_center', scale_fix=True)
+        mean_acov = np.mean(cc[0],axis=1)
         
         #cycle values where the autocorrelation function for color 1 should be decorrelated
-        x = [int(6.28/freq1)*x + int(6.28/freq1/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq1)*x + 310 for x in [1,2,3,4]]
         sum_cycles = np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
-        mean_acov = np.mean(acov[1],axis=1)
+        mean_acov = np.mean(cc[3],axis=1)
         
         #cycle values where the autocorrelation function for color 2 should be decorrelated
-        x = [int(6.28/freq2)*x + int(6.28/freq2/4) for x in [0,1,2,3]]
+        x = [int(6.28/freq2)*x + 3 for x in [1,2,3,4]]
         sum_cycles += np.sum(np.abs(mean_acov[x])) #these should be close to 0 when added up
         
         
-        self.assertAlmostEqual(sum_cycles, 0, delta=.3)
+        self.assertAlmostEqual(sum_cycles, 0, delta=.5)
 
 
 if __name__ == '__main__':
