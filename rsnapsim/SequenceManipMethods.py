@@ -114,6 +114,7 @@ class SequenceManipMethods():
         self.sequence = sequence
         self.codon_dicts = CodonDictionaries.CodonDictionaries()
         self.aux_dicts = AuxCodonDicts.AuxCodonDicts()
+        self.previous_files = {}
         #get the codon dictionaries
 
 
@@ -715,6 +716,14 @@ class SequenceManipMethods():
             msg = 'Specified save path does not exist, double check the path'\
             ' specified.'
             raise custom_err.PathDoesNotExistError(msg)
+        
+        # check if this file was already pulled
+        if accession_number in self.previous_files.keys():
+            if os.path.isfile(os.path.join(save_dir, self.previous_files[accession_number])):
+                return os.path.join(save_dir, self.previous_files[accession_number])
+            
+            
+             
 
         Entrez.email = "wsraymon@rams.colostate.edu"
         Entrez.tool = 'SingleMoleculeSimulator'
@@ -748,7 +757,9 @@ class SequenceManipMethods():
         f.write(gb_rec.format('gb'))
 
         f.close()
-        return sequence_name + '.gb'
+        
+        self.previous_files[accession_number] = sequence_name + '.gb'
+        return os.path.join(save_dir, sequence_name + '.gb')
 
 
     def get_orfs(self, nt_seq='', min_codons=80):
