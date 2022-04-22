@@ -748,6 +748,7 @@ class SequenceManipMethods():
         f.write(gb_rec.format('gb'))
 
         f.close()
+        return sequence_name + '.gb'
 
 
     def get_orfs(self, nt_seq='', min_codons=80):
