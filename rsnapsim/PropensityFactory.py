@@ -9,6 +9,7 @@ import warnings
 import numpy as np
 from . import CodonDictionaries
 from . import SequenceManipMethods
+from . import custom_errors as custom_err
 
 class PropensityFactory():
     '''
@@ -75,11 +76,151 @@ class PropensityFactory():
         return [self.codon_dicts.trna_dict[x] for x in seperated_codons]
 
 
-    def get_k_PA(self, nt_seq, k_init, k_elong_mean, PA_dict=None):
-        return 1
+    def get_k_PA(self, nt_seq, k_init, k_elong_mean, k_term, PA_dict=None):
+        '''
+        Convert a list of Peptide, Acceptor duplet combo dwell times to 
+        an elongation vector. This will lower the "Length" of the mRNA lattice
+        by one codons since it does not account for the last 3 nucleotides.
+        
+        Example
+        -------
+        
+        given the sequence AAACCCGGGUUU and the dictionary:
+        
+        {AAACCC : 1.0
+         CCCGGG : 1.5
+         GGGUUU : 2.0}
+        
+        returns: [1.0, 1.5, 2.0]
+        
+        
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence to convert to values.
+        k_init : float
+            initiation rate.
+        k_elong_mean : float
+            average mean elongation rate to scale the construct too.
+        k_term : float
+            termination rate.
+        PA_dict : dict, optional
+            Provided dictionary that maps nt triplets to values. 
+            The default is the rates from Gobet 2020.
+            [https://www.pnas.org/doi/full/10.1073/pnas.1918145117#supplementary-materials]
 
-    def get_k_EPA(self, nt_seq, k_init, k_elong_mean, EPA_dict=None):
-        return 1
+        Raises
+        ------
+        UnrecognizedCodonError 
+            Error if there is a missing codon-to-value entry, unregonized substring in the nucleotide sequence.
+
+        Returns
+        -------
+        all_k : list
+            A list of elongation rates of size (L + 1) (initation, L-1 elongation rates, termination)
+
+        '''        
+
+
+
+        if PA_dict is None:
+            codon_dict = self.codon_dicts.Gobet2020_PA_rates
+        else:
+            codon_dict = PA_dict
+        codons = nt_seq.upper()
+
+        genelength = int(len(codons)/3)
+        seperated_codons = [codons[i:i+6] for i in range(0, len(codons), 3)][:-1] #split codons by 3
+        k_elongation = np.zeros((1, genelength))
+        codon_freq = np.zeros((1, genelength))
+        
+
+        for i in range(len(seperated_codons)):
+            try:
+                codon_freq[0, i] = codon_dict[seperated_codons[i]]
+            except KeyError:
+                msg = 'Unrecognized codon to optimize: "%s", at index %i provide an entry for this'\
+                    ' codon and its amino acid in '\
+                    'the codon to value dictionary.'%(seperated_codons[i],i) 
+                raise custom_err.UnrecognizedCodonError(msg)
+            
+
+        mean_value = np.mean(list(codon_dict.values()))
+
+        k_elongation = (codon_freq / mean_value) * k_elong_mean
+        all_k = [k_init] + k_elongation.flatten().tolist() + [k_term]
+
+        return all_k
+
+
+    def get_k_EPA(self, nt_seq, k_init, k_elong_mean, k_term, EPA_dict=None):
+        '''
+        Convert a list of Exit, Peptide, Acceptor triplet combo dwell times to 
+        an elongation vector. This will lower the "Length" of the mRNA lattice
+        by two codons since it does not account for the last 6 nucleotides.
+        
+        Example
+        -------
+        
+        given the sequence AAACCCGGGUUU and the dictionary:
+        
+        {AAACCCGGG : 1.0
+         CCCGGGUUU : 1.5}
+        
+        returns: [1.0, 1.5]
+        
+        
+        Parameters
+        ----------
+        nt_seq : str
+            nucleotide sequence to convert to values.
+        k_init : float
+            initiation rate.
+        k_elong_mean : float
+            average mean elongation rate to scale the construct too.
+        k_term : float
+            termination rate.
+        EPA_dict : dict, optional
+            Provided dictionary that maps nt triplets to values. The default is Blank.
+
+        Raises
+        ------
+        UnrecognizedCodonError 
+            Error if there is a missing codon-to-value entry, unregonized substring in the nucleotide sequence.
+
+        Returns
+        -------
+        all_k : list
+            list of elongation rates of size (L) (initation, L-2 elongation rates, termination)
+
+        '''
+
+        if EPA_dict is None:
+            codon_dict = None
+        else:
+            codon_dict = EPA_dict
+        codons = nt_seq.upper()
+
+        genelength = int(len(codons)/3)
+        seperated_codons = [codons[i:i+9] for i in range(0, len(codons), 3)][:-2] #split codons by 3
+        k_elongation = np.zeros((1, genelength))
+        codon_freq = np.zeros((1, genelength))
+        
+
+        for i in range(len(seperated_codons)):
+            try:
+                codon_freq[0, i] = codon_dict[seperated_codons[i]]
+            except KeyError:
+                msg = 'Unrecognized codon to optimize: "%s", at index %i provide an entry for this'\
+                    ' codon and its amino acid in '\
+                    'the codon to value dictionary.'%(seperated_codons[i],i) 
+                raise custom_err.UnrecognizedCodonError(msg)
+            
+
+        mean_value = np.mean(list(codon_dict.values()))
+
+        k_elongation = (codon_freq / mean_value) * k_elong_mean
+        all_k = [k_init] + k_elongation.flatten().tolist() + [k_term]
 
     def get_k(self, nt_seq, k_init, k_elong_mean,
               k_term, codon_freq_bias_dict=None):
@@ -96,6 +237,12 @@ class PropensityFactory():
             average kelongation rate for the transcript.
         k_term : float
             termination rate.
+            
+        Raises
+        ------
+        UnrecognizedCodonError 
+            Error if there is a missing codon-to-value entry, unregonized substring in the nucleotide sequence.
+
 
         Returns
         -------
@@ -112,16 +259,25 @@ class PropensityFactory():
 
         genelength = int(len(codons)/3)
         seperated_codons = [codons[i:i+3] for i in range(0, len(codons), 3)] #split codons by 3
-        k_elongation = np.zeros((1, genelength))
-        tRNA_copynumber = np.zeros((1, genelength))
 
+        
+        k_elongation = np.zeros((1, genelength))
+        codon_freq = np.zeros((1, genelength))
+        
 
         for i in range(len(seperated_codons)):
-            tRNA_copynumber[0, i] = codon_dict[seperated_codons[i]]
+            try:
+                codon_freq[0, i] = codon_dict[seperated_codons[i]]
+            except KeyError:
+                msg = 'Unrecognized codon to optimize: "%s", at index %i provide an entry for this'\
+                    ' codon and its amino acid in '\
+                    'the codon to value dictionary.'%(seperated_codons[i],i) 
+                raise custom_err.UnrecognizedCodonError(msg)
+            
 
-        mean_tRNA_copynumber = np.mean(list(codon_dict.values()))
+        mean_value = np.mean(list(codon_dict.values()))
 
-        k_elongation = (tRNA_copynumber / mean_tRNA_copynumber) * k_elong_mean
+        k_elongation = (codon_freq / mean_value) * k_elong_mean
         all_k = [k_init] + k_elongation.flatten().tolist() + [k_term]
 
         return all_k

@@ -4,6 +4,8 @@ Created on Wed Mar 31 11:19:12 2021
 
 @author: willi
 """
+import itertools as it
+import numpy as np
 
 class AuxCodonDicts():
     '''
@@ -42,11 +44,22 @@ class AuxCodonDicts():
     def __init__(self):
 
         #https://www.pnas.org/doi/10.1073/pnas.1918145117
-        self.Gobet2020_EPA_rates = {
-            }
+
+
+        with open('./data_files/gobert_2020_PA_values.txt','r') as f:
+            dts = f.readlines()
+            
+        g2020 = (2**np.array( [float(d.replace('\n','')) for d in dts] ) ).tolist()
+        valid_codons = [''.join(x) for x in list(it.product(['A','C','G','U'], ['A','C','G','U'], ['A','C','G','U']))]
+        valid_codons.remove('UAA')
+        valid_codons.remove('UAG')
+        valid_codons.remove('UGA')   
+        PA_keys = [''.join(x) for x in list(it.product(valid_codons, valid_codons))]
         
-        self.Gobet2020_PA_rates = {
-            }
+        self.Gobet2020_EPA_rates = {}
+
+        
+        self.Gobet2020_PA_rates = dict(zip(PA_keys, g2020))
         
 
         self.IBEN2015_tRNA_GCN_averages_by_anticodon = {
