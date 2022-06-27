@@ -75,6 +75,11 @@ class PropensityFactory():
         return [self.codon_dicts.trna_dict[x] for x in seperated_codons]
 
 
+    def get_k_PA(self, nt_seq, k_init, k_elong_mean, PA_dict=None):
+        return 1
+
+    def get_k_EPA(self, nt_seq, k_init, k_elong_mean, EPA_dict=None):
+        return 1
 
     def get_k(self, nt_seq, k_init, k_elong_mean,
               k_term, codon_freq_bias_dict=None):

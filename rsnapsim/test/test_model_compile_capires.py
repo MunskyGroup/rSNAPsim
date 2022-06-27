@@ -99,7 +99,7 @@ if state[1] == 1:
     wn[3] = parameters[3]
 
 #IRES is off and Cap is on, add k_IRES_CAP_on
-if state[1] == 0 and state[0]==1:
+if state[1] == 0 and state[0]==1:rs
     wn[4] = parameters[4]
     
 # ribosomes coming in and out reactions

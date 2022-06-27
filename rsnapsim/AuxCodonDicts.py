@@ -41,7 +41,13 @@ class AuxCodonDicts():
     '''
     def __init__(self):
 
-
+        #https://www.pnas.org/doi/10.1073/pnas.1918145117
+        self.Gobet2020_EPA_rates = {
+            }
+        
+        self.Gobet2020_PA_rates = {
+            }
+        
 
         self.IBEN2015_tRNA_GCN_averages_by_anticodon = {
             'AGC': 36.23, 'CGC':4.68,
