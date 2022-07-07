@@ -721,8 +721,6 @@ class SequenceManipMethods():
         if accession_number in self.previous_files.keys():
             if os.path.isfile(os.path.join(save_dir, self.previous_files[accession_number])):
                 return os.path.join(save_dir, self.previous_files[accession_number])
-            
-            
              
 
         Entrez.email = "wsraymon@rams.colostate.edu"
@@ -803,16 +801,14 @@ class SequenceManipMethods():
 
         #self.starts = [orf1_starts, orf2_starts, orf3_starts]
         #self.stops = [orf1_stops, orf2_stops, orf3_stops]
-        orfs = {'1':[], '2':[], '3':[]}
-
-
-        orfs = {'1':[], '2':[], '3':[]}
+        orfs = {'0':[], '+1':[], '+2':[], '-1':[]}
+        orfs = {'0':[], '+1':[], '+2':[], '-1':[]}
         laststop = 0
         for start in orf1_starts:
             nextstop = orf1_stops[np.where(orf1_stops > start)[0][0]]+3
             if (nextstop - start) > min_len:
                 if nextstop != laststop:
-                    orfs['1'].append((start, nextstop))
+                    orfs['0'].append((start, nextstop))
 
                     laststop = nextstop
 
@@ -821,7 +817,7 @@ class SequenceManipMethods():
             nextstop = orf2_stops[np.where(orf2_stops > start)[0][0]]+3
             if (nextstop - start) > min_len:
                 if nextstop != laststop:
-                    orfs['2'].append((start, nextstop))
+                    orfs['+1'].append((start, nextstop))
                     laststop = nextstop
 
         laststop = 0
@@ -830,7 +826,8 @@ class SequenceManipMethods():
 
             if (nextstop - start) > min_len:
                 if nextstop != laststop:
-                    orfs['3'].append((start, nextstop))
+                    orfs['+2'].append((start, nextstop))
+                    orfs['-1'].append((start, nextstop))
                     laststop = nextstop
 
 
@@ -1321,21 +1318,23 @@ class SequenceManipMethods():
 
         '''
         cd = self.codon_dicts
-        proteins_strs = {'1':[], '2':[], '3':[]}
-        protein_objs = {'1':[], '2':[], '3':[]}
-        proteins_w_tags = {'1':[], '2':[], '3':[]}
+        proteins_strs = {'0':[], '+1':[], '+2':[], '-1':[]}
+        protein_objs = {'0':[], '+1':[], '+2':[], '-1':[]}
+        proteins_w_tags = {'0':[], '+1':[], '+2':[], '-1':[]}
 
 
         #tagged_proteins = {a:[] for a in cd.tag_dict.keys()}
         #tagged_protein_seq = {a:[] for a in cd.tag_dict.keys()}
 
+        orf_keys = ['0','+1','+2','-1']
         for i in range(len(orfs)):
-            for j in range(len(orfs[str(i+1)])):
+            
+            for j in range(len(orfs[orf_keys[i]])):
 
                 protein = POI.poi()
 
-                pro = self.nt2aa(seq[orfs[str(i+1)][j][0]:orfs[str(i+1)][j][1]])
-                nt_seq = seq[orfs[str(i+1)][j][0]:orfs[str(i+1)][j][1]]
+                pro = self.nt2aa(seq[orfs[orf_keys[i]][j][0]:orfs[orf_keys[i]][j][1]])
+                nt_seq = seq[orfs[orf_keys[i]][j][0]:orfs[orf_keys[i]][j][1]]
                 # if pro[-1] == '*':
                 #     pro = pro[:-1]
                 #     nt_seq = nt_seq[:-3]
@@ -1353,11 +1352,13 @@ class SequenceManipMethods():
                 protein.tag_length = 0   #length of the tags
                 protein.total_length = len(pro)  #total length of the full amino acid sequence
                 protein.source_seq = seq
+                protein.UTR_5p = source_seq[:orfs[orf_keys[i]][j][0]]
+                protein.UTR_3p =  source_seq[orfs[orf_keys[i]][j][1]:]
                 protein.orf = i
-                protein.loc = (orfs[str(i+1)][j][0], orfs[str(i+1)][j][1]+3)
+                protein.loc = (orfs[orf_keys[i]][j][0], orfs[orf_keys[i]][j][1])
                 protein.tags = []
 
-                protein_objs[str(i+1)].append(protein)
+                protein_objs[orf_keys[i]].append(protein)
 
 
 

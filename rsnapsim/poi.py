@@ -83,7 +83,7 @@ class poi():
 
         '''
 
-        _, CAI, _ = SequenceManipMethods().codon_usage(self.nt_seq)
+        _, CAI, _ = SequenceManipMethods.SequenceManipMethods().codon_usage(self.nt_seq)
         return CAI
 
     @property
