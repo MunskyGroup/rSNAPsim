@@ -10,6 +10,7 @@ from matplotlib import cm
 import matplotlib.patches as mpatches
 import numpy as np
 from dna_features_viewer import GraphicFeature, GraphicRecord
+import re
 
 from . import SequenceManipMethods
 from . import PropensityFactory, ProbeVectorFactory
@@ -17,7 +18,7 @@ from . import CodonDictionaries
 PropensityFactory = PropensityFactory.PropensityFactory
 ProbeVectorFactory = ProbeVectorFactory.ProbeVectorFactory
 CodonDictionaries = CodonDictionaries.CodonDictionaries
-
+SequenceManipMethods = SequenceManipMethods.SequenceManipMethods
 
 class poi():
     '''
@@ -83,7 +84,7 @@ class poi():
 
         '''
 
-        _, CAI, _ = SequenceManipMethods.SequenceManipMethods().codon_usage(self.nt_seq)
+        _, CAI, _ = SequenceManipMethods().codon_usage(self.nt_seq)
         return CAI
 
     @property
@@ -227,6 +228,11 @@ class poi():
 
         return inds, probeloc_binned, probevec_binned, bin_k
 
+    def detect_tag(self, tag_aa_seq, name):
+        self.tag_epitopes[name] = [
+            m.start()+1+offset for m in re.finditer(
+                tag_aa_seq, self.aa_seq)]
+        self.tag_types.append(name)
 
     def generate_3frame_tags(self):
         '''
