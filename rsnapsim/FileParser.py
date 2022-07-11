@@ -11,40 +11,8 @@ import re
 from snapgene_reader import snapgene_file_to_seqrecord
 from Bio import SeqIO
 
-
-class Error(Exception):
-    """Base class for exceptions in this module."""
-    pass
-
-class SnapGeneMissingError(Error):
-    """Exception raised for errors in the input.
-
-    Attributes:
-        message -- explanation of the error
-    """
-
-    def __init__(self, message):
-        self.message = message
-        
-class InvalidCharError(Error):
-    """Exception raised for errors in the input.
-
-    Attributes:
-        message -- explanation of the error
-    """
-
-    def __init__(self, message,index):
-        self.message = message
-
-class FileTypeNotRecognizedError(Error):
-    """Exception raised for errors in the input.
-
-    Attributes:
-        message -- explanation of the error
-    """
-
-    def __init__(self, message):
-        self.message = message
+from . import custom_errors as custom_err
+from .core import SequenceCore as seqcore
 
 class FileParser():
     '''
@@ -65,6 +33,7 @@ class FileParser():
 
 
     def clean_seq(self, nt_sequence):
+
         '''
         Return an mrna sequence of lowercase a,u,c,g from IPUAC substitutions
 
@@ -90,13 +59,7 @@ class FileParser():
             cleaned nucleotide sequence str (only lowercase a,u,c,g).
 
         '''
-        nt_sequence = nt_sequence.lower()
-
-        for key in self.sub_dict.keys():
-            nt_sequence = nt_sequence.replace(key, self.sub_dict[key])
-
-        nt_sequence = nt_sequence.replace('t', 'u')
-        return nt_sequence
+        return seqcore().clean_seq(nt_sequence)
 
 
     def get_sequence(self, file):
@@ -130,7 +93,7 @@ class FileParser():
                 msg = 'To read .dna files please install snapegenereader: '\
                       ' pip install snapgene_reader - '\
                           'https://github.com/IsaacLuo/SnapGeneFileReader'
-                raise SnapGeneMissingError(msg)
+                raise custom_err.SnapGeneMissingError(msg)
             sequence_str = str(seq_record.seq)
 
         if extension == 'txt':
@@ -160,7 +123,7 @@ class FileParser():
         else:
             msg = 'Unrecognized File type, the sequence file must be .fasta, '\
                 '.txt, .dna, .gb, or .fa.'
-            raise FileTypeNotRecognizedError(msg)
+            raise custom_err.FileTypeNotRecognizedError(msg)
 
 
 
@@ -211,7 +174,7 @@ class FileParser():
                 msg = 'To read .dna files please install snapegenereader: '\
                       ' pip install snapgene_reader - '\
                           'https://github.com/IsaacLuo/SnapGeneFileReader'
-                raise SnapGeneMissingError(msg)
+                raise custom_err.SnapGeneMissingError(msg)
             name = seq_record.name
 
         return name
@@ -263,7 +226,7 @@ class FileParser():
                 msg = 'To read .dna files please install snapegenereader: '\
                       ' pip install snapgene_reader - '\
                           'https://github.com/IsaacLuo/SnapGeneFileReader'
-                raise SnapGeneMissingError(msg)
+                raise custom_err.SnapGeneMissingError(msg)
 
             desc = seq_record.description
         if extension == 'txt':

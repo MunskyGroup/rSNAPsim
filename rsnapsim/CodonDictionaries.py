@@ -339,12 +339,12 @@ class CodonDictionaries():
             'ACT', 'TGG', 'TAT', 'GTT', 'TAA',
             'GCU', 'CGU', 'AAU', 'GAU', 'UGU', 'CAA', 'GAA', 'GGU', 'CAU',
             'AUU', 'UUA', 'AAA', 'AUG', 'UUU', 'CCU', 'TCU',
-            'ACU', 'UGG', 'UAU', 'GUU', 'UAA']
+            'ACU', 'UGG', 'UAU', 'GUU', 'UAA',]
 
         codonkeys = [
             'GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT',
             'ATT', 'TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
-            'ACT', 'TGG', 'TAT', 'GTT', 'TAA']
+            'ACT', 'TGG', 'TAT', 'GTT', 'TAA',]
 
         self.sensitivity_fast_slow = []
         for i in range(len(codonkeys)):

@@ -6,6 +6,7 @@ Created on Wed Mar 31 11:19:12 2021
 """
 import itertools as it
 import numpy as np
+import os
 
 class AuxCodonDicts():
     '''
@@ -45,8 +46,8 @@ class AuxCodonDicts():
 
         #https://www.pnas.org/doi/10.1073/pnas.1918145117
 
-
-        with open('./data_files/gobert_2020_PA_values.txt','r') as f:
+        gobert_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data_files','gobert_2020_PA_values.txt')
+        with open(gobert_file,'r') as f:
             dts = f.readlines()
             
         g2020 = (2**np.array( [float(d.replace('\n','')) for d in dts] ) ).tolist()

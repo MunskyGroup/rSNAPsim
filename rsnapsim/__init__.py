@@ -14,18 +14,16 @@ aux_cdict = AuxCodonDicts.AuxCodonDicts()
 from . import DiffusionRateCalc
 diffcalc = DiffusionRateCalc.DiffusionRateCalc()
 
+from .core import SequenceCore
 
 from . import SequenceManipMethods 
-seqmanip = SequenceManipMethods.SequenceManipMethods()
+seqmanip = SequenceManipMethods.SequenceManipMethods(SequenceCore())
 
 from . import IntensityAnalyses
 inta = IntensityAnalyses.IntensityAnalyses()
 
 from . import RibosomeAnalyses
 riba = RibosomeAnalyses.RibosomeAnalyses()
-
-from . import IntensityAnalysesRagged
-inta_r = IntensityAnalysesRagged.IntensityAnalysesRagged()
 
 from . import expv
 expv = expv.expv

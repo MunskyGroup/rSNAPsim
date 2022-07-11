@@ -12,13 +12,13 @@ import numpy as np
 from dna_features_viewer import GraphicFeature, GraphicRecord
 import re
 
-from . import SequenceManipMethods
+from .core import SequenceCore as seqcore
 from . import PropensityFactory, ProbeVectorFactory
 from . import CodonDictionaries
-PropensityFactory = PropensityFactory.PropensityFactory
-ProbeVectorFactory = ProbeVectorFactory.ProbeVectorFactory
-CodonDictionaries = CodonDictionaries.CodonDictionaries
-SequenceManipMethods = SequenceManipMethods.SequenceManipMethods
+pf = PropensityFactory.PropensityFactory
+pvf = ProbeVectorFactory.ProbeVectorFactory
+cd = CodonDictionaries.CodonDictionaries
+
 
 class poi():
     '''
@@ -84,7 +84,7 @@ class poi():
 
         '''
 
-        _, CAI, _ = SequenceManipMethods().codon_usage(self.nt_seq)
+        _, CAI, _ = seqcore().codon_usage(self.nt_seq)
         return CAI
 
     @property
@@ -105,7 +105,7 @@ class poi():
 
         '''
 
-        cs, _, _ = SequenceManipMethods().codon_usage(self.nt_seq)
+        cs, _, _ = seqcore().codon_usage(self.nt_seq)
         return cs
 
 
@@ -126,7 +126,7 @@ class poi():
 
     @property
     def ktrna_id(self):
-        return PropensityFactory().get_trna_ids(self.nt_seq)
+        return pf().get_trna_ids(self.nt_seq)
 
     @property
     def kelong(self):
@@ -139,7 +139,7 @@ class poi():
             elongation rates for the protein object, calculated from the default gene copy numbers
 
         '''
-        return PropensityFactory().get_k(self.nt_seq, self.ki, self.ke_mu,
+        return pf().get_k(self.nt_seq, self.ki, self.ke_mu,
                                          self.kt)[1:-1]
 
     @property
@@ -210,28 +210,48 @@ class poi():
             a list of all propensities including kinitiation and ktermination (ki, kt)
 
         '''
-        return PropensityFactory().get_k(self.nt_seq, self.ki, self.ke_mu, self.kt)
+        return pf().get_k(self.nt_seq, self.ki, self.ke_mu, self.kt)
 
 
     def get_binned_vectors(self, nbins, strategy='intellegent',
                            min_binsize=3):
         if strategy == 'intellegent':
-            inds = PropensityFactory().intellegent_bin(self.probe_loc,
+            inds = pf().intellegent_bin(self.probe_loc,
                                                        nbins,
                                                        min_bin=min_binsize)
 
         if strategy == 'even':
-            inds = PropensityFactory().even_bin(len(self.kelong), nbins)
+            inds = pf().even_bin(len(self.kelong), nbins)
 
-        bin_k = PropensityFactory().bin_k(self.kelong, inds)
-        probeloc_binned, probevec_binned = ProbeVectorFactory().bin_probe_vecs(self.probe_loc, inds)
+        bin_k = pf().bin_k(self.kelong, inds)
+        probeloc_binned, probevec_binned = pvf().bin_probe_vecs(self.probe_loc, inds)
 
         return inds, probeloc_binned, probevec_binned, bin_k
 
-    def detect_tag(self, tag_aa_seq, name):
-        self.tag_epitopes[name] = [
-            m.start()+1+offset for m in re.finditer(
-                tag_aa_seq, self.aa_seq)]
+    def detect_tag(self, tag_aa_seq, name, epitope_loc='front'):
+        '''
+        Search through the mRNAs amino acid sequence and detect a given
+        subsequence, and add it's location to .tag_dict[name]
+
+        Parameters
+        ----------
+        tag_aa_seq : str
+            amino acid substring to search for.
+        name : str
+            name to enter the list of substring locations into the epitope dictionary with.
+        epitope_loc : str, optional
+            where to consider the binary epitope, at the 'front', 'back' or 'middle'.
+            Given the example AAA GGG AAA searching for GGG, the front option 
+            will return index 2 as the epitope location, the middle option will return 3,
+            and the back option will return 4. The default is 'front'.
+
+        Returns
+        -------
+        None.
+
+        '''
+        
+        self.tag_epitopes[name] = seqcore().get_tag_loc(self.aa_seq, tag_aa_seq, epitope_loc=epitope_loc)
         self.tag_types.append(name)
 
     def generate_3frame_tags(self):
@@ -258,22 +278,22 @@ class poi():
                 codons_seq = codons_seq + self.nt_seq[n:-(3-n)]
                 self.multiframe_nt_seq.append(self.nt_seq[n:-(3-n)])
 
-        cd = CodonDictionaries()
-        smm = SequenceManipMethods.SequenceManipMethods()
+        cdict = cd()
+        
         #codons_aa_seq = smm.nt2aa(codons_seq)
 
         for frame in self.multiframe_nt_seq:
-            self.multiframe_aa_seq.append(smm.nt2aa(frame))
+            self.multiframe_aa_seq.append(seqcore().nt2aa(frame))
 
         for frame in self.multiframe_aa_seq:
             multiframe_epitopes = {}
-            for tag in cd.tag_dict.keys():
+            for tag in cdict.tag_dict.keys():
 
-                if cd.tag_dict[tag] in frame:
+                if cdict.tag_dict[tag] in frame:
 
                     #tag_detected = True
 
-                    epi = smm.get_tag_loc(frame, cd.tag_dict[tag])
+                    epi = seqcore().get_tag_loc(frame, cdict.tag_dict[tag])
 
                     multiframe_epitopes[tag] = epi
 
