@@ -1404,7 +1404,7 @@ class SequenceCore:
         if epitope_loc == 'back':
             offset = len(tag)
 
-        return [m.start()+1+offset for m in re.finditer(tag, aa_seq)]
+        return [m.start()+offset for m in re.finditer(tag, aa_seq)]
 
 
     @staticmethod

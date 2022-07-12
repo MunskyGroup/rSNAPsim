@@ -216,12 +216,13 @@ class SequenceManipMethods(SequenceCore):
         sizes = [[len(y) for y in x] for x in protein_strs.values()]
         maxsize = max([item for sublist in sizes for item in sublist])
         
-        for i in range(3):
+        orf_keys = ['0','+1','+2','-1']
+        for i in range(4):
             if maxsize in sizes[i]:
-                frame = i
+                frame = orf_keys[i]
                 pindex = sizes[i].index(maxsize)
                 
-        return proteins[str(int(frame+1))][pindex]
+        return proteins[frame][pindex]
     
     def seq_to_protein_obj(self, nucleotide_sequence_str, min_codons=80, add_tag=True):
         '''

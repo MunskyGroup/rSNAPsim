@@ -8,6 +8,7 @@ Created on Thu Dec 17 17:45:31 2020
 import warnings
 import numpy as np
 from . import CodonDictionaries
+from . import AuxCodonDicts 
 from . import SequenceManipMethods
 from . import custom_errors as custom_err
 
@@ -17,6 +18,7 @@ class PropensityFactory():
     '''
     def __init__(self):
         self.codon_dicts = CodonDictionaries.CodonDictionaries()
+        self.aux_codon_dicts = AuxCodonDicts.AuxCodonDicts()
 
     @staticmethod
     def bin_k(k, inds):
@@ -124,7 +126,7 @@ class PropensityFactory():
 
 
         if PA_dict is None:
-            codon_dict = self.codon_dicts.Gobet2020_PA_rates
+            codon_dict = self.aux_codon_dicts.Gobet2020_PA_rates
         else:
             codon_dict = PA_dict
         codons = nt_seq.upper()
