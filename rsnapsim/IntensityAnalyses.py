@@ -649,7 +649,7 @@ class IntensityAnalyses():
         return autocorr_vec, autocorr_err
     '''
 
-    def get_autocorr(self, autocov, norm_type='interp', norm = 'individual'):
+    def get_autocorr(self, autocov, norm ='indiv', shot_noise_type = 'g0'):
         '''
         Given an autocovariance tensor, normalize to the autocorrelation
         
@@ -692,12 +692,12 @@ class IntensityAnalyses():
         autocorr = np.copy(autocov)
         n_traj = autocorr.shape[-1]
 
-        if norm_type.lower() in ['individual','indiv','i']:
-            g0 = self.get_g0(autocov, norm)
+        if norm.lower() in ['individual','indiv','i']:
+            g0 = self.get_g0(autocov, shot_noise_type)
             for n in range(autocov.shape[0]):
                 autocorr[n] = autocorr[n]/g0[n]
-        elif norm_type.lower() in ['global','g']:
-            g0 = self.get_g0(autocov, norm)
+        elif norm.lower() in ['global','g']:
+            g0 = self.get_g0(autocov, shot_noise_type)
             g0_mean = np.mean(g0)
             for n in range(autocov.shape[0]):
                 autocorr[n] = autocorr[n]/g0_mean     
