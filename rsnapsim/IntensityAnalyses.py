@@ -241,7 +241,10 @@ class IntensityAnalyses():
         if mode.lower() in ['interp', 'inter', 'extrapolate', 'interpolate']:
             X = [1, 2, 3, 4]
             V = covariance[:, X, :]
-            G0 = np.interp(0, X, V)
+            G0 = np.zeros(V[:,0,:].shape)
+            for i in range(V.shape[0]):
+                for j in range(V.shape[-1]):
+                    G0[i,j] = np.interp(0, X, V[i,:,j])
 
         if mode.lower() in ['g1', '1']:
             G0 = covariance[:, 1, :]

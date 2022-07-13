@@ -55,7 +55,6 @@ tagged_poi = rss.seqmanip.seq_to_protein_obj(example_mRNA, add_tag=True)['0'][0]
 
 
 
-
 import unittest
 
 class TestPOI(unittest.TestCase):
