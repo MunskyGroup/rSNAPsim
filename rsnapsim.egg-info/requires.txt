@@ -1,8 +1,0 @@
-BioPython
-numpy
-scipy
-cython
-matplotlib
-pandas
-SnapGeneFileReader
-dna_features_viewer
