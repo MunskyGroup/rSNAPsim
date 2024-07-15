@@ -214,7 +214,7 @@ class RuleConverterLambda():
                     elem = elem + [element]            
         return [x for x in elem if x != '']
 
-    def get_elements(self, propensity_string, defined_dict = {'footprint':'9'}, operator_dict = {'~',:'!'}):
+    def get_elements(self, propensity_string, defined_dict = {'footprint':'9'}, operator_dict = {'~':'!'}):
         '''
         Deconstruct a propensity string into its consituent elements
         '''
