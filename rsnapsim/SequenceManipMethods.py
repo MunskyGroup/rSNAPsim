@@ -41,14 +41,31 @@ class SequenceManipMethods(SequenceCore):
 
 
     def open_seq_file(self, seqfile, min_codons=80, add_tag=True):
+        """
+        Opens a given sequence file (.txt, .fa, .gb, .dna) and reads sequence
+        info, converts all valid sequences beyond the user defined codon limit
+        into protein objects. 
 
-        '''
-        Reads a sequence file, either a .txt file or a .gb genbank file
+        Parameters
+        ----------
+        seqfile : str
+            file path string to the sequence file of interest
+        min_codons : int, optional
+            minimum amount of codons to be considered a protein, by default 80
+        add_tag : bool, optional
+            add a default fluorescent tag to all proteins? by default True
 
-        *args*
-
-            **seqfile**, sequence file either in txt, gb, gbk format
-        '''
+        Returns
+        -------
+        protein_strs : dict
+            dictionary keyed by ORF of all sequences considered valid proteins
+        proteins : dict
+            protein object dicionary sorted by ORF for all detected proteins
+        tagged_proteins : dict
+            dictionary of poi objects with detected tags sorted by ORF
+        sequence_str : str
+            The sequence detected from the sequence file
+        """
 
         fp = FileParser.FileParser()
         #TODO expose this to the user:
@@ -83,12 +100,12 @@ class SequenceManipMethods(SequenceCore):
                 
             # compress the dictionaries by keys
             flatten_dict = lambda dictionary: [[item for sublist in [y[x] for y in dictionary]
-                                                for item in sublist] for x in ['1','2','3']]
+                                                for item in sublist] for x in ['0','+1','+2']]
             
 
-            protein_strs = {i: flatten_dict(ps_list)[int(i)-1] for i in ['1','2','3']}
-            proteins = {i: flatten_dict(pro_list)[int(i)-1] for i in ['1','2','3']}
-            tagged_proteins = {i: flatten_dict(tagd_list)[int(i)-1] for i in ['1','2','3']}
+            protein_strs = {i: flatten_dict(ps_list)[int(i)-1] for i in ['0','+1','+2',]}
+            proteins = {i: flatten_dict(pro_list)[int(i)-1] for i in ['0','+1','+2']}
+            tagged_proteins = {i: flatten_dict(tagd_list)[int(i)-1] for i in ['0','+1','+2']}
                 
         return protein_strs, proteins, tagged_proteins, sequence_str
 
@@ -131,13 +148,6 @@ class SequenceManipMethods(SequenceCore):
 
                 pro = self.nt2aa(seq[orfs[orf_keys[i]][j][0]:orfs[orf_keys[i]][j][1]])
                 nt_seq = seq[orfs[orf_keys[i]][j][0]:orfs[orf_keys[i]][j][1]]
-                # if pro[-1] == '*':
-                #     pro = pro[:-1]
-                #     nt_seq = nt_seq[:-3]
-
-
-
-
 
                 protein.aa_seq = pro
                 protein.nt_seq = nt_seq
@@ -189,7 +199,7 @@ class SequenceManipMethods(SequenceCore):
 
     def get_largest_poi(self,seqfile, min_codons=80, add_tag=True):
         '''
-        Convenience file to get the largest poi if you know your file 
+        Convenience function to get the largest poi if you know your file 
         has multiple orfs
 
         Parameters
@@ -226,15 +236,17 @@ class SequenceManipMethods(SequenceCore):
     
     def seq_to_protein_obj(self, nucleotide_sequence_str, min_codons=80, add_tag=True):
         '''
+        Convert a given nucleotide sequence string into a POI / protein of 
+        interest object.
 
         Parameters
         ----------
         nucleotide_sequence_str : str
-            nucleotide sequence string (.
-        min_codons : TYPE, optional
-            DESCRIPTION. The default is 80.
-        add_tag : TYPE, optional
-            DESCRIPTION. The default is True.
+            nucleotide sequence string to convert
+        min_codons : int, optional
+            min amount of codons to be considered a protein. The default is 80.
+        add_tag : bool, optional
+            Add the default T_FLAG 10X tag to the front? The default is True.
 
         Returns
         -------
@@ -391,8 +403,10 @@ class SequenceManipMethods(SequenceCore):
         poi_obj.gene_seq = gs
         poi_obj.gene_length = len(gs)
         poi_obj.total_length = total_length
-        
-        taglocs = np.array([x for x in poi_obj.tag_epitopes.values()])
+        ##TODO BUG WITH MULTIPLE LENGTHS OF TAGS HERE, HOW DO WE LUMP TAGS?
+        # FLatten the list of lists of dict values here, we just find the first and last tag regions
+        taglocs = np.array([y for ys in [x for x in poi_obj.tag_epitopes.values()] for y in ys])
+
         if taglocs.shape[0] > 0:
             tag_start,tag_stop = (int(np.min(taglocs)), int(np.max(taglocs)))
         

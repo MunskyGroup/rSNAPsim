@@ -18,7 +18,7 @@ class FileParser():
     '''
     Class to parse incoming files
 
-    TODO: Extend this for psuedouridine /m6a / modification dictionary
+    TODO: Extend this for psuedouridine / m6a / modification dictionary
     '''
     def __init__(self):
         self.file = None
@@ -32,7 +32,7 @@ class FileParser():
                         'aguagcugagcaucaucuaug'
 
 
-    def clean_seq(self, nt_sequence):
+    def clean_seq(self, nt_sequence: str) -> str:
 
         '''
         Return an mrna sequence of lowercase a,u,c,g from IPUAC substitutions
@@ -62,10 +62,15 @@ class FileParser():
         return seqcore().clean_seq(nt_sequence)
 
 
-    def get_sequence(self, file):
+    def get_sequence(self, file: str) -> str:
         '''
         given a txt, dna, fasta, or gb file, get the nucleotide sequence data 
         out of the file and into a string.
+
+        .. warning::
+            this code will replace substitutive nucleotides with
+            preferential order a, g , u , c. for example: N (any base) is set
+            to A, W (T, U, or A) is set to A, S (C or G) is set to G
         
         Valid file types: 
             * fasta
@@ -127,7 +132,7 @@ class FileParser():
 
 
 
-    def get_name(self, file_path):
+    def get_name(self, file_path: str)-> str:
         '''
         attempt to find the transcript name from a file, if the name cannot
         be found from the file, this function will return "unknown"
@@ -180,7 +185,7 @@ class FileParser():
         return name
 
 
-    def get_description(self, file_path):
+    def get_description(self, file_path: str) -> str:
         '''
         Attempt to find the text description from a file
 
@@ -237,7 +242,7 @@ class FileParser():
 
 
     @classmethod
-    def __get_seq_from_txt(cls, file):
+    def __get_seq_from_txt(cls, file: str) -> str:
         with open(file) as fname:
             raw = fname.readlines()
 
@@ -259,7 +264,7 @@ class FileParser():
         return sequence_str
 
     @classmethod
-    def __get_name_from_text(cls, file):
+    def __get_name_from_text(cls, file: str) -> str:
         name = ''
         with open(file) as fname:
             raw = fname.readlines()

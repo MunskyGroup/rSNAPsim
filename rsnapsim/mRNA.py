@@ -20,12 +20,11 @@ pvf = ProbeVectorFactory.ProbeVectorFactory
 cd = CodonDictionaries.CodonDictionaries
 
 
-class poi():
+class mRNA():
     '''
 
     Attributes
     ----------
-
     aa_seq: str
         amino acid sequence
     nt_seq: str
@@ -49,24 +48,52 @@ class poi():
 
     '''
     def __init__(self):
-        self.aa_seq = ''    #amino sequence
-        self.nt_seq = ''    #nucleotide sequence
-        self.gene_length = 0   #length of the gene
-        self.tag_length = 0   #length of the tags
-        self.total_length = 0  #total length of the full amino acid sequence
-        self.name = ''         #name of the gene
-        self.tag_types = []
-        self.tag_epitopes = {}  #type of tags and epitope lists per tag
-        self.ki = .03
-        self.ke_mu = 10
-        self.kt = 10
+        self.nt_seq = ''    #full nucleotide sequence of the mRNA
+        self.five_prime_UTR = ''
+        self.three_prime_UTR = ''
 
-        self.multiframe_epitopes = []
-        self.multiframe_nt_seq = []
-        self.multiframe_aa_seq = []
-        self._colors = ['#fa8174', '#b3de69', '#bc82bd','#ccebc4',
-                        '#ffed6f','#81b1d2']
+        self.orfs = {}      # open reading frames of each detected protein
+        self.CDSs = {}       # each coding region sorted by ORFs
+        self.proteins = {}   # each protein object
 
+        self.fluorescent_tag_epitopes = {}  #type of tags and epitope lists per tag
+        self.fluorescent_tag_names = {}  #type of tags and epitope lists per tag
+
+        self.annotations = {}
+
+    @property
+    def codon_array(self):
+        """
+        Creates an array of ORF x LENGTH_MRNA of indexes of amino acids for
+        calculating elongation rate for any frame anywhere on a given sequence.
+        
+        Indexes are as follows:
+              0    1    2    3    4    5    6    7    8    9
+            ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I',
+             10   11   12   13    14   15   16   17   18   19 
+             'L', 'K', 'M', 'F',  'P', 'S', 'T', 'W', 'Y', 'V',
+             20   21    22
+             '*', 'X', 'blank']
+
+        Returns
+        -------
+        codon_array : ndarray
+            3 x Length mRNA sequence array of amino acid indexes
+        """        
+        # make a 0, +1, -1 array of codons
+        nt_seq = self.nt_seq.upper()
+        blank_value = len(cd.aa_keys) + 1 #index for no amino acid 
+        codon_array = np.ones(3,len(nt_seq), dtype=np.uint8)*blank_value #set them to the index of blank
+        amino_acid_int = [[cd.aa_keys.index(cd.aa_table[nt_seq[i+j:i+j+3]]) for i in 
+                        range(0, len(nt_seq)-j-2, 3)]
+                        for j in range(3)]
+        
+        for i in range(3): # for each open reading frame, place the indexes in
+            codon_array[:len(amino_acid_int[i])] = amino_acid_int[i]
+
+        return codon_array
+
+        
 
     @property
     def CAI(self):

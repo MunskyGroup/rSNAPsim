@@ -33,7 +33,7 @@ class GenericMetaData():
         self.platform = platform.platform()
         self.python_version = sys.version
 
-    def get(self):
+    def get(self) -> dict:
         '''
         Generate and return a metadata dictionary for a solver object
 
@@ -45,7 +45,7 @@ class GenericMetaData():
         '''
         return self.__dict__
 
-    def get_as_str(self):
+    def get_as_str(self) -> str:
         '''
         Function to return a readable string of the contained metadata
         
