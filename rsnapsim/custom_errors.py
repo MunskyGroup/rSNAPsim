@@ -10,6 +10,16 @@ class Error(Exception):
     pass
 
 
+class UnknownElementError(Error):
+    """Exception raised for errors in converting models to c.
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+        
 class SnapGeneMissingError(Error):
     """Exception raised for errors in the input.
 
@@ -133,3 +143,120 @@ class UnrecognizedNormalizationError(Error):
     def __init__(self, message):
         self.message = message
                 
+
+
+class NegativeRateError(Error):
+    """Exception raised for errors in the simulation where negative rates appear
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+class NegativeResourcesError(Error):
+    """Exception raised for errors in the simulation where negative resources appear
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+class StatesError(Error):
+    """Exception raised for errors in the simulation where states are not equal 
+    to 0 or 1
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+        
+class SmallTimestepError(Error):
+    """Exception raised for errors in the simulation where time steps are less than 1e-8
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+
+
+class EigenMissingError(Error):
+    """Exception raised for when an eigen instillation cannot be found
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+        
+class UnknownElementError(Error):
+    """Exception raised for when an unknown element to convert to C++ was used
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+
+class ExistenceError(Error):
+    """Exception raised for when a requesting making a model that already
+    exists without overwite == True
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+class ModelNameError(Error):
+    """Exception raised for when a requesting making a model that already
+    exists without overwite == True
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+
+
+class MisMatchedBrackets(Error):
+    """Exception raised for when a requesting making a model that already
+    exists without overwite == True
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+class MisMatchedParenthesis(Error):
+    """Exception raised for when a requesting making a model that already
+    exists without overwite == True
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message

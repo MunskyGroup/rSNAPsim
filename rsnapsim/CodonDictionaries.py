@@ -337,13 +337,13 @@ class CodonDictionaries():
             'GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT',
             'ATT', 'TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
             'ACT', 'TGG', 'TAT', 'GTT', 'TAA',
-            'GCU', 'CGU', 'AAU', 'GAU', 'UGU', 'CAA', 'GAA', 'GGU', 'CAU',
+            'GCU', 'CGU', 'AAU', 'GAU','GAC', 'UGU', 'CAA', 'GAA', 'GGU', 'CAU',
             'AUU', 'UUA', 'AAA', 'AUG', 'UUU', 'CCU', 'TCU',
             'ACU', 'UGG', 'UAU', 'GUU', 'UAA',]
 
         codonkeys = [
-            'GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT',
-            'ATT', 'TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
+            'GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT', 
+            'ATT', 'GAC','TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
             'ACT', 'TGG', 'TAT', 'GTT', 'TAA',]
 
         self.sensitivity_fast_slow = []

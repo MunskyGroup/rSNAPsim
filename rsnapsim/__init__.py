@@ -40,9 +40,6 @@ probef = ProbeVectorFactory.ProbeVectorFactory()
 from . import PropensityFactory
 propf = PropensityFactory.PropensityFactory()
 
-from . import ModelBuilder
-model_builder = ModelBuilder.ModelBuilder()
-
 from . import TranslationSolvers 
 solver = TranslationSolvers.TranslationSolvers()
 
@@ -59,6 +56,16 @@ from . import TranslationOptimization
 optimizer = TranslationOptimization
 from ._version import __version__
 from . import GenericMetaData
+
+from . import mRNA
+mRNA = mRNA.mRNA
+
+from . import TranslationModel
+tasep_model = TranslationModel.TranslationModel
+
+from . import ModelMaker
+mf = ModelMaker.ModelFactory()
+rlc = ModelMaker.RuleConverterLambda()
 
 
 

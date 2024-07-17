@@ -15,6 +15,7 @@ cimport cython
 
 #min length goes here 
 
+#model id goes here
 
 #parsed rules go here
 
@@ -23,53 +24,47 @@ cimport cython
 
 
 #cdef goes here
-    void generic_ssa_cpp(int* result, int* intensity, int* states, int* Stoich_states, int* Stoich_lattice, double* forward_rates,
-                         double* parameters, int* xi_lattice, int* xi_state, double* time_vector,
-                         double tf, int seed, int Nt,
-                         int n_rxns, int n_total_rxns, int n_states, int length,
-                         int max_particles, int used_frames,
-                         int* probe_location_matrix,   int Ncolors);
+    void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,  # arrays to fill
+                    int* particle_x0, int* state_x0,  int* resource_x0, int* rxns, int* rxnids, double* elongs, int* probes,
+                    double* parameters, int npars,       # initial simulation state
+                    int max_rib, int n_constant_reactions, int n_ribosome_reactions,  # constants of the simulation
+                    int n_colors, int n_states, int n_resources, int Nt, double* time_vector, double tf, double burnin, int seed, int L, int error_code);
     
-def run_ssa_cpp( np.ndarray[int, ndim=2, mode="c"] result not None,
-                 np.ndarray[int, ndim=2, mode="c"] intensity not None,
-                 np.ndarray[int, ndim=2, mode="c"] states not None,
-                 np.ndarray[int, ndim=2, mode="c"] stoich_states not None,
-                 np.ndarray[int, ndim=2, mode="c"] stoich_lattice not None,
+    
+    
+
+    
+def run_ssa_cpp( np.ndarray[int, ndim=2, mode="c"] particle_array not None,
+                 np.ndarray[int, ndim=2, mode="c"] state_array not None,
+                 np.ndarray[int, ndim=2, mode="c"] resource_array not None,
+                 np.ndarray[int, ndim=2, mode="c"] particle_x0 not None,
+                 np.ndarray[int, ndim=1, mode="c"] state_x0 not None,
+                 np.ndarray[int, ndim=1, mode="c"] resource_x0 not None,
+                 np.ndarray[int, ndim=2, mode="c"] rxn_mat not None,
+                 np.ndarray[int, ndim=1, mode="c"] rxnids not None,
+                 np.ndarray[double, ndim=2, mode="c"] elong_mat not None,
+                 np.ndarray[int, ndim=2, mode="c"] probes not None,
                  np.ndarray[double, ndim=1, mode="c"] parameters not None,
-                 np.ndarray[double, ndim=1, mode="c"] kelong not None, 
-                 np.ndarray[double, ndim=1, mode="c"] t_array not None,
-                 np.ndarray[int,ndim=2, mode="c"] xi_lattice not None,
-                 np.ndarray[int,ndim=2, mode="c"] xi_states not None,
-                 np.ndarray[int,ndim=2, mode="c"] probe_locations not None,
-                 int length,
-                 unsigned int seed,
-                 int n_total_reactions):
+                 np.ndarray[double, ndim=1, mode="c"] time_vector not None,
+                 int max_rib, int n_states, int n_resources, int n_constant_reactions, int n_ribosome_reactions, 
+                 double burnin, int seed):
     
     
-    cdef int used_frames = 1
+    cdef int n_colors = probes.max()
+    cdef int n_parameters = len(parameters)
+    cdef int Nt = time_vector.shape[0]
+    cdef double tf = time_vector[Nt-1]
+    cdef int n_rxns = n_constant_reactions + n_ribosome_reactions
+    cdef int L = int(elong_mat.shape[1])
+    cdef int error_code = 0
     
-    if len(xi_states) > 1.1*length:
-        used_frames = 2
-        if len(xi_states) > 2*length:
-            used_frames = 3
-            
-    #print(used_frames)
-    
-    cdef int max_particles = result.shape[1]
-    #print(max_particles)
-    
-    cdef int ncolors = probe_locations.shape[0]
 
-    cdef int n_states = xi_states.shape[1]
-    cdef int n_reaction_states = stoich_states.shape[0]
-    cdef int nt = t_array.shape[0]
-    #print(nt)
-    cdef double tf = t_array[nt-1]
+    generic_ssa_cpp(&particle_array[0,0], &state_array[0,0], &resource_array[0,0], &particle_x0[0,0], &state_x0[0], &resource_x0[0],
+                    &rxn_mat[0,0], &rxnids[0], &elong_mat[0,0], &probes[0,0], &parameters[0],  n_parameters,
+                    max_rib, n_constant_reactions, n_ribosome_reactions, n_colors, n_states, n_resources, Nt,  &time_vector[0],
+                    tf, burnin, seed, L, error_code)
+    return error_code
 
-    generic_ssa_cpp(&result[0,0], &intensity[0,0], &states[0,0], &stoich_states[0,0], &stoich_lattice[0,0], &kelong[0], &parameters[0],
-                    &xi_lattice[0,0], &xi_states[0,0], &t_array[0], tf, seed, nt, n_reaction_states,
-                    n_total_reactions, n_states, length, max_particles, used_frames,&probe_locations[0,0], ncolors)
-    
 
 def __original_rules():
     return original_rules_str
@@ -77,9 +72,8 @@ def __original_rules():
 def __parsed_rules():
     return rules_str
 
-def __min_length():
-    return min_length
-    
+def __model_id():
+    return model_id
     
     
     
