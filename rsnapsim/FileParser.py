@@ -7,8 +7,12 @@ Created on Tue Apr 21 16:29:21 2020
 
 import os
 import re
+import struct
 
-from snapgene_reader import snapgene_file_to_seqrecord
+#from snapgene_reader import snapgene_file_to_seqrecord
+# ^ replaced with a shortened function based on this package.v see
+# __get_sequence_from_dnafile(filepath)
+
 from Bio import SeqIO
 
 from . import custom_errors as custom_err
@@ -92,14 +96,7 @@ class FileParser():
         self.__check_valid_file(file)
         extension = file.split('.')[-1]
         if extension == 'dna':
-            try:
-                seq_record = snapgene_file_to_seqrecord(file)
-            except:
-                msg = 'To read .dna files please install snapegenereader: '\
-                      ' pip install snapgene_reader - '\
-                          'https://github.com/IsaacLuo/SnapGeneFileReader'
-                raise custom_err.SnapGeneMissingError(msg)
-            sequence_str = str(seq_record.seq)
+            sequence_str = self.__get_sequence_from_dnafile(file)
 
         if extension == 'txt':
             sequence_str = self.__get_seq_from_txt(file)
@@ -173,14 +170,7 @@ class FileParser():
             name = self.__get_name_from_text(file_path)
 
         if extension == 'dna':
-            try:
-                seq_record = snapgene_file_to_seqrecord(file_path)
-            except:
-                msg = 'To read .dna files please install snapegenereader: '\
-                      ' pip install snapgene_reader - '\
-                          'https://github.com/IsaacLuo/SnapGeneFileReader'
-                raise custom_err.SnapGeneMissingError(msg)
-            name = seq_record.name
+            pass
 
         return name
 
@@ -225,15 +215,7 @@ class FileParser():
             desc = str(gb_record.description)
 
         if extension == 'dna':
-            try:
-                seq_record = snapgene_file_to_seqrecord(file_path)
-            except:
-                msg = 'To read .dna files please install snapegenereader: '\
-                      ' pip install snapgene_reader - '\
-                          'https://github.com/IsaacLuo/SnapGeneFileReader'
-                raise custom_err.SnapGeneMissingError(msg)
-
-            desc = seq_record.description
+            desc = '<unknown description>'
         if extension == 'txt':
             desc = '<unknown description>'
 
@@ -289,3 +271,55 @@ class FileParser():
             name = os.path.basename(file)[:-4]
 
         return name
+
+    @classmethod
+    def __get_sequence_from_dnafile(cls, filepath: str) -> str:
+        # THIS IS A MODIFIED VERSION OF SNAPGENE READER 
+        # https://github.com/IsaacLuo/SnapGeneFileReader/tree/master
+        # this only pulls the sequence and name from a given .dna, rSNAPsim assumes 
+        # the user knows what they are passing it is an mRNA or CDS or translatable sequence.
+        
+        f = open(filepath, 'rb')
+        
+        # read the header first and make sure its snapgene
+        
+        unpack = lambda size,mode: struct.unpack('>' + mode, f.read(size))[0]
+        fb = f.read(1)
+        
+        if fb != b'\t':
+            raise ValueError("Input file is not in SnapGene .dna format")
+    
+        
+        spacer = unpack(4, 'I')
+        title = f.read(8).decode('ascii')
+        
+        if spacer != 14 or title != 'SnapGene':
+            raise ValueError("Input file is not in SnapGene .dna format")
+    
+        # features of the snapgene file
+    
+        data = dict(is_dna = unpack(2, 'H'),
+        exportVersion = unpack(2, 'H'),
+        importVersion = unpack(2, 'H'),
+        features=[])
+        
+        bs = []
+        while True:
+            nb = f.read(1)
+            bs.append(nb)
+            if nb == b'':
+                break
+            
+            block_size = unpack(4, 'I')
+            
+            if ord(nb) == 0:
+                # read the sequence we still need to pull out the sequence types
+                props = unpack(1, 'b') #get the props and discard
+                s = f.read(block_size - 1)
+                data["seq"] = s.decode('ascii')     
+            else:
+                f.read(block_size)
+                pass
+            
+        return data['seq']
+    
