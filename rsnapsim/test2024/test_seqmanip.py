@@ -56,6 +56,23 @@ class TestSeqmanip(unittest.TestCase):
 
 
 ##############################################################################            
+# Sequence Opening Tests
+    
+   
+    def test_parsing_multiline_fasta(self):
+        aa = 'MKGPILLGTCTSYPGASILSTSTGWASTTASAPAGLFTCLVEASISFRSLRKGILMVRCMRPRKTALPSWSSSTCGRSTPVRCWRAPGSSMSCPTTEAGSTCWTRRSTGSPSTGVQLPQLSSLSAALWSDDTDAAKRWLALSSK*'
+        example_file_paths = './test_gene_files/'
+        files = os.listdir(example_file_paths)
+        for f in files:
+            if f == 'multiline_fasta.fasta':
+                a,c,b,d = rss.seqmanip.open_seq_file(example_file_paths + f, add_tag=True)    
+        self.assertEqual(a['0'][0], aa) #check that both sequences are right from each multiline
+        self.assertEqual(a['0'][1], aa)
+            
+            
+            
+        
+##############################################################################            
 # Sequence Optimization Tests
     
     def test_unknown_codon_to_aa_optimization(self):
@@ -158,41 +175,6 @@ class TestSeqmanip(unittest.TestCase):
     def test_nt2aa_invalid_length(self):
         with self.assertRaises(rss.custom_errors.InvalidSequenceLengthError): 
             seqmanip.nt2aa(example_mRNA + 'A')
-        
-    '''
-    def test_pull_file(self):
-        if os.path.isfile(os.path.join('.', 'content', 'MN908947.gb')):
-            os.remove(os.path.join('.', 'content', 'MN908947.gb'))
-                               
-                               
-        rss.seqmanip.get_gb_file(Ascession_Number, '.\content')
-        
-        self.assertTrue(os.path.isfile(os.path.join('.',
-                                                         'content',
-                                                         'MN908947.gb')))
-
-    def test_wrong_path(self):
-        with self.assertRaises(rss.SequenceManipMethods.PathDoesNotExistError) as context:
-            rss.seqmanip.get_gb_file('aaa', '.\content')
-            msg = 'Specified save path does not exist, double check the path'\
-            ' specified.'
-            self.assertEqual(
-                context.exception.msg,
-                msg)
-            
-    def test_wrong_asc(self):
-        with self.assertRaises(rss.SequenceManipMethods.AscNumDoesNotExistError) as context:
-            rss.seqmanip.get_gb_file('113', '.\contents')
-            msg = 'Cannot find given ascession number for genbank, file re'\
-                'quest failed.'
-            
-            print('')
-            print(context.exception)
-            print('')
-            self.assertEqual(
-                context.exception.msg,
-                msg)
-    '''
 
 if __name__ == '__main__':
     unittest.main()
