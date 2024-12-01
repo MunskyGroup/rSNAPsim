@@ -15,7 +15,7 @@ ODE_Soln = ODE_Soln.ODE_Soln
 
 
 import time
-
+import warnings
 import os
 
 ## Search locally for ssa_cpp
@@ -73,6 +73,20 @@ except:
     pass
 
 
+class Error(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+class CythonMissingError(Error):
+    """Exception raised for errors in the input.
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
 class TranslationSolvers():
     '''
     Container class for the solvers
@@ -127,7 +141,8 @@ class TranslationSolvers():
             pass
 
 
-    def solve_ballistic_model(self, ki,ke, poi=None, tag= None):
+    def solve_ballistic_model(self, ki,ke, nt_seq=None,
+                              length=None, poi=None, tag= None):
         '''
 
         Given a iniation rate and set of elongation rates,
@@ -160,21 +175,32 @@ class TranslationSolvers():
 
         '''
 
-        if poi == None:
-            poi = self._poi
+        if nt_seq == None:
+            nt_seq = poi.nt_seq
+            
         if tag == None:
-            colors = np.where((poi.probe_loc)== 1)[0]
-            locs = np.where((poi.probe_loc)== 1)[1]
-            tags = []
-            for i in range(0,max(colors)+1):
-
-                tags.append(locs[np.where(colors == i)].tolist())
-
+            if poi ==None:
+                tags = []
+            else:
+                colors = np.where((poi.probe_loc)== 1)[0]
+                locs = np.where((poi.probe_loc)== 1)[1]
+                tags = []
+                for i in range(0,max(colors)+1):
+    
+                    tags.append(locs[np.where(colors == i)].tolist())
+        
+        #parse out stop codons
+        if nt_seq[-3:].lower() in ['taa', 'tag', 'tga' ,'uga' ,'uaa', 'uag']:
+            nt_seq = nt_seq[:-3]
+        L = len(nt_seq)
 
         tau_analyticals = []
         mean_analyticals = []
         var_analyticals = []
-
+        
+        
+        ke_analytical = L*ke / np.sum(self.__get_ui(nt_seq[:-3]))
+        tau_analytical = (L )/ke_analytical  #analytical tau ie autocovariance time
         for tag in tags:
 
 
@@ -183,17 +209,13 @@ class TranslationSolvers():
             L_after_tag = L - tag[-1]
             L_tag = int((tag[-1] - tag[0]) / 2)
 
-            ke_analytical = L*ke / np.sum(self.__get_ui(poi.nt_seq[:-3]))
-
-            tau_analytical = (L )/ke_analytical  #analytical tau ie autocovariance time
             mean_analytical = ki*tau_analytical * (1.-Lm/float(L)) # mean intensity
             var_analytical = ki*tau_analytical * (1.-Lm/float(L))**2  #var intensity
-
-            tau_analyticals.append(tau_analytical)
+          
             mean_analyticals.append(mean_analytical)
             var_analyticals.append(var_analytical)
 
-        return tau_analyticals,mean_analyticals,var_analyticals
+        return tau_analytical,mean_analyticals,var_analyticals
 
 
     def invert_ballistic(self,tau_measured, mu_I, poi= None):
@@ -250,7 +272,6 @@ class TranslationSolvers():
 
         for i in range(len(tags)):
             tag= tags[i]
-            print(tag)
             L = poi.total_length #get the total length of the gene
             Lm = np.mean(tag)  #the mean location of the tag epitopes
             L_after_tag = L - tag[-1]
@@ -283,6 +304,7 @@ class TranslationSolvers():
         return ui
 
 
+    '''
     def solve_ssa_set_conditions(self):
 
         ssa_conditions = self.default_conditions
@@ -349,9 +371,15 @@ class TranslationSolvers():
 
 
         return ssa_obj
+    '''
 
-
-    def solve_ssa_trna(self,k_index, k_diffusion, k_bind, kelong, k_compl, t,x0=[], k_trna = None, perturb=[0,0,0],leaky_probes=False,kprobe=np.ones(1),probe_vec = None, probe_loc=None, kon=1,koff=1,bursting=False,n_traj=10   ):
+    def solve_ssa_trna(self,k_index, k_diffusion, k_bind, kelong,
+                       k_compl, t,x0=[], k_trna = None,
+                       perturb=[0,0,0],leaky_probes=False,
+                       kprobe=np.ones(1),probe_vec = None, probe_loc=None,
+                       kon=1,koff=1,bursting=False,n_traj=10,
+                       connection_mat=None):
+        
         self.__check_rates_trna(k_index)
 
         ssa_conditions = self.default_conditions
@@ -396,11 +424,10 @@ class TranslationSolvers():
                 probe_vec = self.protein.probe_vec.astype(np.int32)
                 probe_loc = self.protein.probe_loc.astype(np.int32)
             else:
-                try:
-                    num = int("string")
-                except ValueError:
-                    print("no provided probe vector, please set the solver.protein with a protein object or provide a probe vector")
-
+                probe_loc = np.zeros([1,len(kelong)], dtype=np.int32)
+                probe_vec = np.zeros([1,len(kelong)], dtype=np.int32)
+                warnings.warn('no provided probe vector, using a blank probe'\
+                              '. This will result in zero sum intensity.')
         else:
             probe_vec = probe_vec
 
@@ -409,8 +436,12 @@ class TranslationSolvers():
         ssa_conditions['probe_loc'] = probe_loc
 
 
+        try:
+            connection_mat[0]
+            ssa_obj = self.__solve_ssa_trna_connection_mat(k_index,k_trna, k_diffusion,k_bind,kelong, k_compl,t,x0,n_traj,ssa_conditions = ssa_conditions)
 
-        ssa_obj = self.__solve_ssa_trna(k_index,k_trna, k_diffusion,k_bind,kelong, k_compl,t,x0,n_traj,ssa_conditions = ssa_conditions)
+        except:
+            ssa_obj = self.__solve_ssa_trna(k_index,k_trna, k_diffusion,k_bind,kelong, k_compl,t,x0,n_traj,ssa_conditions = ssa_conditions)
 
         return ssa_obj
 
@@ -450,6 +481,7 @@ class TranslationSolvers():
         all_results = np.zeros([n_traj,  Nt, max_rib,],dtype=np.int32)
         all_intensities = np.zeros([n_traj,  Nt, Ncolors,],dtype=np.int32)
         all_states = np.zeros([n_traj,  Nt, max(xi_states.shape),],dtype=np.int32)
+
         for i in range(0,n_traj):
             result = np.zeros([Nt, max_rib,],dtype=np.int32)
             intensity = np.zeros([Nt, Ncolors,],dtype=np.int32)
@@ -484,8 +516,9 @@ class TranslationSolvers():
             #there was a blank
             except:
                 pass
-
-
+            
+        if validind == 0:
+            validind = 1
         all_results = all_results[:,:,:validind]
 
         for i in range(all_results.shape[0]):
@@ -515,18 +548,208 @@ class TranslationSolvers():
         ssa_obj.time_rec = t_array
         ssa_obj.ribosome_locations = all_results
         ssa_obj.states = all_states
+        ssa_obj.eval_time = eval_time
 
         return ssa_obj
 
 
 
 
-    def solve_ssa(self, ke, t, ki=.33, kt = 10,
-                  x0=[], n_traj=100, bins=None, low_memory=True,
-                  perturb=[0,0,0], leaky_probes=False, kprobe=np.ones(1),
+
+    def solve_ssa_protease(self, ke, t, ki=.033, kt = 10, 
+                  x0=[], n_traj=100, bins=None, protease_locations = [], protease_rates = [],
+                  perturb=[0,0,0,0], leaky_probes=False, kprobe=np.ones(1),
                   record_stats=False, probe_vec=None, probe_loc=None,
                   kon=1, koff=1, bursting=False, rib_prealloc=200,
-                  dynamic_prealloc=False):
+                  dynamic_prealloc=False, photobleaching=False, photobleaching_rate=0.0):
+        '''
+
+        Solve a stochastic simulation of ribosomes on an mRNA transcript
+        given codon dependent rates (TASEP) with protease trimming
+
+        Parameters
+        ----------
+        ke : list
+            list of kelongation rates, can be accessed via a protein object by POI.kelong.
+        t : list, arr
+            a list/array of times to run the simulation for.
+        ki : float, optional
+            Initiation Rate. The default is .033 1/time.
+        kt : float, optional
+            Termination Rate. The default is 10 1/time.
+        x0 : numpy array, optional
+            1xRibsomes max intial condition. The default is []
+            (no intial condition).
+        n_traj : int, optional
+            Number of trajectories to simulate. The default is 100.
+        bins : numpy array, optional
+            binning key array, for example [2,2,2,2,2] would bin a 10 length
+            ke into 5 bins. The default is None.
+        protease_locations : 1D array like, optional
+            list of locations of where protease can trim nascent chains
+        protease_rates : 1D array like, optional
+            list of rates for each protease to trim available sites.
+        low_memory : Bool, optional
+            Use lower memory when simulating, meaning dont keep track of
+            ribosome positions over time, just the Intensity. The default is True.
+        perturb : list [bool, bool, float], optional
+            Apply a pertubation [frap, inhibitor, application time], for
+            example [1,0,50] would apply frap at time 50. The default is [0,0,0].
+        leaky_probes : bool, optional
+            Use leaky probes with a probability kprobe for binding when
+            passing each epitope. The default is False.
+        kprobe : list of floats, optional
+            probabilities for each probe to bind, for example a two color
+            system should have [.1,.9] for 10% chance of color 1 binding,
+            and 90% of color two binding on each epitope.
+            The default is np.ones(1).
+        record_stats : bool, optional
+            Record stats such as collisions or ribosome dwell times.
+            The default is False.
+        probe_vec : numpy array, optional
+            probe cumsum to convert to Intensities Ncolor x L_transcript.
+            If left blank will use POI. The default is None.
+        probe_loc : numpy array, optional
+            probe locations Ncolor x L_transcript with 1 for epitope
+            locations, 0 otherwise. If left blank will use POI.
+            The default is None.
+        kon : float, optional
+            on rate for bursting. The default is 1.
+        koff : float, optional
+            off rate for bursting. The default is 1.
+        bursting : bool, optional
+            use a on/off bursting dynamic for initiation. The default is False.
+        rib_prealloc : int, optional
+            how many ribosomes to consider binding at a time, for a
+            transcript the maximum that can bind at a time is L/9.
+            The default is 200.
+        dynamic_prealloc : bool, optional
+            calculate the expeted number of maximum ribosomes and use that
+            to preallocate memory. The default is False.
+
+        Returns
+        -------
+        ssa_obj : SSA_Soln_obj
+            returns a container object containing all the stats from
+            the simulation, such as intensity.
+
+        '''
+
+
+        self.__check_rates(ke)
+
+        ssa_conditions = self.default_conditions
+        if np.sum(kprobe != 1) !=0:
+            ssa_conditions['leaky_probes'] = True
+            leaky_probes = True
+
+        if isinstance(protease_locations, list):
+            protease_locations = np.array(protease_locations,dtype = np.int32)
+            
+        if isinstance(protease_rates, list):
+            protease_rates = np.array(protease_rates,dtype = np.float64)
+
+        ssa_conditions['perturb'] = perturb
+        ssa_conditions['leaky_probes'] = leaky_probes
+        ssa_conditions['low_mem'] = False
+        ssa_conditions['record_stats'] = record_stats
+        ssa_conditions['bins'] = bins
+        ssa_conditions['bursting'] = bursting
+        ssa_conditions['ribosome_preallocation'] = rib_prealloc
+        ssa_conditions['dynamic_rib_prealloc'] = dynamic_prealloc
+        ssa_conditions['photobleaching'] = photobleaching
+        ssa_conditions['photobleaching_rate'] = photobleaching_rate
+        ssa_conditions['protease_rates'] = protease_rates
+        ssa_conditions['protease_locations'] = protease_locations
+        provided_probe = False
+
+        try:
+            probe_vec[0]
+            provided_probe = True
+        except:
+            pass
+
+        provided_protein = False
+        try:
+            self.protein.kelong[0]
+            provided_protein = True
+
+        except:
+            pass
+
+        if provided_protein: #parse out stop codons if they are included
+            includes_stop = False
+            if self.protein.aa_seq[-1] == '*' or self.protein.nt_seq[-1].upper() in ['UAA','TAA','TAG','UAG', 'UGA','TGA']:
+                if len(self.protein.aa_seq) == len(ke):
+                    includes_stop = True
+
+
+
+        if not provided_probe:
+            if provided_protein:
+                if includes_stop:
+                    probe_vec = np.require(self.protein.probe_vec.astype(np.int32)[:,:-1],requirements=['C'])
+                    probe_loc = np.require(self.protein.probe_loc.astype(np.int32)[:,:-1],requirements=['C'])
+                    ke = ke[:-1]
+                else:
+                    probe_vec = self.protein.probe_vec.astype(np.int32)
+                    probe_loc = self.protein.probe_loc.astype(np.int32)
+            else:
+                probe_loc = np.zeros([1,len(ke)], dtype=np.int32)
+                probe_vec = np.zeros([1,len(ke)], dtype=np.int32)
+                warnings.warn('no provided probe vector, using a blank probe'\
+                              '. This will result in zero sum intensity.')
+                
+        else:
+            probe_vec = probe_vec
+
+
+        ssa_conditions['probe_vec'] = probe_vec
+        ssa_conditions['probe_loc'] = probe_loc
+
+
+        if dynamic_prealloc:
+
+            ssa_conditions['ribosome_preallocation'] = int(len(ke)/ssa_conditions['footprint'])+5
+
+        k = [ki,] + ke + [kt,]
+        if self.cython_available:
+
+            ssa_obj = self.__solve_ssa_replicon(k,t,x0,n_traj,protease_locations, protease_rates, ssa_conditions = ssa_conditions, kon=kon, koff=koff, kprobe=kprobe)
+
+
+        else:
+            warnings.warn('Warning: Protease model is only included in the c++'\
+              'This will return None until you install the translation c++.')
+
+
+       #Generate metadata
+        colors = ssa_obj.intensity_vec.shape[0]
+        st = ssa_obj.start_time
+        ft = ssa_obj.time_rec[-1]
+        lt = len(ssa_obj.time_rec)
+        if bins == None:
+            bstr = 0
+        else:
+            bstr=1
+        sid = 'L' + str(len(k)) + 'N' + str(n_traj) + 'T' + str(st) + '_' + str(ft) + '_' + str(lt)
+        fstr = '-F' + str(int(self.cython_available)) + str(int(sum(perturb))) + str(int(leaky_probes)) + str(int(False))  + str(int(record_stats))  +  str(int(bstr)) + str(int(bursting))
+        cstr = 'C' + str(int(colors))
+        nprobe = np.sum(probe_loc,axis=1)
+        for value in nprobe:
+            cstr = cstr+ 'P' + str(int(value))
+        sid = sid + cstr + fstr
+        ssa_obj._SSA_Soln__meta['id'] = sid
+
+        return ssa_obj
+
+
+    def solve_ssa(self, ke, t, ki=.033, kt = 10,
+                  x0=[], n_traj=100, bins=None, low_memory=True,
+                  perturb=[0,0,0,0], leaky_probes=False, kprobe=np.ones(1),
+                  record_stats=False, probe_vec=None, probe_loc=None,
+                  kon=1, koff=1, bursting=False, rib_prealloc=200,
+                  dynamic_prealloc=False, photobleaching=False, photobleaching_rate=0.0):
         '''
 
         Solve a stochastic simulation of ribosomes on an mRNA transcript
@@ -539,7 +762,7 @@ class TranslationSolvers():
         t : list, arr
             a list/array of times to run the simulation for.
         ki : float, optional
-            Initiation Rate. The default is .33 1/time.
+            Initiation Rate. The default is .033 1/time.
         kt : float, optional
             Termination Rate. The default is 10 1/time.
         x0 : numpy array, optional
@@ -612,7 +835,8 @@ class TranslationSolvers():
         ssa_conditions['bursting'] = bursting
         ssa_conditions['ribosome_preallocation'] = rib_prealloc
         ssa_conditions['dynamic_rib_prealloc'] = dynamic_prealloc
-
+        ssa_conditions['photobleaching'] = photobleaching
+        ssa_conditions['photobleaching_rate'] = photobleaching_rate
         provided_probe = False
 
         try:
@@ -647,8 +871,11 @@ class TranslationSolvers():
                     probe_vec = self.protein.probe_vec.astype(np.int32)
                     probe_loc = self.protein.probe_loc.astype(np.int32)
             else:
-                print("no provided probe vector, please set the solver.protein with a protein object or provide a probe vector")
-                raise
+                probe_loc = np.zeros([1,len(ke)], dtype=np.int32)
+                probe_vec = np.zeros([1,len(ke)], dtype=np.int32)
+                warnings.warn('no provided probe vector, using a blank probe'\
+                              '. This will result in zero sum intensity.')
+                
         else:
             probe_vec = probe_vec
 
@@ -812,7 +1039,7 @@ class TranslationSolvers():
 
 
 
-
+    '''
     def __solve_ssa(self,k,t,x0,n_traj,ssa_conditions=None):
 
         seeds = np.random.randint(0, 0x7FFFFFF, n_traj, dtype = np.int32)
@@ -963,7 +1190,7 @@ class TranslationSolvers():
 
         return ssa_obj
 
-
+    '''
 
 
     def __map_to_intensity(self):
@@ -972,7 +1199,7 @@ class TranslationSolvers():
 
 
     def __solve_ssa_trna(self, kindex, ktrna, kdiffusion, kbind, kelong,
-                         kcompl, t, x0, n_traj, ssa_conditions=None):
+                         kcompl, t, x0, n_traj, ssa_conditions=None, probe_vec=None ):
 
         seeds = np.random.randint(0, 0x7FFFFFF, n_traj, dtype=np.int32)
 
@@ -986,7 +1213,13 @@ class TranslationSolvers():
         solutions = []
         solutionssave = []
         N_rib = 200
-        colors = self.colors
+        
+        if probe_vec == None:
+            pv = self.protein.probe_vec
+        else:
+            pv = probe_vec
+            
+        colors = int(pv.shape[0])
 
         n_trajectories = n_traj
 
@@ -1043,7 +1276,7 @@ class TranslationSolvers():
 
             all_results[i, :] = result.T
             all_trna_results[i, :] = trna_result
-            all_frapresults[i, :] = frapresult
+           # all_frapresults[i, :] = frapresult
             all_ribtimes[i, :] = ribtimes
             all_collisions[i, :] = coltimes
             all_nribs[i, :] = nribs[0]
@@ -1104,7 +1337,7 @@ class TranslationSolvers():
         startindex = np.where(t >= non_consider_time)[0][0]
 
         #all_results = all_results[:,startindex*N_rib:]
-        pv = self.protein.probe_vec
+        
         I = np.zeros((colors, len(t), n_traj))
 
         for n in range(colors):
@@ -1186,7 +1419,10 @@ class TranslationSolvers():
         st = time.time()
 
 
-        print('C++ library failed, Using Python Implementation')
+        warnings.warn('C++ extention missing or not compiled, using Python' \
+                      ' Implementation. This will be much slower!' \
+                      ' For C++ instillation instructions read the README or '\
+                          'visit the github page: https://github.com/MunskyGroup/rSNAPsim')
         rib_vec = []
 
         solutions = []
@@ -1378,8 +1614,8 @@ class TranslationSolvers():
 
         probe_vec = ssa_conditions['probe_vec']
 
-        colors = self.colors
-
+        colors = int(probe_vec.shape[0])
+ 
 
         if ssa_conditions['bursting'] == False:
             kon = 1
@@ -1400,29 +1636,32 @@ class TranslationSolvers():
 
 
         N_rib = ssa_conditions['ribosome_preallocation']
-        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats_lowmem(n_traj,k[0],t,N_rib,colors)
+        all_results,all_nribs,all_collisions,_,all_ribtimes,all_col_points = self.__generate_mats_lowmem(n_traj,k[0],t,N_rib,colors)
         footprint = ssa_conditions['footprint']
         evf = ssa_conditions['perturb'][0]
         evi = ssa_conditions['perturb'][1]
         intime = ssa_conditions['perturb'][2]
+        intime_stop = ssa_conditions['perturb'][3]
         non_consider_time = ssa_conditions['burnin']
+        photobleaching_rate = ssa_conditions['photobleaching_rate']
+        photobleaching = ssa_conditions['photobleaching']
 
         st = time.time()
 
         for i in range(n_traj):
 
-            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
+            result,ribtimes,_,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
             nribs = np.array([0], dtype=np.int32)
 
 
             if i == 0: #detect any int64
-                inputs = [result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), int(evf), int(evi), float(intime), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib]
+                inputs = [result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime), float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib, photobleaching_rate, photobleaching]
                 wash_inputs = self.__check_input_memview(inputs)
 
             if wash_inputs:
                 #check memview so all given variables are in int32 if integer for C
-                inputs = [result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1],frapresult, t, k[0], float(k[-1]), int(evf), int(evi), float(intime), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib]
-                result, ribtimes, coltimes, colpointsx,colpointst, kelong,frapresult, t, ki, kt, evf, evi, intime, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib = self.__check_memview(inputs)
+                inputs = [result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime),float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib, photobleaching_rate, photobleaching]
+                result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime,intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib, photobleaching_rate, photobleaching = self.__check_memview(inputs)
             else:
                 kelong = k[1:-1]
                 ki = k[0]
@@ -1430,14 +1669,15 @@ class TranslationSolvers():
                 evf = int(evf)
                 evi = int(evi)
                 intime = float(intime)
+                intime_stop = float(intime_stop)
                 seed = seeds[i]
                 colors = int(colors)
-
-            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, kelong,frapresult, t, ki, kt, evf, evi, intime, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib)
+           
+            ssa_translation_lowmem.run_SSA(result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime,intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib, photobleaching_rate, photobleaching)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
 
             all_results[i, :, :] = result.T
-            all_frapresults[i, :] = frapresult
+            #all_frapresults[i, :] = frapresult
             all_ribtimes[i, :] = ribtimes
             all_collisions[i, :] = coltimes
             all_nribs[i, :] = nribs
@@ -1510,6 +1750,8 @@ class TranslationSolvers():
         ssa_obj.time_rec = t[startindex:]
         ssa_obj.start_time = non_consider_time
         ssa_obj.start_index = int(startindex)
+        ssa_obj.photobleaching = photobleaching
+        ssa_obj.photobleaching_rate = photobleaching_rate
 
 
 
@@ -1524,7 +1766,7 @@ class TranslationSolvers():
         return ssa_obj
 
 
-    def __solve_ssa_full_combined(self,k, t, x0, n_traj, ssa_conditions=None,
+    def __solve_ssa_replicon(self,k, t, x0, n_traj, protease_locations, protease_rates, ssa_conditions=None,
                                   kon=1, koff=1, kprobe=[] ):
         seeds = np.random.randint(0, 0x7FFFFFF, n_traj, dtype=np.int32)
 
@@ -1566,14 +1808,14 @@ class TranslationSolvers():
                           int(ssa_conditions['record_stats'])], dtype=np.int32)
         probe_loc = ssa_conditions['probe_loc']
 
-
+        colors = int(probe_loc.shape[0])
         rib_vec = []
         solutions = []
         solutionssave = []
 
 
         N_rib = ssa_conditions['ribosome_preallocation']
-        all_results,all_nribs,all_collisions,all_frapresults,all_ribtimes,all_col_points = self.__generate_mats_lowmem(n_traj,k[0],t,N_rib,colors)
+        all_results,all_nribs,all_collisions,_,all_ribtimes,all_col_points = self.__generate_mats_lowmem(n_traj,k[0],t,N_rib,colors)
         all_rib_loc = np.zeros((n_traj, len(t), N_rib), dtype=np.int32)
 
 
@@ -1581,23 +1823,28 @@ class TranslationSolvers():
         evf = ssa_conditions['perturb'][0]
         evi = ssa_conditions['perturb'][1]
         intime = ssa_conditions['perturb'][2]
+        intime_stop = ssa_conditions['perturb'][3]
         non_consider_time = ssa_conditions['burnin']
-
+        photobleaching_rate = ssa_conditions['photobleaching_rate']
+        photobleaching = ssa_conditions['photobleaching']
+        
+         
+        
         st = time.time()
 
         for i in range(n_traj):
 
             nribs = np.array([0], dtype=np.int32)
-            result,ribtimes,frapresult,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
+            result,ribtimes,_,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
             ribloc = np.zeros((N_rib,len(t)), dtype=np.int32)
             if i == 0: #detect any int64
-                inputs = [ribloc,result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], frapresult, t, k[0], float(k[-1]), int(evf), int(evi), float(intime), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib]
+                inputs = [ribloc,result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime), float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib, photobleaching_rate, photobleaching, protease_locations, protease_locations]
                 wash_inputs = self.__check_input_memview(inputs)
 
             if wash_inputs:
                 #check memview so all given variables are in int32 if integer for C
-                inputs = [ribloc,result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], frapresult, t, k[0], float(k[-1]), int(evf), int(evi), float(intime), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib]
-                ribloc,result, ribtimes, coltimes, colpointsx,colpointst, kelong,frapresult, t, ki, kt, evf, evi, intime, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib = self.__check_memview(inputs)
+                inputs = [ribloc,result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime), float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib, photobleaching_rate, photobleaching, protease_locations, protease_locations]
+                ribloc,result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime,intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib, photobleaching_rate, photobleaching, protease_locations, protease_locations = self.__check_memview(inputs)
             else:
                 kelong = k[1:-1]
                 ki = k[0]
@@ -1605,15 +1852,16 @@ class TranslationSolvers():
                 evf = int(evf)
                 evi = int(evi)
                 intime = float(intime)
+                intime_stop = float(intime_stop)
                 seed = seeds[i]
                 colors = int(colors)
 
-
-            ssa_translation_lowmem.run_SSA_full(ribloc, result, ribtimes, coltimes, colpointsx,colpointst, kelong,frapresult, t, ki, kt, evf, evi, intime, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags)
+            
+            ssa_translation_lowmem.run_SSA_replicon(ribloc, result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime, intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, photobleaching_rate, photobleaching,protease_locations, protease_rates)
             #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
 
             all_results[i, :, :] = result.T
-            all_frapresults[i, :] = frapresult
+            #all_frapresults[i, :] = frapresult
             all_ribtimes[i, :] = ribtimes
             all_collisions[i, :] = coltimes
             all_nribs[i, :] = nribs
@@ -1711,6 +1959,215 @@ class TranslationSolvers():
         ssa_obj.collisions = collisions
         ssa_obj.ribosome_locations = all_rib_loc
         ssa_obj.ribtimes = all_ribtimes
+        ssa_obj.photobleaching = photobleaching
+        ssa_obj.photobleaching_rate = photobleaching_rate
+        ssa_obj.protease_locations = protease_locations
+        ssa_obj.protease_rates = protease_rates
+
+        try:
+            ssa_obj.col_points = all_col_points2
+        except:
+            pass
+
+
+        ssa_obj.eval_time = sttime
+
+        return ssa_obj
+
+
+    def __solve_ssa_full_combined(self,k, t, x0, n_traj, ssa_conditions=None,
+                                  kon=1, koff=1, kprobe=[] ):
+        seeds = np.random.randint(0, 0x7FFFFFF, n_traj, dtype=np.int32)
+
+        if isinstance(k, list):
+            k = np.array(k).astype(np.float64)
+
+        k = k.flatten()
+
+        if kprobe == []:
+            kprobe = np.ones(self.color)
+
+        if isinstance(kprobe, list):
+            kprobe = np.array(kprobe, dtype=np.float64)
+        if isinstance(kprobe, int):
+            kprobe = np.array([kprobe], dtype=np.float64)
+        if isinstance(kprobe, float):
+            kprobe = np.array([kprobe], dtype=np.float64)
+
+
+        if ssa_conditions == None:
+            ssa_conditions = self.default_conditions
+
+        x0 = self.__check_x0(x0)
+
+        probe_vec = ssa_conditions['probe_vec']
+
+        colors = self.colors
+
+
+        if ssa_conditions['bursting'] == False:
+            kon = 1
+            koff = 1
+        else:
+            kon = kon
+            koff = koff
+
+        flags = np.array([int(ssa_conditions['bursting']),
+                          int(ssa_conditions['leaky_probes']),
+                          int(ssa_conditions['record_stats'])], dtype=np.int32)
+        probe_loc = ssa_conditions['probe_loc']
+
+        colors = int(probe_loc.shape[0])
+        rib_vec = []
+        solutions = []
+        solutionssave = []
+
+
+        N_rib = ssa_conditions['ribosome_preallocation']
+        all_results,all_nribs,all_collisions,_,all_ribtimes,all_col_points = self.__generate_mats_lowmem(n_traj,k[0],t,N_rib,colors)
+        all_rib_loc = np.zeros((n_traj, len(t), N_rib), dtype=np.int32)
+
+
+        footprint = ssa_conditions['footprint']
+        evf = ssa_conditions['perturb'][0]
+        evi = ssa_conditions['perturb'][1]
+        intime = ssa_conditions['perturb'][2]
+        intime_stop = ssa_conditions['perturb'][3]
+        non_consider_time = ssa_conditions['burnin']
+        photobleaching_rate = ssa_conditions['photobleaching_rate']
+        photobleaching = ssa_conditions['photobleaching']
+        
+        st = time.time()
+
+        for i in range(n_traj):
+
+            nribs = np.array([0], dtype=np.int32)
+            result,ribtimes,_,coltimes,colpointsx,colpointst = self.__generate_vecs_lowmem(k,t,N_rib,colors)
+            ribloc = np.zeros((N_rib,len(t)), dtype=np.int32)
+            if i == 0: #detect any int64
+                inputs = [ribloc,result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime), float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib, photobleaching_rate, photobleaching]
+                wash_inputs = self.__check_input_memview(inputs)
+
+            if wash_inputs:
+                #check memview so all given variables are in int32 if integer for C
+                inputs = [ribloc,result, ribtimes, coltimes, colpointsx,colpointst, k[1:-1], t, k[0], float(k[-1]), int(evf), int(evi), float(intime), float(intime_stop), seeds[i],nribs,x0,footprint, probe_vec ,int(colors), kon, koff, kprobe, probe_loc, flags,N_rib, photobleaching_rate, photobleaching]
+                ribloc,result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime,intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, N_rib, photobleaching_rate, photobleaching = self.__check_memview(inputs)
+            else:
+                kelong = k[1:-1]
+                ki = k[0]
+                kt = float(k[-1])
+                evf = int(evf)
+                evi = int(evi)
+                intime = float(intime)
+                intime_stop = float(intime_stop)
+                seed = seeds[i]
+                colors = int(colors)
+
+            
+            ssa_translation_lowmem.run_SSA_full(ribloc, result, ribtimes, coltimes, colpointsx,colpointst, kelong, t, ki, kt, evf, evi, intime, intime_stop, seed,nribs,x0,footprint, probe_vec ,colors, kon, koff, kprobe, probe_loc, flags, photobleaching_rate, photobleaching)
+            #ssa_translation.run_SSA(result, ribtimes, coltimes, k[1:-1],frapresult, truetime, k[0], k[-1], evf, evi, intime, seeds[i],nribs)
+
+            all_results[i, :, :] = result.T
+            #all_frapresults[i, :] = frapresult
+            all_ribtimes[i, :] = ribtimes
+            all_collisions[i, :] = coltimes
+            all_nribs[i, :] = nribs
+            all_rib_loc[i, :, :] = ribloc.T
+
+            endcolrec = np.where(colpointsx == 0)[0][0]
+
+            colpoints = np.vstack((colpointsx[:endcolrec],
+                                   colpointst[:endcolrec]))
+            all_col_points.append(colpoints.T)
+
+
+
+            # for i in range(n_traj):
+            #     soln = all_results[i,:, :]
+
+            #     so = soln
+            #     solutionssave.append(so)
+            #     solutions.append(soln)
+
+            collisions = np.array([[]])
+            watched_ribs = []
+            for i in range(n_traj):
+                totalrib = all_nribs[i]
+
+                if totalrib > all_collisions.shape[1]:
+                    collisions = np.append(collisions, all_collisions[i][:])
+                    watched_ribs.append(int(all_collisions.shape[1]))
+
+                else:
+
+                    collisions = np.append(collisions, all_collisions[i][:int(totalrib[0])])
+                    watched_ribs.append(int(totalrib[0]))
+
+            sttime = time.time() - st
+
+
+        no_ribosomes = np.zeros((n_traj, (len(k)+1)))
+
+        startindex = np.where(t >= non_consider_time)[0][0]
+
+        all_col_points2 = []
+        for i in range(len(all_col_points)):
+            all_col_points2.append(all_col_points[i][ all_col_points[i][:, 1] > non_consider_time])
+
+
+        rib_per_t = np.zeros((n_traj, len(t)))
+
+
+        validind = 0
+        riblocs = []
+        for i in range(len(all_rib_loc)):
+            try:
+
+
+                if np.where(np.sum(all_rib_loc[i].T, axis=1)!=0)[0][-1] > validind:
+
+                    validind = np.where(np.sum(all_rib_loc[i].T, axis=1)!=0)[0][-1]
+
+                        #there was a blank
+            except:
+                pass
+
+
+        all_rib_loc = all_rib_loc[:, :, :validind]
+
+        for i in range(all_rib_loc.shape[0]):
+            rib_loc = all_rib_loc[i, :, :]
+            rt = np.count_nonzero(rib_loc.T,axis=0)
+            rib_per_t[i, :] = rt
+
+        rib_density_loc, rib_density_count = np.unique(all_rib_loc, return_counts=True)
+        rib_density_loc = rib_density_loc[1:]
+        rib_density_count = rib_density_count[1:]
+        rib_density = rib_density_count / np.sum(rib_density_count)
+
+
+        ssa_obj = SSA_Soln()
+        ssa_obj.no_ribosomes = no_ribosomes
+        ssa_obj.n_traj = n_traj
+        ssa_obj.k = k
+        # ssa_obj.no_rib_per_mrna = no_ribosomes_per_mrna
+        ssa_obj.rib_per_t = rib_per_t.T[startindex:, :]
+        ssa_obj.rib_mean = np.mean(rib_per_t.T[startindex:, :])
+
+        ssa_obj.rib_density = rib_density
+        # ssa_obj.rib_means = ribosome_means
+        ssa_obj.intensity_vec = all_results.T[:, startindex:, :]
+
+        ssa_obj.time = t
+        ssa_obj.time_rec = t[startindex:]
+        ssa_obj.start_time = non_consider_time
+        ssa_obj.start_index = int(startindex)
+        ssa_obj.watched_ribs = watched_ribs
+        ssa_obj.collisions = collisions
+        ssa_obj.ribosome_locations = all_rib_loc
+        ssa_obj.ribtimes = all_ribtimes
+        ssa_obj.photobleaching = photobleaching
+        ssa_obj.photobleaching_rate = photobleaching_rate
 
 
         try:

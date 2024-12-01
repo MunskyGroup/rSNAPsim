@@ -1,0 +1,59 @@
+LOCUS       X64898                   492 bp    mRNA    linear   MAM 12-JUN-2006
+DEFINITION  B.taurus mRNA for B15 subunit of NADH: ubiquinone oxidoreductase
+            complex.
+ACCESSION   X64898
+VERSION     X64898.1
+KEYWORDS    NADH-ubiquinone oxidoreductase; NADH-ubiquinone oxidoreductase
+            complex.
+SOURCE      Bos taurus (cattle)
+  ORGANISM  Bos taurus
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Laurasiatheria; Artiodactyla; Ruminantia;
+            Pecora; Bovidae; Bovinae; Bos.
+REFERENCE   1  (bases 1 to 492)
+  AUTHORS   Walker,J.E., Arizmendi,J.M., Dupuis,A., Fearnley,I.M., Finel,M.,
+            Medd,S.M., Pilkington,S.J., Runswick,M.J. and Skehel,J.M.
+  TITLE     Sequences of 20 subunits of NADH:ubiquinone oxidoreductase from
+            bovine heart mitochondria. Application of a novel strategy for
+            sequencing proteins using the polymerase chain reaction
+  JOURNAL   J. Mol. Biol. 226 (4), 1051-1072 (1992)
+   PUBMED   1518044
+REFERENCE   2  (bases 1 to 492)
+  AUTHORS   Walker,J.E.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (10-MAR-1992) J.E. Walker, M.R.C.Laboratory of
+            Mol.Biology, Hills Road, Cambridge CB2 2QH, UK
+FEATURES             Location/Qualifiers
+     source          1..492
+                     /organism="Bos taurus"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:9913"
+                     /tissue_type="heart"
+     CDS             29..418
+                     /codon_start=1
+                     /product="B15 subunit of the NADH: ubiquinone
+                     oxidoreductase complex"
+                     /protein_id="CAA46107.1"
+                     /db_xref="GOA:P48305"
+                     /db_xref="InterPro:IPR009866"
+                     /db_xref="UniProtKB/Swiss-Prot:P48305"
+                     /translation="MSFPKYEASRLSSLPTTLDPAEYDISSETRKAQAERLAIRSRLKR
+                     EYQLQYYDPSRRGVIEDPALVRWTYARSANIYPNFRPNTKTSLLGALFGIGPLVFWYYV
+                     FKTDRDRKEKLIQEGKLDRTFNISY"
+     mat_peptide     32..415
+                     /product="B15 subunit of the NADH: ubiquinone
+                     oxidoreductase complex"
+     regulatory      453..458
+                     /regulatory_class="polyA_signal_sequence"
+     polyA_site      471
+ORIGIN
+        1 aagcgcggtt ttgcgccggg tcgtcaagat gtcgttcccc aagtacgagg catcgcgctt
+       61 gtccagccta cctactaccc tcgacccagc tgaatacgac atatcttctg aaacccggaa
+      121 agcacaagcc gagcggttgg ccataagatc ccggcttaaa cgggaatacc agcttcagta
+      181 ctacgaccct agtcgccgag gggttatcga agatcctgcc ttggttcgtt ggacctacgc
+      241 aagatcagca aatatctatc ccaatttcag acccaatacc aagacctccc tcttaggggc
+      301 tctgtttgga attgggcccc tcgtcttctg gtattatgtt ttcaaaactg acagagatag
+      361 gaaagaaaaa cttatccagg aaggaaaatt ggatcgaaca tttaacatct cctattaagt
+      421 ctgacagtga tgtctgtatg tcctattgtt taaataaatc aattaatcat taaaaaaaaa
+      481 aaaaaaaaaa aa
+//

@@ -41,14 +41,48 @@ class CodonDictionaries():
 
 
     def __init__(self):
+        
+        # a, g , u , c. #order of replacement if non random
+        self.ipuac_nt_t = {'a':['a'], 't':['t'], 'u':['u'], 'c':['c'],
+                         'w':['a','t'], 's':['g','c'], 'm':['a','c'],
+                         'k':['g','t'], 'r':['a','g'], 'y':['t','c'],
+                         'b':['g','t','c'], 'd':['a','g','t'],
+                         'h':['a','t','c'], 'v':['a','g','c'],
+                         'n':['a','t','g','c'], 'Ψ':['u'],
+            
+            }
+        
+        self.ipuac_nt_u = {'a':['a'], 't':['t'], 'u':['u'], 'c':['c'],
+                         'w':['a','u'], 's':['g','c'], 'm':['a','c'],
+                         'k':['g','u'], 'r':['a','g'], 'y':['u','c'],
+                         'b':['g','u','c'], 'd':['a','g','u'],
+                         'h':['a','u','c'], 'v':['a','g','c'],
+                         'n':['a','u','g','c'], 'Ψ':['u'],
+            
+            }
+                
+        
+        #some common epitopes used for protein fluorescent tagging
         self.tag_dict = {'T_SunTag':'EELLSKNYHLENEVARLKK',
                          'T_Flag':'DYKDDDDK',
-                         'T_Hemagglutinin':'YPYDVPDYA'}
-
+                         'T_Hemagglutinin':'YPYDVPDYA',
+                         'T_Myc':'EQKLISEEDL',
+                         'T_Strep':'WSHPQFEK',
+                         'T_Hist':'HHHHHH',
+                         'T_V5':'GKPIPNPLLGLDST',
+                         'T_TC':'CCPGCC'}
+        
+        #some default colors for those tags
         self.tag_colors = {'T_SunTag':'green',
                            'T_Flag':'blue',
-                           'T_Hemagglutinin':'blue'}
-
+                           'T_Hemagglutinin':'blue',
+                           'T_Myc':'green',
+                           'T_Strep':'green',
+                           'T_Hist':'green',
+                           'T_V5':'green',
+                           'T_TC':'green'}
+        
+        #Full NT sequences of tags if known
         self.tag_full = {'T_Flag':('ATGGACTACAAGGACGACGACGACAAAGGTGAC'
                                    'TACAAAGATGATGACGATAAAGGCGACTATA'
                                    'AGGACGATGACGACAAGGGCGGAAACTCACTGA'
@@ -84,10 +118,10 @@ class CodonDictionaries():
 
         self.aa_keys = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I',
                         'L', 'K', 'M', 'F',
-                        'P', 'S', 'T', 'W', 'Y', 'V', '*']
+                        'P', 'S', 'T', 'W', 'Y', 'V', '*', 'X'] #* is stop, X is unspecified
 
         self.codon_types = dict(zip(
-            self.aa_keys, np.ones((1, 21)).flatten().astype(int).tolist()))
+            self.aa_keys, np.ones((1, 22)).flatten().astype(int).tolist()))
 
         self.aa_table = {
             'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
@@ -303,14 +337,14 @@ class CodonDictionaries():
             'GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT',
             'ATT', 'TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
             'ACT', 'TGG', 'TAT', 'GTT', 'TAA',
-            'GCU', 'CGU', 'AAU', 'GAU', 'UGU', 'CAA', 'GAA', 'GGU', 'CAU',
+            'GCU', 'CGU', 'AAU', 'GAU','GAC', 'UGU', 'CAA', 'GAA', 'GGU', 'CAU',
             'AUU', 'UUA', 'AAA', 'AUG', 'UUU', 'CCU', 'TCU',
-            'ACU', 'UGG', 'UAU', 'GUU', 'UAA']
+            'ACU', 'UGG', 'UAU', 'GUU', 'UAA',]
 
         codonkeys = [
-            'GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT',
-            'ATT', 'TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
-            'ACT', 'TGG', 'TAT', 'GTT', 'TAA']
+            'GCT', 'CGT', 'AAT', 'GAT', 'TGT', 'CAA', 'GAA', 'GGT', 'CAT', 
+            'ATT', 'GAC','TTA', 'AAA', 'ATG', 'TTT', 'CCT', 'TCT',
+            'ACT', 'TGG', 'TAT', 'GTT', 'TAA',]
 
         self.sensitivity_fast_slow = []
         for i in range(len(codonkeys)):

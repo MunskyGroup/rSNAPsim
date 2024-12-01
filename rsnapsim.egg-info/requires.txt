@@ -1,6 +1,0 @@
-BioPython
-numpy
-scipy
-cython
-matplotlib
-pandas

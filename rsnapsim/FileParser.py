@@ -7,40 +7,22 @@ Created on Tue Apr 21 16:29:21 2020
 
 import os
 import re
+import struct
 
-from snapgene_reader import snapgene_file_to_seqrecord
+#from snapgene_reader import snapgene_file_to_seqrecord
+# ^ replaced with a shortened function based on this package.v see
+# __get_sequence_from_dnafile(filepath)
+
 from Bio import SeqIO
 
-
-class Error(Exception):
-    """Base class for exceptions in this module."""
-    pass
-
-class SnapGeneMissingError(Error):
-    """Exception raised for errors in the input.
-
-    Attributes:
-        message -- explanation of the error
-    """
-
-    def __init__(self, message):
-        self.message = message
-
-class FileTypeNotRecognizedError(Error):
-    """Exception raised for errors in the input.
-
-    Attributes:
-        message -- explanation of the error
-    """
-
-    def __init__(self, message):
-        self.message = message
+from . import custom_errors as custom_err
+from .core import SequenceCore as seqcore
 
 class FileParser():
     '''
     Class to parse incoming files
 
-    TODO: Extend this for psuedouridine /m6a / modification dictionary
+    TODO: Extend this for psuedouridine / m6a / modification dictionary
     '''
     def __init__(self):
         self.file = None
@@ -54,62 +36,67 @@ class FileParser():
                         'aguagcugagcaucaucuaug'
 
 
-    def clean_seq(self, seq):
+    def clean_seq(self, nt_sequence: str) -> str:
+
         '''
         Return an mrna sequence of lowercase a,u,c,g from IPUAC substitutions
 
-        .. warning:: this code will replace substitutive nucleotides with
-        preferential order a, g , u , c. for example: N (any base) is set
-        to A, W (T,U, or A) is set to A, S (C or G) is set to G
+        .. warning:: 
+            this code will replace substitutive nucleotides with
+            preferential order a, g , u , c. for example: N (any base) is set
+            to A, W (T, U, or A) is set to A, S (C or G) is set to G
 
+        .. warning:: 
+            this code will replace any modified nucleotides such as Ψ'
+            or m6a to a,u,g,c. The code is not configured for modified nucleotides
+            in this version.
 
 
         Parameters
         ----------
         seq : str
-            sequence string.
+            nucleotide sequence string to convert to only a, u, g, or c..
 
         Returns
         -------
         seq : str
-            cleaned sequence str (only lowercase a,u,c,g).
+            cleaned nucleotide sequence str (only lowercase a,u,c,g).
 
         '''
-        seq = seq.lower()
-
-        for key in self.sub_dict.keys():
-            seq = seq.replace(key, self.sub_dict[key])
-
-        seq = seq.replace('t', 'u')
-        return seq
+        return seqcore().clean_seq(nt_sequence)
 
 
-    def get_sequence(self, file):
+    def get_sequence(self, file: str) -> str:
         '''
-        get a nucleotide sequence
+        given a txt, dna, fasta, or gb file, get the nucleotide sequence data 
+        out of the file and into a string.
+
+        .. warning::
+            this code will replace substitutive nucleotides with
+            preferential order a, g , u , c. for example: N (any base) is set
+            to A, W (T, U, or A) is set to A, S (C or G) is set to G
+        
+        Valid file types: 
+            * fasta
+            * gb (genbank)
+            * dna (snapgene)
+            * txt (text)
 
         Parameters
         ----------
-        file : path
-            Path to the file to open.
+        file : str
+            string of the path to the file to open
 
         Returns
         -------
-        str
-            mRNA sequence string.
+        cleaned_sequence_str : str
+            nucleotide sequence string.
 
         '''
         self.__check_valid_file(file)
         extension = file.split('.')[-1]
         if extension == 'dna':
-            try:
-                seq_record = snapgene_file_to_seqrecord(file)
-            except:
-                msg = 'To read .dna files please install snapegenereader: '\
-                      ' pip install snapgene_reader - '\
-                          'https://github.com/IsaacLuo/SnapGeneFileReader'
-                raise SnapGeneMissingError(msg)
-            sequence_str = str(seq_record.seq)
+            sequence_str = self.__get_sequence_from_dnafile(file)
 
         if extension == 'txt':
             sequence_str = self.__get_seq_from_txt(file)
@@ -119,12 +106,13 @@ class FileParser():
             gb_record = SeqIO.read(open(file, "r"), "genbank")
             sequence_str = str(gb_record.seq)
 
-        if extension == 'fasta':
+        if extension == 'fasta' or extension == 'fa':
             fastas = list(SeqIO.parse(file, 'fasta'))
             if len(fastas) > 1:
-                return 'Multiple line fastas not supported'
+                return [self.clean_seq(str(x.seq)) for x in fastas]
             else:
                 sequence_str = (str(fastas[0].seq))
+                
         cleaned_sequence_str = self.clean_seq(sequence_str)
 
         return cleaned_sequence_str
@@ -132,18 +120,25 @@ class FileParser():
     def __check_valid_file(self, file):
         extension = file.split('.')[-1]
 
-        if extension in ['fasta', 'gb', 'txt', 'dna']:
+        if extension in ['fasta', 'gb', 'txt', 'dna','fa']:
             return True
         else:
-            raise FileTypeNotRecognizedError("Unrecognized File '\
-                                             'type, the sequence '\
-                            'file must be a .txt, .dna, .gb, or .fasta")
+            msg = 'Unrecognized File type, the sequence file must be .fasta, '\
+                '.txt, .dna, .gb, or .fa.'
+            raise custom_err.FileTypeNotRecognizedError(msg)
 
 
 
-    def get_name(self, file_path):
+    def get_name(self, file_path: str)-> str:
         '''
-        attempt to find the transcript name from a file
+        attempt to find the transcript name from a file, if the name cannot
+        be found from the file, this function will return "unknown"
+
+        Valid file types: 
+            * fasta
+            * gb (genbank)
+            * dna (snapgene)
+            * txt (text)
 
         Parameters
         ----------
@@ -152,7 +147,7 @@ class FileParser():
 
         Returns
         -------
-        str
+        name : str
             transcript name or "unknown".
 
         '''
@@ -175,21 +170,22 @@ class FileParser():
             name = self.__get_name_from_text(file_path)
 
         if extension == 'dna':
-            try:
-                seq_record = snapgene_file_to_seqrecord(file_path)
-            except:
-                msg = 'To read .dna files please install snapegenereader: '\
-                      ' pip install snapgene_reader - '\
-                          'https://github.com/IsaacLuo/SnapGeneFileReader'
-                raise SnapGeneMissingError(msg)
-            name = seq_record.name
+            pass
 
         return name
 
 
-    def get_description(self, file_path):
+    def get_description(self, file_path: str) -> str:
         '''
         Attempt to find the text description from a file
+
+
+        Valid file types: 
+            * fasta
+            * gb (genbank)
+            * dna (snapgene)
+            * txt (text)
+
 
         Parameters
         ----------
@@ -198,7 +194,7 @@ class FileParser():
 
         Returns
         -------
-        str
+        description : str
             transcript description or "unknown".
 
         '''
@@ -219,15 +215,7 @@ class FileParser():
             desc = str(gb_record.description)
 
         if extension == 'dna':
-            try:
-                seq_record = snapgene_file_to_seqrecord(file_path)
-            except:
-                msg = 'To read .dna files please install snapegenereader: '\
-                      ' pip install snapgene_reader - '\
-                          'https://github.com/IsaacLuo/SnapGeneFileReader'
-                raise SnapGeneMissingError(msg)
-
-            desc = seq_record.description
+            desc = '<unknown description>'
         if extension == 'txt':
             desc = '<unknown description>'
 
@@ -236,7 +224,7 @@ class FileParser():
 
 
     @classmethod
-    def __get_seq_from_txt(cls, file):
+    def __get_seq_from_txt(cls, file: str) -> str:
         with open(file) as fname:
             raw = fname.readlines()
 
@@ -258,7 +246,7 @@ class FileParser():
         return sequence_str
 
     @classmethod
-    def __get_name_from_text(cls, file):
+    def __get_name_from_text(cls, file: str) -> str:
         name = ''
         with open(file) as fname:
             raw = fname.readlines()
@@ -283,3 +271,55 @@ class FileParser():
             name = os.path.basename(file)[:-4]
 
         return name
+
+    @classmethod
+    def __get_sequence_from_dnafile(cls, filepath: str) -> str:
+        # THIS IS A MODIFIED VERSION OF SNAPGENE READER 
+        # https://github.com/IsaacLuo/SnapGeneFileReader/tree/master
+        # this only pulls the sequence and name from a given .dna, rSNAPsim assumes 
+        # the user knows what they are passing it is an mRNA or CDS or translatable sequence.
+        
+        f = open(filepath, 'rb')
+        
+        # read the header first and make sure its snapgene
+        
+        unpack = lambda size,mode: struct.unpack('>' + mode, f.read(size))[0]
+        fb = f.read(1)
+        
+        if fb != b'\t':
+            raise ValueError("Input file is not in SnapGene .dna format")
+    
+        
+        spacer = unpack(4, 'I')
+        title = f.read(8).decode('ascii')
+        
+        if spacer != 14 or title != 'SnapGene':
+            raise ValueError("Input file is not in SnapGene .dna format")
+    
+        # features of the snapgene file
+    
+        data = dict(is_dna = unpack(2, 'H'),
+        exportVersion = unpack(2, 'H'),
+        importVersion = unpack(2, 'H'),
+        features=[])
+        
+        bs = []
+        while True:
+            nb = f.read(1)
+            bs.append(nb)
+            if nb == b'':
+                break
+            
+            block_size = unpack(4, 'I')
+            
+            if ord(nb) == 0:
+                # read the sequence we still need to pull out the sequence types
+                props = unpack(1, 'b') #get the props and discard
+                s = f.read(block_size - 1)
+                data["seq"] = s.decode('ascii')     
+            else:
+                f.read(block_size)
+                pass
+            
+        return data['seq']
+    

@@ -14,15 +14,16 @@ aux_cdict = AuxCodonDicts.AuxCodonDicts()
 from . import DiffusionRateCalc
 diffcalc = DiffusionRateCalc.DiffusionRateCalc()
 
+from .core import SequenceCore
 
 from . import SequenceManipMethods 
-seqmanip = SequenceManipMethods.SequenceManipMethods()
+seqmanip = SequenceManipMethods.SequenceManipMethods(SequenceCore())
 
 from . import IntensityAnalyses
 inta = IntensityAnalyses.IntensityAnalyses()
 
-from . import IntensityAnalysesRagged
-inta_r = IntensityAnalysesRagged.IntensityAnalysesRagged()
+from . import RibosomeAnalyses
+riba = RibosomeAnalyses.RibosomeAnalyses()
 
 from . import expv
 expv = expv.expv
@@ -38,9 +39,6 @@ probef = ProbeVectorFactory.ProbeVectorFactory()
 
 from . import PropensityFactory
 propf = PropensityFactory.PropensityFactory()
-
-from . import ModelBuilder
-model_builder = ModelBuilder.ModelBuilder()
 
 from . import TranslationSolvers 
 solver = TranslationSolvers.TranslationSolvers()
@@ -58,6 +56,16 @@ from . import TranslationOptimization
 optimizer = TranslationOptimization
 from ._version import __version__
 from . import GenericMetaData
+
+from . import mRNA
+mRNA = mRNA.mRNA
+
+from . import TranslationModel
+tasep_model = TranslationModel.TranslationModel
+
+from . import ModelMaker
+mf = ModelMaker.ModelFactory()
+rlc = ModelMaker.RuleConverterLambda()
 
 
 

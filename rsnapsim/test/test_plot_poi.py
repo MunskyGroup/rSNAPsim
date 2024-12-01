@@ -11,6 +11,7 @@ cwd = os.getcwd()
 os.chdir('../../..')
 
 import rsnapsim as rss
+from rsnapsim import seqmanip
 
 import numpy as np
 import time
@@ -45,7 +46,7 @@ construct = flagtag_codons + hairpin_codons + suntag_codons[:267-24] + suntag_co
 
 poi = rss.seqmanip.seq_to_protein_obj(''.join(construct))
 bactin = poi['1'][0]
-forward_rates = rss.propf.get_k(bactin.nt_seq, .03, 3, 0)[1:]
+forward_rates = rss.propf().get_k(bactin.nt_seq, .03, 3, 0)[1:]
 
 
 koff = .04
@@ -95,7 +96,7 @@ probe_locations[0,tags['T_Flag']] = 1
 probe_locations[1,tags['T_SunTag']] = 1
 
 #rss.model_builder.compile_model('test_hairpin_model', overwrite=False, rules = additional_rules )
-model = rss.model_builder.get_model('test_hairpin_model')
+model = rss.model_builder().get_model('test_hairpin_model')
 
 
 

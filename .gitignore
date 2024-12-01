@@ -128,5 +128,12 @@ trna_ssa/
 # Pylint
 .pylint.d/
 
+# packaged stuff
+build/
+dist/
+obsolete/
+*.egg-info/
+
+.vscode*
 
 

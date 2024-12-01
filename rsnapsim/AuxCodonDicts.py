@@ -4,6 +4,9 @@ Created on Wed Mar 31 11:19:12 2021
 
 @author: willi
 """
+import itertools as it
+import numpy as np
+import os
 
 class AuxCodonDicts():
     '''
@@ -41,9 +44,26 @@ class AuxCodonDicts():
     '''
     def __init__(self):
 
+        #https://www.pnas.org/doi/10.1073/pnas.1918145117
 
+        gobert_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data_files','gobert_2020_PA_values.txt')
+        with open(gobert_file,'r') as f:
+            dts = f.readlines()
+            
+        g2020 = (2**np.array( [float(d.replace('\n','')) for d in dts] ) ).tolist()
+        valid_codons = [''.join(x) for x in list(it.product(['A','C','G','U'], ['A','C','G','U'], ['A','C','G','U']))]
+        valid_codons.remove('UAA')
+        valid_codons.remove('UAG')
+        valid_codons.remove('UGA')   
+        PA_keys = [''.join(x) for x in list(it.product(valid_codons, valid_codons))]
+        
+        self.Gobet2020_EPA_rates = {}
 
-        human_avtRNA_gene_number_anticodon_IBEN2015 = {
+        
+        self.Gobet2020_PA_rates = dict(zip(PA_keys, g2020))
+        
+
+        self.IBEN2015_tRNA_GCN_averages_by_anticodon = {
             'AGC': 36.23, 'CGC':4.68,
             'UGC':10.07, 'ACG': 6.87,
             'CCG':3.71, 'CCU': 5.48,
@@ -72,10 +92,10 @@ class AuxCodonDicts():
             'UAC':5.46}
 
 
-        tmpdict = self.__convert_codon_to_anticodon(human_avtRNA_gene_number_anticodon_IBEN2015)
-        self.IBEN2015_tRNA_GCN_averages = self.__add_other_keys(tmpdict)
+        #tmpdict = self.__convert_codon_to_anticodon(human_avtRNA_gene_number_anticodon_IBEN2015)
+        #self.IBEN2015_tRNA_GCN_averages = self.__add_other_keys(tmpdict)
 
-        human_stdtRNA_gene_number_anticodon_IBEN2015 = {
+        self.IBEN2015_tRNA_GCN_stds_by_anticodon = {
             'AGC': 2.68, 'CGC':0.65,
             'UGC':1.02, 'ACG': .66,
             'CCG':.4, 'CCU': .59,
@@ -103,11 +123,11 @@ class AuxCodonDicts():
             'AAC':.91, 'CAC':1.78,
             'UAC':.68}
 
-        tmpdict = self.__convert_codon_to_anticodon(human_stdtRNA_gene_number_anticodon_IBEN2015)
-        self.IBEN2015_tRNA_GCN_stds = self.__add_other_keys(tmpdict)
+        #tmpdict = self.__convert_codon_to_anticodon(human_stdtRNA_gene_number_anticodon_IBEN2015)
+        #self.IBEN2015_tRNA_GCN_stds = self.__add_other_keys(tmpdict)
 
 
-        hg19_trna_gene_number_anticodon = {
+        self.hg19_tRNA_GCN_by_anticodon = {
             'AGC': 33, 'CGC':5,
             'UGC':11, 'ACG': 8, 'GGC':2,
             'CCG':4, 'CCU': 8,
@@ -135,8 +155,8 @@ class AuxCodonDicts():
             'AAC':12, 'CAC':18, #duplicate for doubled up codons
             'UAC':7,}
 
-        tmpdict = self.__convert_codon_to_anticodon(hg19_trna_gene_number_anticodon)
-        self.hg19_tRNA_GCN = self.__add_other_keys(tmpdict)
+        #tmpdict = self.__convert_codon_to_anticodon(self.hg19_tRNA_GCN_anticodon)
+        #self.hg19_tRNA_GCN_codon = self.__add_other_keys(tmpdict)
 
 
 
@@ -231,7 +251,7 @@ class AuxCodonDicts():
 
             for i in range(3):
                 if newkeys[i] == 'A':
-                    newkeys[i] = 'T'
+                    newkeys[i] = 'U'
 
                 elif newkeys[i] == 'U':
                     newkeys[i] = 'A'
