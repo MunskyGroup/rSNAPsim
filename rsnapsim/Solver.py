@@ -100,7 +100,8 @@ class Solver():
 
 
 
-    def solve_ssa(self, mRNA_model, t, n_traj=1, burnin=0, seed=None, parallel=False, cplus=False, cores=4):
+    def solve_ssa(self, mRNA_model, t, n_traj=1, burnin=0, seed=None, parallel=False, cplus=False, cores=4, 
+                  probe_list=None, ki=None, kt=None):
         
         # check if the user passed a model object or an mRNA object
         
@@ -115,7 +116,7 @@ class Solver():
         
         if not cplus:
             
-            constants = self.__setup_python_sim(mRNA_model)
+            constants = self.__setup_python_sim(mRNA_model, probe_list, ki, kt)
             if parallel:
                 NUMBER_OF_CORES = cores
                 solns = Parallel(n_jobs = NUMBER_OF_CORES, prefer="threads")(delayed(self.__run)(*args, **kwargs)
@@ -130,7 +131,8 @@ class Solver():
             resource_array = np.array([solns[i][2] for i in range(len(solns))])
             state_array = np.array([solns[i][1] for i in range(len(solns))])
             solve_time = time.time() - st
-            soln = CustomSSASoln(mRNA_model, rib_array, state_array, resource_array, t, burnin, n_traj, solve_time) 
+            n_colors = constants[4]
+            soln = CustomSSASoln(mRNA_model, n_colors, rib_array, state_array, resource_array, t, burnin, n_traj, solve_time) 
             
             
         if cplus:
@@ -183,7 +185,7 @@ class Solver():
                                            mRNA_model._kelong_mat,
                                            mRNA_model._probe_mat.astype(np.int32), np.array(pars),
                                            t,
-                                           model._rib_arr0.shape[0], mRNA_model._n_states, mRNA_model._n_resources, len(mRNA_model._constant_reactions),
+                                           mRNA_model._rib_arr0.shape[0], mRNA_model._n_states, mRNA_model._n_resources, len(mRNA_model._constant_reactions),
                                            len(mRNA_model._ribosome_reactions),
                                            burnin, seed, )
                 
@@ -193,14 +195,14 @@ class Solver():
                 
                 #print(pa)
             solve_time = time.time() - st
-            soln = CustomSSASoln(mRNA_model, ribosome_array, state_array, resource_array, t, burnin, n_traj, solve_time)         
+            soln = CustomSSASoln(mRNA_model, 0, ribosome_array, state_array, resource_array, t, burnin, n_traj, solve_time)         
 
         return soln
     
 
         
         
-    def __initalize_trajs(self, mRNA_model):
+    def __initalize_trajs(self, mRNA_model, n_colors):
 
         try:
             particle_size = mRNA_model.particle_size
@@ -213,19 +215,29 @@ class Solver():
             NR = np.sum(lattice_arr)
             occupied = rib_arr[:,3]
         else:
-            particle_size = self.default_footprint_size 
-            n_colors = int(len(mRNA_model.tag_epitopes))
-            rib_arr = np.zeros([int(mRNA_model.total_length/particle_size)+5, 4 + 3 + n_colors], dtype=np.int32)
-            lattice_arr = np.zeros(len(mRNA_model.kelong), dtype=np.int32)
-            state_arr = np.array([],dtype=np.int32)
-            resource_arr = np.array([],dtype=np.int32)
-            
-            NR = np.sum(lattice_arr)
-            occupied = rib_arr[:,3]
+            if isinstance(mRNA_model, list):
+                particle_size = self.default_footprint_size 
+                rib_arr = np.zeros([int(len(mRNA_model)/particle_size)+5, 4 + 3 + n_colors], dtype=np.int32)
+                lattice_arr = np.zeros(len(mRNA_model), dtype=np.int32)
+                state_arr = np.array([],dtype=np.int32)
+                resource_arr = np.array([],dtype=np.int32)
+                
+                NR = np.sum(lattice_arr)
+                occupied = rib_arr[:,3]
+            else:
+                particle_size = self.default_footprint_size 
+                n_colors = int(len(mRNA_model.tag_epitopes))
+                rib_arr = np.zeros([int(mRNA_model.total_length/particle_size)+5, 4 + 3 + n_colors], dtype=np.int32)
+                lattice_arr = np.zeros(len(mRNA_model.kelong), dtype=np.int32)
+                state_arr = np.array([],dtype=np.int32)
+                resource_arr = np.array([],dtype=np.int32)
+                
+                NR = np.sum(lattice_arr)
+                occupied = rib_arr[:,3]
             
         return np.copy(rib_arr), np.copy(lattice_arr), np.copy(state_arr), np.copy(resource_arr), np.copy(occupied), NR
         
-    def __constants(self, mRNA_model):
+    def __constants(self, mRNA_model, probe_list, ki, kt):
         #if the user passes an object that is not a model, use the default model
         #otherwise, read the constants stored in the model.
         try:
@@ -258,46 +270,88 @@ class Solver():
             probe_function = mRNA_model._probe_function
             probe_parameters = mRNA_model._probe_parameters
         else:
-            #overwrite to a default model if just a protein obj was passed
-            particle_size = self.default_footprint_size 
-            n_colors = int(len(mRNA_model.tag_epitopes)) # number of color tags
-            n_states = 0
-            n_resources = 0
-
-            max_rib = int(mRNA_model.total_length/particle_size)+5 #total number of ribosomes possible
-            
-
-            L = len(mRNA_model.kelong)
-            #build the default reaction matrix
-            rxn_mat = np.array([[  2.,   1.,   0.,   0.,   1.,   0.,   0.,   0.,   0.],  #initiation
-                                [  2.,   0.,   0., L-1,  -1.,   0.,   0.,   0.,   0.],     #termination
-                                [  0.,   1.,   0.,   0.,   0.,   0.,   1.,   0.,   0.]]).astype(np.int32) #stepping
-
-            n_rxns = int(rxn_mat.shape[0])
-            n_ribosome_reactions = np.sum(rxn_mat[:,0] == 0)
-            n_constant_reactions = len(rxn_mat) - n_ribosome_reactions
-            kelong_mat = mRNA_model.kelong_mat
-            kelong_mat[:,-1] = 0
-            probe_mat = mRNA_model.probe_mat
-            
-            
-            init = lambda k,t,p,ke,o,l,pr,s,r,nr: (1-np.any(l[0:0+int(particle_size)]))*k[0]
-            leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[L-1]*k[1]
-            elong_step = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+particle_size])) for i in range(nr)]
-            probe_function = lambda k,t,p,ke,o,l,pr,s,r,nr: 1
-            constant_props = [init, leave]
-            constant_parameters = [[mRNA_model.ki], [0,mRNA_model.kt]]
-            probe_parameters = 0
-            ribosome_props = [elong_step]
-            ribosome_parameters = [[mRNA_model.ke_mu]]
-            reaction_ids =[0,1,2]
+            if isinstance(mRNA_model, list):
+                #overwrite to a default model if just a stepping list was used
+                particle_size = self.default_footprint_size 
+                n_colors = int(len(probe_list)) # number of color tags
+                n_states = 0
+                n_resources = 0
+    
+                max_rib = int(len(mRNA_model)/particle_size)+5 #total number of ribosomes possible
+                
+    
+                L = len(mRNA_model)
+                #build the default reaction matrix
+                rxn_mat = np.array([[  2.,   1.,   0.,   0.,   1.,   0.,   0.,   0.,   0.],  #initiation
+                                    [  2.,   0.,   0., L-1,  -1.,   0.,   0.,   0.,   0.],     #termination
+                                    [  0.,   1.,   0.,   0.,   0.,   0.,   1.,   0.,   0.]]).astype(np.int32) #stepping
+    
+                n_rxns = int(rxn_mat.shape[0])
+                n_ribosome_reactions = np.sum(rxn_mat[:,0] == 0)
+                n_constant_reactions = len(rxn_mat) - n_ribosome_reactions
+                #kelong_mat = mRNA_model.kelong_mat
+                kelong_mat = np.zeros([3,L])
+                kelong_mat[0,:] = mRNA_model
+                kelong_mat[:,-1] = 0
+                #probe_mat = mRNA_model.probe_mat
+                probe_mat = np.zeros([3,L])
+                k = 1
+                for i in range(len(probe_list)):
+                    probe_mat[0,probe_list[i]] = k
+                    k+=1
+                
+                
+                init = lambda k,t,p,ke,o,l,pr,s,r,nr: (1-np.any(l[0:0+int(particle_size)]))*k[0]
+                leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[L-1]*k[1]
+                elong_step = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+particle_size])) for i in range(nr)]
+                probe_function = lambda k,t,p,ke,o,l,pr,s,r,nr: 1
+                constant_props = [init, leave]
+                constant_parameters = [[ki], [0,kt]]
+                probe_parameters = 0
+                ribosome_props = [elong_step]
+                ribosome_parameters = [[1]]
+                reaction_ids =[0,1,2]                
+            else:
+                #overwrite to a default model if just a protein obj was passed
+                particle_size = self.default_footprint_size 
+                n_colors = int(len(mRNA_model.tag_epitopes)) # number of color tags
+                n_states = 0
+                n_resources = 0
+    
+                max_rib = int(mRNA_model.total_length/particle_size)+5 #total number of ribosomes possible
+                
+    
+                L = len(mRNA_model.kelong)
+                #build the default reaction matrix
+                rxn_mat = np.array([[  2.,   1.,   0.,   0.,   1.,   0.,   0.,   0.,   0.],  #initiation
+                                    [  2.,   0.,   0., L-1,  -1.,   0.,   0.,   0.,   0.],     #termination
+                                    [  0.,   1.,   0.,   0.,   0.,   0.,   1.,   0.,   0.]]).astype(np.int32) #stepping
+    
+                n_rxns = int(rxn_mat.shape[0])
+                n_ribosome_reactions = np.sum(rxn_mat[:,0] == 0)
+                n_constant_reactions = len(rxn_mat) - n_ribosome_reactions
+                kelong_mat = mRNA_model.kelong_mat
+                kelong_mat[:,-1] = 0
+                probe_mat = mRNA_model.probe_mat
+                
+                
+                init = lambda k,t,p,ke,o,l,pr,s,r,nr: (1-np.any(l[0:0+int(particle_size)]))*k[0]
+                leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[L-1]*k[1]
+                elong_step = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+particle_size])) for i in range(nr)]
+                probe_function = lambda k,t,p,ke,o,l,pr,s,r,nr: 1
+                constant_props = [init, leave]
+                constant_parameters = [[mRNA_model.ki], [0,mRNA_model.kt]]
+                probe_parameters = 0
+                ribosome_props = [elong_step]
+                ribosome_parameters = [[mRNA_model.ke_mu]]
+                reaction_ids =[0,1,2]
             
         return particle_size, max_rib, rxn_mat, n_colors, n_states, n_rxns, n_resources, n_constant_reactions, n_ribosome_reactions, L, kelong_mat, probe_mat, constant_props, constant_parameters, ribosome_props, ribosome_parameters, probe_function, probe_parameters, reaction_ids
         
 
-    def __setup_python_sim(self, mRNA_model):
+    def __setup_python_sim(self, mRNA_model, probe_list, ki, kt):
         # initalize constants, flags, and initial state of the simulation
-        footprint, max_rib, rxn_mat, n_colors, n_states, n_rxns, n_resources, n_constant_reactions, n_ribosome_reactions, L, kelong_mat, probe_mat, constant_props, constant_parameters, ribosome_props, ribosome_parameters, probe_function, probe_parameters, reaction_ids = self.__constants(mRNA_model)
+        footprint, max_rib, rxn_mat, n_colors, n_states, n_rxns, n_resources, n_constant_reactions, n_ribosome_reactions, L, kelong_mat, probe_mat, constant_props, constant_parameters, ribosome_props, ribosome_parameters, probe_function, probe_parameters, reaction_ids = self.__constants(mRNA_model, probe_list, ki, kt)
         #rib_arr, lattice_arr, state_arr, resource_arr, occupied, NR = self.__initalize_trajs(mRNA_model)    
             
         probe_fun = inspect.getsourcelines(probe_function)[0][0].split(':')[-1].replace('\n','').replace(' ','')
@@ -315,7 +369,7 @@ class Solver():
             ribosome_props, ribosome_parameters, probe_function, use_probe_fun, 
             probe_parameters, reaction_ids, t, burnin=0, seed=None):
         
-        rib_arr, lattice_arr, state_arr, resource_arr, occupied, NR = self.__initalize_trajs(mRNA_model)    
+        rib_arr, lattice_arr, state_arr, resource_arr, occupied, NR = self.__initalize_trajs(mRNA_model, n_colors)    
         
         reaction_taken, dexist, rib_id, ribosome_moved, tindex = [0,]*5
         #rint(state_arr)
@@ -515,24 +569,43 @@ class Solver():
 
     
 class CustomSSASoln:
-    def __init__(self, mRNA_model, rib_array, state_array, resource_array, t, burnin, n_traj, solve_time):
+    def __init__(self, mRNA_model, n_colors, rib_array, state_array, resource_array, t, burnin, n_traj, solve_time):
         self.ribosome_array = rib_array
         self.state_array = state_array
         self.resource_array = resource_array
         self.t = t
         self.burnin = burnin
+        
         try:
+            particle_size = mRNA_model.particle_size
+            is_model_obj = True
+        except:
+            is_model_obj = False
+            
+        if is_model_obj:
             self.kelong_mat = mRNA_model._kelong_mat
             self.L = mRNA_model._kelong_mat.shape[1]
-        except:
-            self.kelong_mat = mRNA_model.kelong_mat
-            self.L = mRNA_model.kelong_mat.shape[1]
+        else:
+            if isinstance(mRNA_model, list):
+                self.kelong_mat = np.zeros([3,len(mRNA_model)])
+                self.kelong_mat[0,:] = mRNA_model
+                self.L = len(mRNA_model)
+            else:
+                self.kelong_mat = mRNA_model.kelong_mat
+                self.L = mRNA_model.kelong_mat.shape[1]
+
+
+            
+            
         #self.model_id = mRNA_model.model_id
         self.n_traj = n_traj
-        try:
+        if is_model_obj:
             self.n_colors = mRNA_model._n_colors
-        except:
-            self.n_colors = len(mRNA_model.tag_epitopes)
+        else:
+            if isinstance(mRNA_model, list):
+                self.n_colors = n_colors
+            else:
+               self.n_colors = len(mRNA_model.tag_epitopes)
         self.solve_time = solve_time
         
     @property
