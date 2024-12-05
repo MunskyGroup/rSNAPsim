@@ -28,8 +28,10 @@ riba = RibosomeAnalyses.RibosomeAnalyses()
 from . import expv
 expv = expv.expv
 
-from . import poi
-poi = poi.poi
+from . import cds
+mRNA = cds.mRNA
+cds = cds.CDS
+
 
 from . import FileParser
 fp = FileParser.FileParser()
@@ -40,8 +42,8 @@ probef = ProbeVectorFactory.ProbeVectorFactory()
 from . import PropensityFactory
 propf = PropensityFactory.PropensityFactory()
 
-from . import TranslationSolvers 
-solver = TranslationSolvers.TranslationSolvers()
+from . import Solver 
+solver = Solver.Solver()
 
 from . import tRNAmap
 trna_mapper = tRNAmap.tRNAmap()
@@ -56,9 +58,6 @@ from . import TranslationOptimization
 optimizer = TranslationOptimization
 from ._version import __version__
 from . import GenericMetaData
-
-from . import mRNA
-mRNA = mRNA.mRNA
 
 from . import TranslationModel
 tasep_model = TranslationModel.TranslationModel

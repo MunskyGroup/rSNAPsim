@@ -466,7 +466,7 @@ class TranslationModel:
         mm.ModelFactory().compile_model(self.name, self.model_id, [self._propensities[x] for x in self._constant_reactions],
                                      [self._propensities[x] for x in self._ribosome_reactions], overwrite=True )        
         
-        self.cmodel = importlib.import_module('rsnapsim.models.%s.%s'%(self.name,self.name))
+        self.cmodel = importlib.import_module('rsnapsim.models.%s'%(self.name))
 
 
     def visualize(self, ax=None, show_speed=True, **kwargs):

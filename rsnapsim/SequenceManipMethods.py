@@ -12,7 +12,7 @@ import itertools as it
 from . import CodonDictionaries
 from . import AuxCodonDicts
 from . import FileParser
-from . import poi as POI
+from . import cds as POI
 from . import custom_errors as custom_err
 from .core import SequenceCore
 import warnings
@@ -144,7 +144,7 @@ class SequenceManipMethods(SequenceCore):
             
             for j in range(len(orfs[orf_keys[i]])):
 
-                protein = POI.poi()
+                protein = POI.CDS()
 
                 pro = self.nt2aa(seq[orfs[orf_keys[i]][j][0]:orfs[orf_keys[i]][j][1]])
                 nt_seq = seq[orfs[orf_keys[i]][j][0]:orfs[orf_keys[i]][j][1]]
@@ -154,12 +154,12 @@ class SequenceManipMethods(SequenceCore):
 
                 proteins_strs[orf_keys[i]].append(pro)
 
-                protein.gene_length = len(pro) #length of the gene
+                protein.CDS_length = len(pro) #length of the gene
                 protein.tag_length = 0   #length of the tags
                 protein.total_length = len(pro)  #total length of the full amino acid sequence
                 protein.source_seq = seq
-                protein.UTR_5p = seq[:orfs[orf_keys[i]][j][0]]
-                protein.UTR_3p =  seq[orfs[orf_keys[i]][j][1]:]
+                #protein.UTR_5p = seq[:orfs[orf_keys[i]][j][0]]
+                #protein.UTR_3p =  seq[orfs[orf_keys[i]][j][1]:]
                 protein.orf = orf_keys[i]
                 protein.loc = (orfs[orf_keys[i]][j][0], orfs[orf_keys[i]][j][1])
                 protein.tags = []
@@ -197,7 +197,7 @@ class SequenceManipMethods(SequenceCore):
         return proteins_strs, protein_objs, proteins_w_tags
 
 
-    def get_largest_poi(self,seqfile, min_codons=80, add_tag=True):
+    def get_largest_cds(self,seqfile, min_codons=80, add_tag=True):
         '''
         Convenience function to get the largest poi if you know your file 
         has multiple orfs

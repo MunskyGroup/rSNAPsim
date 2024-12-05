@@ -1147,15 +1147,20 @@ class SequenceCore:
         gene_len = len(nt_seq)/3
         aa_seq = self.nt2aa(nt_seq)
         aa_seq = aa_seq.replace('X','') #remove unknown sequences
-        for i in range(21):
-            if self.codon_dicts.aa_keys[i] != '*':
-                codon_usage[0, i] = len(
-                    re.findall(self.codon_dicts.aa_keys[i], aa_seq))
-            else:
-                codon_usage[0, i] = len(re.findall('\*', aa_seq))
-        codon_norm = codon_usage/gene_len
-        codon_sensitivity = np.round(
-            codon_norm*self.codon_dicts.sensitivity_fast_slow, 2)
+        seq = aa_seq.replace('*','')
+
+        aa_table_r = self.codon_dicts.aa_table_r
+        # get the amount of amino acids that arent stops
+        aas = [x for x in self.codon_dicts.aa_keys if x != '*']
+        aas.remove('X')
+        aa_norm = [] # amino acid percentage in the sequence
+        codon_sensitivity = [] #fastest codon / slowest codon for that amino acid
+        lseq = len(seq)
+        for i in range(len(aas)):
+            cmax, cmin = max([codon_dict[x] for x in aa_table_r[aas[i]]]), min([codon_dict[x] for x in aa_table_r[aas[i]]])
+            aa_norm.append(seq.count(aas[i])/lseq)
+            codon_sensitivity.append(seq.count(aas[i])/lseq*cmax/cmin)
+        codon_sensitivity = np.array(codon_sensitivity)
 
         cai_codons = []
         for i in range(0, len(nt_seq), 3):

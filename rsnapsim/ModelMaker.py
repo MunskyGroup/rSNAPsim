@@ -995,11 +995,14 @@ class ModelFactory():
                     
         try:
             self.eigen_path = self.find_eigen_path()
-            #print('eigen instillation found...')
+            print('eigen instillation found...')
+            print(self.eigen_path)
         except:
+            
             self.eigen_path=''
         self.reserved_model_names = ['build', 'model_maker_cpp', 'models',
                                      'rsnapsim_model_maker']
+        print(self.eigen_path)
         self.find_models()
 
 
@@ -1059,13 +1062,17 @@ class ModelFactory():
         '''
 
         paths = sys.path
-        potential_paths = []  #check the <env>/lib/ folder
+        potential_paths = []  #check the <env>/lib/ folder and check the <env>/Library/folder
+                
         for path in paths:
 
-            if path[-3:] == 'lib':
+            if path[-3:] == 'Lib':
                 potential_paths.append(path)
+                potential_paths.append(path[:-3] + 'Library')
             if path[-7:] == 'include':
                 potential_paths.append(path)
+
+        
         eigen_paths = []
         for path in potential_paths:  #in each of these try to find an eigen instillation
             base, _ = os.path.split(path)
@@ -1078,11 +1085,14 @@ class ModelFactory():
                 eigen_paths.append(os.path.join(base,''))
             if os.path.exists(os.path.join(base, 'eigen3')):
                 eigen_paths.append(os.path.join(base,''))
-                
+        
+        print(eigen_paths)
+        
         if len(eigen_paths) == 0:
             raise custom_error.EigenMissingError('Eigen is missing, please provide a path'\
                                     ' or if using a conda instillation, use'\
                                         ' conda install eigen')
+        
         return eigen_paths
 
 
@@ -1308,7 +1318,7 @@ class ModelFactory():
         init_str += "'''\n\n"
 
         #add the model name to the string to write
-        init_str += 'from . import %s'%model_name
+        init_str += 'from . import %s'%model_name#'from . import %s'%model_name
 
         #make the new init file
         initpath = os.path.join(folder_path, 'models',
