@@ -234,7 +234,7 @@ class SequenceManipMethods(SequenceCore):
                 
         return proteins[frame][pindex]
     
-    def seq_to_protein_obj(self, nucleotide_sequence_str, min_codons=80, add_tag=True):
+    def seq_to_CDS_obj(self, nucleotide_sequence_str, min_codons=80, add_tag=True):
         '''
         Convert a given nucleotide sequence string into a POI / protein of 
         interest object.

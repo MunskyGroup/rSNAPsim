@@ -319,7 +319,7 @@ class CDS():
         '''
         frame0 = pf().get_k(self.nt_seq, self.ki, self.ke_mu,
                                          self.kt)[1:-1]
-        probe_mat = np.zeros([3,len(frame0)])
+        probe_mat = np.zeros([3,len(frame0)],dtype=int)
         k = 1
         for i in range(3):
             keys = self.multiframe_epitopes[i].keys()
