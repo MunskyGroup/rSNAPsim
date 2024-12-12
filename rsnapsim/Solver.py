@@ -258,7 +258,7 @@ class Solver():
             n_constant_reactions = len(rxn_mat) - n_ribosome_reactions
             L = mRNA_model._kelong_mat.shape[1]
             kelong_mat = mRNA_model._kelong_mat
-            kelong_mat[:,-1] = 0
+            kelong_mat[0,-1] = 0
             probe_mat = mRNA_model._probe_mat.astype(int)
             
             constant_props = [mRNA_model._propensities[i] for i in mRNA_model._constant_reactions]
@@ -292,7 +292,7 @@ class Solver():
                 #kelong_mat = mRNA_model.kelong_mat
                 kelong_mat = np.zeros([3,L])
                 kelong_mat[0,:] = mRNA_model
-                kelong_mat[:,-1] = 0
+                kelong_mat[0,-1] = 0
                 #probe_mat = mRNA_model.probe_mat
                 probe_mat = np.zeros([3,L])
                 k = 1
@@ -331,7 +331,7 @@ class Solver():
                 n_ribosome_reactions = np.sum(rxn_mat[:,0] == 0)
                 n_constant_reactions = len(rxn_mat) - n_ribosome_reactions
                 kelong_mat = mRNA_model.kelong_mat
-                kelong_mat[:,-1] = 0
+                kelong_mat[0,-1] = 0
                 probe_mat = mRNA_model.probe_mat
                 
                 
@@ -392,7 +392,7 @@ class Solver():
         
         tc = 0-burnin # current time
         tf = t[-1] # final time point
-        
+        max_lattice_node = len(lattice_arr)-1
         while tc < tf:
 
             # get propensities and where
@@ -408,7 +408,7 @@ class Solver():
 
             tc = (tc-np.log(np.random.rand())/rate_sum[-1]) # Update the time point randomly
             ro = rate_sum[-1]*np.random.rand()  #draw random number for reaction
-
+            
             # record
             while tc >= t[tindex]:
 
@@ -552,7 +552,15 @@ class Solver():
             if ribosome_moved:
                 # update occupied vector
                 occupied = rib_arr[:,3]
-
+                if max(occupied) > max_lattice_node:
+                        msg = 'A particle stepped out of the maximum lattice node, check model design.'\
+                            ''
+                        raise custom_err.SteppedOutsideLattice(msg)
+                if min(occupied) < 0:
+                        msg = 'Negative lattice location stepped to, check model design.'\
+                            ''
+                        raise custom_err.SteppedOutsideLattice(msg)                    
+                    
                 # update the lattice vector
                 lattice_arr[:] = 0
                 lattice_arr[occupied[:NR]] = 1
