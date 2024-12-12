@@ -639,6 +639,27 @@ class CustomSSASoln:
     def I(self):
         return self.intensity_arr
 
+    def condense_ribosome_array(self):
+        '''
+        Condenses the solution memory size by stripping zeros in the ribosome
+        array.
+
+        Returns
+        -------
+        None.
+
+        '''
+        max_ind = 0
+        while self.ribosome_array[:,:,max_ind,:].sum() != 0 and max_ind < self.ribosome_array.shape[2]:
+            max_ind += 1
+        if max_ind < self.ribosome_array.shape[2]:
+            self.ribosome_array = self.ribosome_array[:,:,:max_ind,:]
+        
+    def save_solution_object(self, file_format='json'):
+        return
+    
+    def load_solution_object(self, filename):
+        return
 
 
 class TranslationSolvers():

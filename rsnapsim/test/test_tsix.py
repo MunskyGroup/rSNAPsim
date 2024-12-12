@@ -72,7 +72,7 @@ termination_tsix = 10
 termination_xist = 10
 
 dropoff_tsix = .01
-dropoff_xist = .01
+dropoff_xist = .01 
 
 # histone bursting
 k_xoff = .5
