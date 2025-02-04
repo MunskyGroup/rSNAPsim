@@ -83,7 +83,7 @@ model_figsize = (5, 7)
 figure_folder = '.' #where to save the figures
 figure_format = '.svg' #what format for the figures
 
-n_model_runs = 10 #for figure 3 how many times to run the models
+n_model_runs = 50 #for figure 3 how many times to run the models
 use_cplus = False
 
 ##############################################################################
@@ -315,7 +315,9 @@ profile.set_ylabel('Density')
 profile.set_xlabel('Codon')
 profile.invert_yaxis()
 
-
+fig.suptitle('CAP-IRES Model')
+if resave:
+    plt.savefig('%s/cap_ires_model_kym%s'%(figure_folder,figure_format))
 
 spottypes = [0,0,0,0]
 
@@ -370,7 +372,8 @@ plt.text(-.4,.53, r'%s (%.3f)'%(spottypes[0], spottypes[0]/np.sum(spottypes)))
 plt.gca().set_ylim([0,.6])
 plt.ylabel('percentage')
 
-
+if resave:
+    plt.savefig('%s/cap_ires_model_spots%s'%(figure_folder,figure_format))
 
 
 
@@ -451,8 +454,6 @@ poi = rsnp.seqmanip.seq_to_CDS_obj(ken_sequence_frame_0) # convert a given seque
 mRNA = poi['0'][0]                              # pull out the main open reading frame
 mRNA_length = len(mRNA.kelong)                  # get the length of the mRNA
 mRNA.generate_3frame_tags()                     # call to generate all open reading frames tags
-
-mRNA.visualize_mrna_strand() # plot open reading frame 1
 
 model = rsnp.tasep_model(mRNA, 'FSS') # model object
 # Make the kelong mat (manually adding an extra location that is equal to zero, so particles dont run over the simulation)
@@ -550,7 +551,7 @@ intense.set_yticks([])
 intense.set_title('Intensity', fontsize=8)
 intense.get_xaxis().set_ticks([0,100,200])
 intense.get_xaxis().set_ticklabels(['0','100','200'], rotation=90, fontsize=6)
-intense.legend(['C1', 'C2'], fontsize=, bbox_to_anchor=(2.5,.96), loc='upper right')
+intense.legend(['C1', 'C2'], fontsize=6, bbox_to_anchor=(2.5,.96), loc='upper right')
 
 s_arr = np.zeros([5001,1]);
 for i in range(5001):
@@ -574,6 +575,9 @@ profile.set_ylabel('Density')
 profile.set_xlabel('Codon')
 profile.invert_yaxis()
 
+fig.suptitle('Ribosomal Frameshifting Model')
+if resave:
+    plt.savefig('%s/fss_model_kym%s'%(figure_folder,figure_format))
 
 spottypes = [0,0,0,0]
 for i in tqdm.tqdm(range(n_model_runs)):
@@ -602,14 +606,15 @@ plt.figure(dpi=global_dpi)
 plt.bar([0,1,2,3],np.array(spottypes)/np.sum(spottypes),color=['k',colors[1], colors[0], colors[3]])
 plt.gca().set_xticks([0,1,2,3])
 plt.gca().set_xticklabels(['off', '-1F', '0F', '0F / -1F'])
-plt.text(-.5,.90, 'n = 1000 mRNAs')
+plt.text(-.5,.85, 'n = %s mRNAs'%n_model_runs)
 plt.text(1.6,.5, r'%s (%.2f)'%(spottypes[2], spottypes[2]/np.sum(spottypes)))
 plt.text(2.65,.05, r'%s (%.2f)'%(spottypes[3], spottypes[3]/np.sum(spottypes)))
 plt.text(0.70,.08, r'%s (%.2f)'%(spottypes[1], spottypes[1]/np.sum(spottypes)))
 plt.text(-.3,.02, r'%s (%.3f)'%(spottypes[0], spottypes[0]/np.sum(spottypes)))
 plt.ylabel('percentage')
 
-
+if resave:
+    plt.savefig('%s/fss_model_spots%s'%(figure_folder,figure_format))
 
 ken_sequence_frame_0 = '''
 AAGAAAAGAATGAACAAGAATTATTGGAATTAGATAAATGGGCAAGTTTGTGGAATTGGTTTAACATAAC
@@ -936,8 +941,8 @@ int1 = np.mean(intensity2[:500,2500:,1]/av_int_1, axis=0)
 
 plt.figure(dpi=global_dpi)
 
-std0 = np.std(intensity2[:500,2500:,0]/av_int_0, axis=0)/np.sqrt(500)
-std1 = np.std(intensity2[:500,2500:,1]/av_int_1, axis=0)/np.sqrt(500)
+std0 = np.std(intensity2[:500,2500:,0]/av_int_0, axis=0)/np.sqrt(n_model_runs)
+std1 = np.std(intensity2[:500,2500:,1]/av_int_1, axis=0)/np.sqrt(n_model_runs)
 plt.plot(int0, color=colors[4])
 plt.plot(int0 + std0, color=colors[4],lw=.5,ls='--')
 plt.plot(int0 - std0, color=colors[4],lw=.5,ls='--')
@@ -947,7 +952,8 @@ plt.plot(int1 - std1, color=colors[1],lw=.5,ls='--')
 plt.plot([500,500],[0,1.5],'k--')
 plt.xlabel('Time (s)')
 plt.ylabel('Normalized Intensity (before run-off)')
-
+if resave:
+    plt.savefig('%s/fss_roa%s'%(figure_folder,figure_format))
 
 
 
@@ -1076,9 +1082,33 @@ states.spines['right'].set_visible(False)
 states.spines['bottom'].set_visible(False)
 states.spines['left'].set_visible(False)
 
+fig.suptitle('FRAP Model')
+if resave:
+    plt.savefig('%s/frap_model%s'%(figure_folder,figure_format))
+
+n = n_model_runs
+intensity2 = np.zeros((n,1501,2))
+t = np.linspace(0,1500,1501)
+  
+for i in tqdm.tqdm(range(n)):
+  soln =  rsnp.solver.solve_ssa(model, t, n_traj=1)
+  intensity2[i] = soln.I[0]
 
 
+av_int_0 = np.mean(intensity2[:,700:1500,0], axis=0)
 
+plt.figure(dpi=global_dpi)
+
+std0 = np.std(intensity2[:,700:1500,0], axis=0)/np.sqrt(n_model_runs)
+plt.plot(np.linspace(700,1499,800), av_int_0, color=colors[0])
+plt.plot(np.linspace(700,1499,800), av_int_0 + std0, color=colors[0],lw=.5,ls='--')
+plt.plot(np.linspace(700,1499,800), av_int_0 - std0, color=colors[0],lw=.5,ls='--')
+plt.fill_between([1000,1200], [0,0], [30,30], alpha=.5, color='gray')
+plt.text(1400, 28,'n = %s'%str(n_model_runs))
+plt.xlabel('Time (s)')
+plt.ylabel('Average Intensity (# probes)')
+if resave:
+    plt.savefig('%s/frap_avint%s'%(figure_folder,figure_format))
 
 
 ############################ Ribosomal Drafting
@@ -1195,5 +1225,42 @@ states.spines['right'].set_visible(False)
 states.spines['bottom'].set_visible(False)
 states.spines['left'].set_visible(False)
 
+fig.suptitle('Ribosomal Drafting Model')
+if resave:
+    plt.savefig('%s/drafting_model%s'%(figure_folder,figure_format))
+    
+    
+    
+    
+n = n_model_runs
+profile_drafting = np.zeros((n,592))
+profile_control = np.zeros((n,592))
+t = np.linspace(0,6000,6001)
+  
+for i in tqdm.tqdm(range(n)):
+  soln =  rsnp.solver.solve_ssa(model, t, n_traj=1)
+  profile_drafting[i] = soln.lattice_arr[0,-1]
+  
+model._parameters = [0.03, 10, [5, 0]]
+
+for i in tqdm.tqdm(range(n)):
+  soln =  rsnp.solver.solve_ssa(model, t, n_traj=1)
+  profile_control[i] = soln.lattice_arr[0,-1]
 
 
+def movmean(a, w=3):
+    ret = np.cumsum(a, dtype=float)
+    ret[w:] = ret[w:] - ret[:-w]
+    return ret[w - 1:] / w
+
+
+plt.figure(dpi=global_dpi)
+plt.plot(movmean(np.mean(profile_control, axis=0), 20))
+plt.plot(movmean(np.mean(profile_drafting, axis=0), 20))
+plt.xlabel('Codon')
+plt.ylabel('Moving Average of Occupation Probability')
+plt.legend(['no drafting', 'drafting'])
+
+
+if resave:
+    plt.savefig('%s/drafting_model_profile%s'%(figure_folder,figure_format))
