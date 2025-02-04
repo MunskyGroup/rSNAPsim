@@ -99,6 +99,37 @@ class Solver():
         self.default_footprint_size = 9
 
 
+    def load_soln(self, filename):
+        
+        if filename[-4:] == '.npy':
+            linear_array = np.load(filename)
+            barcode_size = linear_array[0] #read the size of every compressed array
+            
+            # decompress the constant values
+            solve_time = linear_array[1+barcode_size+2]
+            n_traj = linear_array[1+barcode_size+3]
+            L = linear_array[1+barcode_size+4]
+            n_colors = linear_array[1+barcode_size+5]
+            burnin = linear_array[1+barcode_size+6]
+            
+            ribosome_array_shape = barcode[1:5]
+            state_array_shape = barcode[5:8]
+            resource_array_shape = barcode[8:11]
+            kelong_mat_shape = barcode[11:13]
+            time_shape = barcode[14]
+            
+            linear_save = np.hstack([len(barcode)] + barcode + 
+                                    [self.solve_time, self.n_traj, self.L, self.n_colors, self.burnin] + 
+                                    [x.flatten() for x in [self.ribosome_array, self.state_array,
+                                     self.resource_array, self.kelong_mat, self.t]])
+
+            
+            soln =  CustomSSASoln(mRNA_model, n_colors, rib_array, state_array,
+                                  resource_array, t, burnin, n_traj, solve_time) 
+            
+
+        
+        return 
 
     def solve_ssa(self, mRNA_model, t, n_traj=1, burnin=0, seed=None, parallel=False, cplus=False, cores=4, 
                   probe_list=None, ki=None, kt=None):
@@ -584,6 +615,7 @@ class CustomSSASoln:
         self.t = t
         self.burnin = burnin
         
+        
         try:
             particle_size = mRNA_model.particle_size
             is_model_obj = True
@@ -654,13 +686,50 @@ class CustomSSASoln:
             max_ind += 1
         if max_ind < self.ribosome_array.shape[2]:
             self.ribosome_array = self.ribosome_array[:,:,:max_ind,:]
+            
+    def convert_to_aas(self, sequence):
         
-    def save_solution_object(self, file_format='json'):
+        number_of_ribosomes_per_traj = []
+        for i in range(len(self.ribosome_array)):
+            number_of_ribosomes_per_traj.append(np.max(self.ribosome_array[i,:,:,0]))
+        
+        aa_over_traj = []
+        for i in range(len(self.ribosome_array)):
+            aa_over_time = []
+            for j in range(1,len(number_of_ribosomes_per_traj)+1):
+                
+                codon = self.ribosome_array[i,:,:,3][np.where(self.ribosome_array[i,:,:,0] == j)]
+                frame = self.ribosome_array[i,:,:,2][np.where(self.ribosome_array[i,:,:,0] == j)]
+                time = np.where(self.ribosome_array[i,:,:,0] == j)
+                
+                aa_over_time.append(np.vstack([time, frame, codon]))
+            aa_over_traj.append(aa_over_time)
+            
+        aas = []
+        for i in range(len(self.ribosome_array)): #over trajectories
+            aas2 = []
+            for j in range(len(self.ribosome_array[0])): #over time
+                aas2.append()
+                
+        return
+        
+    def save(self, filename, fmt ='.npy'):
+        self.condense_ribosome_array() # compress the ribosome array to save memory
+        
+        constants = 5
+        barcode = [constants, *self.ribosome_array.shape, *self.state_array.shape,
+                   *self.resource_array.shape, *self.kelong_mat.shape, *self.t.shape]
+        
+        if fmt == '.npy':
+            # compress everything into a singular linear array for saving with the barcode first
+            linear_save = np.hstack([len(barcode)] + barcode + 
+                                    [self.solve_time, self.n_traj, self.L, self.n_colors, self.burnin] + 
+                                    [x.flatten() for x in [self.ribosome_array, self.state_array,
+                                     self.resource_array, self.kelong_mat, self.t ]])
+            np.save(filename, linear_save)
+        
         return
     
-    def load_solution_object(self, filename):
-        return
-
 
 class TranslationSolvers():
     '''
