@@ -278,7 +278,7 @@ for i in np.unique(soln.ribosome_array[0][:,:,0]):
 
 kym.set_ylabel('Time (s)')
 kym.invert_yaxis()
-kym.set_title('Ribosome movement', fontsize=8)
+kym.set_title('Ribosome movement', fontsize=12, loc='left')
 kym.set_xticks([])
 
 intense.plot(soln.I[0], soln.t)
@@ -287,7 +287,7 @@ intense.set_yticks([])
 intense.set_title('Intensity', fontsize=8)
 intense.get_xaxis().set_ticks([0,100,200,300])
 intense.get_xaxis().set_ticklabels(['0','100','200','300'], rotation=90, fontsize=6)
-intense.legend(['C1', 'C2'], fontsize=6, bbox_to_anchor=(2.0,.96), loc='upper right')
+intense.legend(['C1', 'C2'], fontsize=6, bbox_to_anchor=(1,.96), loc='best')
 
 s_arr = np.zeros([5001,1]);
 for i in range(5001):
@@ -374,6 +374,10 @@ plt.ylabel('percentage')
 
 if resave:
     plt.savefig('%s/cap_ires_model_spots%s'%(figure_folder,figure_format))
+
+
+
+
 
 
 
@@ -528,11 +532,11 @@ soln = rsnp.solver.solve_ssa(model, t, n_traj=1, seed=35)
 
 soln.L = mRNA_length +1
 fig = plt.figure(tight_layout=True, dpi=global_dpi, figsize = model_figsize)
-gs = gridspec.GridSpec(2, 3, width_ratios=(4,1,1), height_ratios=(4, 1),)
+gs = gridspec.GridSpec(2, 2, width_ratios=(4,1), height_ratios=(4, 1),)
 kym = fig.add_subplot(gs[0,0])
 intense = fig.add_subplot(gs[0, 1])
 profile = fig.add_subplot(gs[1,0])
-states = fig.add_subplot(gs[0,2])
+#states = fig.add_subplot(gs[0,2])
 
 un = len(np.unique(soln.ribosome_array[0][:,:,0]))
 for i in np.unique(soln.ribosome_array[0][:,:,0]):
@@ -542,33 +546,33 @@ for i in np.unique(soln.ribosome_array[0][:,:,0]):
 
 kym.set_ylabel('Time (s)')
 kym.invert_yaxis()
-kym.set_title('Ribosome movement', fontsize=8)
+kym.set_title('Ribosome movement', fontsize=12, loc='left')
 kym.set_xticks([])
 
 intense.plot(soln.I[0], soln.t)
 intense.invert_yaxis()
 intense.set_yticks([])
-intense.set_title('Intensity', fontsize=8)
+intense.set_title('Intensity', fontsize=12, loc='left')
 intense.get_xaxis().set_ticks([0,100,200])
 intense.get_xaxis().set_ticklabels(['0','100','200'], rotation=90, fontsize=6)
-intense.legend(['C1', 'C2'], fontsize=6, bbox_to_anchor=(2.5,.96), loc='upper right')
+intense.legend(['C1', 'C2'], fontsize=6, bbox_to_anchor=(1,.96), loc='upper right')
 
-s_arr = np.zeros([5001,1]);
-for i in range(5001):
-  if soln.state_array[0][i,0] == 0:
-    s_arr[i,0] = 0
-  if soln.state_array[0][i,0] == 1:
-    s_arr[i,0] = 1
+# s_arr = np.zeros([5001,1]);
+# for i in range(5001):
+#   if soln.state_array[0][i,0] == 0:
+#     s_arr[i,0] = 0
+#   if soln.state_array[0][i,0] == 1:
+#     s_arr[i,0] = 1
 
-states.plot(s_arr, soln.t, lw=.5)
-states.scatter(s_arr, soln.t, c=[[colors[0], colors[2], colors[4], colors[1]][int(i)] for i in s_arr], edgecolor='none', s=3, zorder=2)
-states.invert_yaxis()
-states.set_yticks([])
-states.set_title('States', fontsize=8)
-states.set_xlim([-1,2])
-states.get_yaxis().set_visible(False)
-states.get_xaxis().set_ticks([0,1])
-states.get_xaxis().set_ticklabels(['FSS Off', 'FSS On',], rotation=90, fontsize=6)
+# states.plot(s_arr, soln.t, lw=.5)
+# states.scatter(s_arr, soln.t, c=[[colors[0], colors[2], colors[4], colors[1]][int(i)] for i in s_arr], edgecolor='none', s=3, zorder=2)
+# states.invert_yaxis()
+# states.set_yticks([])
+# states.set_title('States', fontsize=8)
+# states.set_xlim([-1,2])
+# states.get_yaxis().set_visible(False)
+# states.get_xaxis().set_ticks([0,1])
+# states.get_xaxis().set_ticklabels(['FSS Off', 'FSS On',], rotation=90, fontsize=6)
 
 profile.plot(np.mean(soln.lattice_arr[0],axis=0),'.', markersize=2, alpha=.5)
 profile.set_ylabel('Density')
@@ -614,7 +618,7 @@ plt.text(-.3,.02, r'%s (%.3f)'%(spottypes[0], spottypes[0]/np.sum(spottypes)))
 plt.ylabel('percentage')
 
 if resave:
-    plt.savefig('%s/fss_model_spots%s'%(figure_folder,figure_format))
+    plt.savefig('%s/fss_OR_model_spots%s'%(figure_folder,figure_format))
 
 ken_sequence_frame_0 = '''
 AAGAAAAGAATGAACAAGAATTATTGGAATTAGATAAATGGGCAAGTTTGTGGAATTGGTTTAACATAAC
@@ -925,10 +929,78 @@ model._constant_reactions = [0,1,2,3,4]
 model._lattice_arr0 = np.zeros([model._length+1], dtype=int)
 
 
+  
+
+
+t = np.linspace(0,10000,5001)
+soln = rsnp.solver.solve_ssa(model, t, n_traj=1, seed=35)
+
+fig = plt.figure(tight_layout=True, dpi=global_dpi, figsize = model_figsize)
+gs = gridspec.GridSpec(2, 2, width_ratios=(4,1), height_ratios=(4, 1),)
+kym = fig.add_subplot(gs[0,0])
+intense = fig.add_subplot(gs[0, 1])
+profile = fig.add_subplot(gs[1,0])
+#states = fig.add_subplot(gs[0,2])
+
+un = len(np.unique(soln.ribosome_array[0][:,:,0]))
+for i in np.unique(soln.ribosome_array[0][:,:,0]):
+    if i != 0:
+        rib_traj = soln.ribosome_array[0][soln.ribosome_array[0][:,:,0]==i]
+        kym.plot( rib_traj[:,3], soln.t[np.where(soln.ribosome_array[0][:,:,0]==i)[0]], color=cm.viridis(i/un))
+
+kym.set_ylabel('Time (s)')
+kym.set_ylim([0,6000])
+kym.invert_yaxis()
+kym.set_title('Ribosome movement', fontsize=12, loc='left')
+kym.set_xticks([])
+
+kym.plot([0,1400],[3000,3000],'k--')
+
+
+
+intense.plot(soln.I[0], soln.t)
+intense.set_ylim([0,6000])
+intense.invert_yaxis()
+intense.set_yticks([])
+intense.set_title('Intensity', fontsize=8)
+intense.get_xaxis().set_ticks([0,100,200])
+intense.get_xaxis().set_ticklabels(['0','100','200'], rotation=90, fontsize=6)
+intense.legend(['SUN', 'HA', 'FLAG'], fontsize=6, bbox_to_anchor=(1,.96), loc='best')
+intense.plot([0,200],[3000,3000],'k--')
+
+
+# s_arr = np.zeros([5001,1]);
+# for i in range(5001):
+#   if soln.state_array[0][i,0] == 0:
+#     s_arr[i,0] = 0
+#   if soln.state_array[0][i,0] == 1:
+#     s_arr[i,0] = 1
+
+# states.plot(s_arr, soln.t, lw=.5)
+# states.scatter(s_arr, soln.t, c=[[colors[0], colors[2], colors[4], colors[1]][int(i)] for i in s_arr], edgecolor='none', s=3, zorder=2)
+# states.invert_yaxis()
+# states.set_yticks([])
+# states.set_title('States', fontsize=8)
+# states.set_xlim([-1,2])
+# states.get_yaxis().set_visible(False)
+# states.get_xaxis().set_ticks([0,1])
+# states.get_xaxis().set_ticklabels(['FSS Off', 'FSS On',], rotation=90, fontsize=6)
+
+profile.plot(np.mean(soln.lattice_arr[0],axis=0),'.', markersize=2, alpha=.5)
+profile.set_ylabel('Density')
+profile.set_xlabel('Codon')
+profile.invert_yaxis()
+
+fig.suptitle('Ribosomal Frameshifting Model')
+
+if resave:
+    plt.savefig('%s/fss_ROA_model_spots%s'%(figure_folder,figure_format))
+
+
 n = n_model_runs
 intensity2 = np.zeros((n,6001,3))
 t = np.linspace(0,6000,6001)
-  
+
 for i in tqdm.tqdm(range(n)):
   soln =  rsnp.solver.solve_ssa(model, t, n_traj=1)
   intensity2[i] = soln.I[0]
@@ -938,6 +1010,8 @@ av_int_0 = np.mean(intensity2[:500,2900:3000,0])
 av_int_1 = np.mean(intensity2[:500,2900:3000,1])
 int0 = np.mean(intensity2[:500,2500:,0]/av_int_0, axis=0)
 int1 = np.mean(intensity2[:500,2500:,1]/av_int_1, axis=0)
+
+
 
 plt.figure(dpi=global_dpi)
 
@@ -953,18 +1027,63 @@ plt.plot([500,500],[0,1.5],'k--')
 plt.xlabel('Time (s)')
 plt.ylabel('Normalized Intensity (before run-off)')
 if resave:
-    plt.savefig('%s/fss_roa%s'%(figure_folder,figure_format))
+    plt.savefig('%s/fss_ROA_intensity%s'%(figure_folder,figure_format))
+
+
+profile = []
+spottypes = [0,0,0,0]
+for i in tqdm.tqdm(range(n_model_runs)):
+  r1 = np.random.rand()
+  model._state_arr0[0] = 0 # FSS off
+  model._state_arr0[0] = 0 # FSS off
+  if r1 < koff/(kon+koff):
+    model._state_arr0[0] = 1 # FSS off
+  else:
+    model._state_arr0[1] = 1 # FSS off
+
+
+  t = np.linspace(0,800,801)
+  soln = rsnp.solver.solve_ssa(model, t, n_traj = 1)
+  c1,_,c2 = soln.I[0,-1,:]
+  if c1 > 5 and c2 > 5:
+    spottypes[3] = spottypes[3] +1
+  if c1 <= 5 and c2 > 5:
+    spottypes[2] = spottypes[2] +1
+  if c1 > 5 and c2 <= 5:
+    spottypes[1] = spottypes[1] +1
+  if c1 <= 5 and c2 <= 5:
+    spottypes[0] = spottypes[0] +1
+
+    profile[i] = soln.lattice_arr[0,-1]
+
+plt.figure(dpi=global_dpi)
+plt.bar([0,1,2,3],np.array(spottypes)/np.sum(spottypes),color=['k',colors[1], colors[0], colors[3]])
+plt.gca().set_xticks([0,1,2,3])
+plt.gca().set_xticklabels(['off', '-1F', '0F', '0F / -1F'])
+plt.text(-.5,.85, 'n = %s mRNAs'%n_model_runs)
+plt.text(1.6,.5, r'%s (%.2f)'%(spottypes[2], spottypes[2]/np.sum(spottypes)))
+plt.text(2.65,.05, r'%s (%.2f)'%(spottypes[3], spottypes[3]/np.sum(spottypes)))
+plt.text(0.70,.08, r'%s (%.2f)'%(spottypes[1], spottypes[1]/np.sum(spottypes)))
+plt.text(-.3,.02, r'%s (%.3f)'%(spottypes[0], spottypes[0]/np.sum(spottypes)))
+plt.ylabel('percentage')
+if resave:
+    plt.savefig('%s/fss_ROA_spots%s'%(figure_folder,figure_format))
 
 
 
+def movmean(a, w=3):
+    ret = np.cumsum(a, dtype=float)
+    ret[w:] = ret[w:] - ret[:-w]
+    return ret[w - 1:] / w
 
 
+plt.figure(dpi=global_dpi)
+plt.plot(movmean(np.mean(profile, axis=0), 20))
+plt.xlabel('Codon')
+plt.ylabel('Moving Average of Occupation Probability')
 
-
-
-
-
-
+if resave:
+    plt.savefig('%s/fss_ROA_profile%s'%(figure_folder,figure_format))
 
 
 ############################## FRAP
@@ -1042,11 +1161,11 @@ soln = rsnp.solver.solve_ssa(model, t, n_traj=1, seed=35)
 
 soln.L = mRNA_length +1
 fig = plt.figure(tight_layout=True, dpi=global_dpi, figsize = model_figsize)
-gs = gridspec.GridSpec(2, 3, width_ratios=(4,1,1), height_ratios=(4, 1),)
+gs = gridspec.GridSpec(2, 2, width_ratios=(4,1), height_ratios=(4, 1),)
 kym = fig.add_subplot(gs[0,0])
 intense = fig.add_subplot(gs[0, 1])
 profile = fig.add_subplot(gs[1,0])
-states = fig.add_subplot(gs[0,2])
+#states = fig.add_subplot(gs[0,2])
 
 un = len(np.unique(soln.ribosome_array[0][:,:,0]))
 for i in np.unique(soln.ribosome_array[0][:,:,0]):
@@ -1056,16 +1175,16 @@ for i in np.unique(soln.ribosome_array[0][:,:,0]):
 
 kym.set_ylabel('Time (s)')
 kym.invert_yaxis()
-kym.set_title('Ribosome movement', fontsize=8)
+kym.set_title('Ribosome movement', fontsize=12, loc='left')
 kym.set_xticks([])
 
 intense.plot(soln.I[0], soln.t)
 intense.invert_yaxis()
 intense.set_yticks([])
-intense.set_title('Intensity', fontsize=8)
+intense.set_title('Intensity', fontsize=12, loc='left')
 intense.get_xaxis().set_ticks([0,25,50])
 intense.get_xaxis().set_ticklabels(['0','25','50'], rotation=90, fontsize=6)
-intense.legend(['C1', 'C2'], fontsize=6, bbox_to_anchor=(2.0,.96), loc='upper right')
+intense.legend(['C1', 'C2'], fontsize=6, bbox_to_anchor=(1,.96), loc='upper right')
 intense.fill_between([0,50], [1000,1000],[1200,1200], alpha=.3, color='gray')
 
 kym.fill_between([0,600], [1000,1000],[1200,1200], alpha=.3, color='gray')
@@ -1075,12 +1194,12 @@ profile.set_ylabel('Density')
 profile.set_xlabel('Codon')
 profile.invert_yaxis()
 
-states.get_xaxis().set_visible(False)
-states.get_yaxis().set_visible(False)
-states.spines['top'].set_visible(False)
-states.spines['right'].set_visible(False)
-states.spines['bottom'].set_visible(False)
-states.spines['left'].set_visible(False)
+# states.get_xaxis().set_visible(False)
+# states.get_yaxis().set_visible(False)
+# states.spines['top'].set_visible(False)
+# states.spines['right'].set_visible(False)
+# states.spines['bottom'].set_visible(False)
+# states.spines['left'].set_visible(False)
 
 fig.suptitle('FRAP Model')
 if resave:
@@ -1182,16 +1301,16 @@ model._lattice_arr0 = np.zeros([model._length+1], dtype=int)
 
 model._parameters[0] = .03
 
-t = np.linspace(0,500,501)
+t = np.linspace(0,250,251)
 soln =  rsnp.solver.solve_ssa(model, t, n_traj=1, seed=42)
 
 soln.L = mRNA_length +1
 fig = plt.figure(tight_layout=True, dpi=global_dpi, figsize = model_figsize)
-gs = gridspec.GridSpec(2, 3, width_ratios=(4,1,1), height_ratios=(4, 1),)
+gs = gridspec.GridSpec(2, 2, width_ratios=(4,1), height_ratios=(4, 1),)
 kym = fig.add_subplot(gs[0,0])
 intense = fig.add_subplot(gs[0, 1])
 profile = fig.add_subplot(gs[1,0])
-states = fig.add_subplot(gs[0,2])
+#states = fig.add_subplot(gs[0,2])
 
 un = len(np.unique(soln.ribosome_array[0][:,:,0]))
 for i in np.unique(soln.ribosome_array[0][:,:,0]):
@@ -1201,16 +1320,16 @@ for i in np.unique(soln.ribosome_array[0][:,:,0]):
 
 kym.set_ylabel('Time (s)')
 kym.invert_yaxis()
-kym.set_title('Ribosome movement', fontsize=8)
+kym.set_title('Ribosome movement', fontsize=12, loc='left')
 kym.set_xticks([])
 
 intense.plot(soln.I[0], soln.t)
 intense.invert_yaxis()
 intense.set_yticks([])
-intense.set_title('Intensity', fontsize=8)
+intense.set_title('Intensity', fontsize=12, loc='left')
 intense.get_xaxis().set_ticks([0,25,50])
 intense.get_xaxis().set_ticklabels(['0','25','50'], rotation=90, fontsize=6)
-intense.legend(['C1', 'C2'], fontsize=6, bbox_to_anchor=(2.0,.96), loc='upper right')
+intense.legend(['C1', 'C2'], fontsize=6, bbox_to_anchor=(1,.96), loc='upper right')
 
 
 profile.plot(np.mean(soln.lattice_arr[0],axis=0),'.', markersize=2, alpha=.5)
@@ -1218,12 +1337,12 @@ profile.set_ylabel('Density')
 profile.set_xlabel('Codon')
 profile.invert_yaxis()
 
-states.get_xaxis().set_visible(False)
-states.get_yaxis().set_visible(False)
-states.spines['top'].set_visible(False)
-states.spines['right'].set_visible(False)
-states.spines['bottom'].set_visible(False)
-states.spines['left'].set_visible(False)
+# states.get_xaxis().set_visible(False)
+# states.get_yaxis().set_visible(False)
+# states.spines['top'].set_visible(False)
+# states.spines['right'].set_visible(False)
+# states.spines['bottom'].set_visible(False)
+# states.spines['left'].set_visible(False)
 
 fig.suptitle('Ribosomal Drafting Model')
 if resave:

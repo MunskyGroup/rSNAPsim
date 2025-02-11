@@ -64,20 +64,39 @@ class TestSSAsoln_saving(unittest.TestCase):
     example_kelong = np.ones(100)
     example_init = .03
     
-    def test_save_default_model(self):
+    def test_save_default_model_npy(self):
         st = time.time()
         soln = rss.solver.solve_ssa(self.poi,self.t, n_traj=1, seed=1 )
         soln.save('./test_solution_save', fmt='.npy')
         return     
 
-    def test_load_default_model(self):
+    def test_load_poi_model_npy(self):
         st = time.time()
         soln = rss.solver.solve_ssa(self.poi,self.t, n_traj=1, seed=1 )
         soln.save('./test_solution_save2', fmt='.npy')
+
+        soln2 = rss.solver.load_soln('./test_solution_save2.npy')
         
-        soln2 = rss.solver.CustomSSASoln()
-        soln2.load('./test_solution_save2.npy')
-        return     
+        error_sum = [np.sum(soln.ribosome_array.flatten() != soln2.ribosome_array.flatten()),
+        np.sum(soln.state_array.flatten() != soln2.state_array.flatten()),
+        np.sum(soln.resource_array.flatten() != soln2.resource_array.flatten()),
+        np.sum(soln.kelong_mat.flatten() != soln2.kelong_mat.flatten()),
+        np.sum(soln.t.flatten() != soln2.t.flatten())]
+        self.assertAlmostEqual(np.sum(error_sum), 0)
+    
+    def test_load_poi_model_npz(self):
+        st = time.time()
+        soln = rss.solver.solve_ssa(self.poi,self.t, n_traj=1, seed=1 )
+        soln.save('./test_solution_save2', fmt='.npz')
+
+        soln2 = rss.solver.load_soln('./test_solution_save2.npz')
+        
+        error_sum = [np.sum(soln.ribosome_array.flatten() != soln2.ribosome_array.flatten()),
+        np.sum(soln.state_array.flatten() != soln2.state_array.flatten()),
+        np.sum(soln.resource_array.flatten() != soln2.resource_array.flatten()),
+        np.sum(soln.kelong_mat.flatten() != soln2.kelong_mat.flatten()),
+        np.sum(soln.t.flatten() != soln2.t.flatten())]
+        self.assertAlmostEqual(np.sum(error_sum), 0)
 
 
 if __name__ == '__main__':

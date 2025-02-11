@@ -101,35 +101,78 @@ class Solver():
 
     def load_soln(self, filename):
         
+        if filename[-4:] == '.npz':
+            
+            loaded = np.load(filename)
+            solve_time, n_traj, L, n_colors, burnin = loaded['constants']
+            ribosome_array = loaded['ribosome_array']
+            state_array = loaded['state_array']
+            resource_array = loaded['resource_array']
+            kelong_mat = loaded['kelong_mat']
+            t = loaded['t']
+            
+            soln =  CustomSSASoln([0], n_colors, ribosome_array, state_array,
+                                  resource_array, t, burnin, n_traj, solve_time) 
+            
+            #overwrite these entries since we initialized the object with a blank list.
+            soln.L = L
+            soln.kelong_mat = kelong_mat
+            
+            return soln
+            
+        
         if filename[-4:] == '.npy':
             linear_array = np.load(filename)
-            barcode_size = linear_array[0] #read the size of every compressed array
+            barcode_size = int(linear_array[0]) #read the size of every compressed array
             
             # decompress the constant values
-            solve_time = linear_array[1+barcode_size+2]
-            n_traj = linear_array[1+barcode_size+3]
-            L = linear_array[1+barcode_size+4]
-            n_colors = linear_array[1+barcode_size+5]
-            burnin = linear_array[1+barcode_size+6]
+            solve_time = linear_array[1+barcode_size]
+            n_traj = int(linear_array[1+barcode_size+1])
+            L = int(linear_array[1+barcode_size+2])
+            n_colors = int(linear_array[1+barcode_size+3])
+            burnin = linear_array[1+barcode_size+4]
             
+            start = 1+barcode_size+4+1
+            barcode = linear_array[1:barcode_size+1].astype(int)
             ribosome_array_shape = barcode[1:5]
             state_array_shape = barcode[5:8]
             resource_array_shape = barcode[8:11]
             kelong_mat_shape = barcode[11:13]
-            time_shape = barcode[14]
+            time_shape = barcode[13]
             
-            linear_save = np.hstack([len(barcode)] + barcode + 
-                                    [self.solve_time, self.n_traj, self.L, self.n_colors, self.burnin] + 
-                                    [x.flatten() for x in [self.ribosome_array, self.state_array,
-                                     self.resource_array, self.kelong_mat, self.t]])
+            ribosome_array = linear_array[start:ribosome_array_shape[0]*ribosome_array_shape[1]*ribosome_array_shape[2]*ribosome_array_shape[3]+start].reshape(ribosome_array_shape)
+            
+            start = ribosome_array_shape[0]*ribosome_array_shape[1]*ribosome_array_shape[2]*ribosome_array_shape[3]+start
+            state_array = linear_array[start:state_array_shape[0]*state_array_shape[1]*state_array_shape[2]+start].reshape(state_array_shape)
+            
+            
+            if 0 not in state_array_shape:
+                start = 1+state_array_shape[0]*state_array_shape[1]*state_array_shape[2]+start
+            else:
+                start = state_array_shape[0]*state_array_shape[1]*state_array_shape[2]+start
+            resource_array = linear_array[start:resource_array_shape[0]*resource_array_shape[1]*resource_array_shape[2]+start].reshape(resource_array_shape)
 
+            if 0 not in resource_array_shape:
+                start = 1+resource_array_shape[0]*resource_array_shape[1]*resource_array_shape[2]+start
+            else:
+                start = resource_array_shape[0]*resource_array_shape[1]*resource_array_shape[2]+start
+            kelong_mat = linear_array[start:kelong_mat_shape[0]*kelong_mat_shape[1]+start].reshape(kelong_mat_shape)
             
-            soln =  CustomSSASoln(mRNA_model, n_colors, rib_array, state_array,
+            if 0 not in kelong_mat_shape:
+                start = kelong_mat_shape[0]*kelong_mat_shape[1]+start
+            else:
+                start = kelong_mat_shape[0]*kelong_mat_shape[1]+start
+            t = linear_array[start:time_shape+start].reshape(time_shape)
+            
+                        
+            soln =  CustomSSASoln([0], n_colors, ribosome_array, state_array,
                                   resource_array, t, burnin, n_traj, solve_time) 
             
-
-        
-        return 
+            #overwrite these entries since we initialized the object with a blank list.
+            soln.L = L
+            soln.kelong_mat = kelong_mat
+            
+        return soln
 
     def solve_ssa(self, mRNA_model, t, n_traj=1, burnin=0, seed=None, parallel=False, cplus=False, cores=4, 
                   probe_list=None, ki=None, kt=None):
@@ -605,6 +648,8 @@ class Solver():
                     else:
                         rib_arr[rib_ind, 3+pr] +=1
                 ribosome_moved = 0
+                
+        
 
     
 class CustomSSASoln:
@@ -634,9 +679,6 @@ class CustomSSASoln:
                 self.kelong_mat = mRNA_model.kelong_mat
                 self.L = mRNA_model.kelong_mat.shape[1]
 
-
-            
-            
         #self.model_id = mRNA_model.model_id
         self.n_traj = n_traj
         if is_model_obj:
@@ -728,7 +770,19 @@ class CustomSSASoln:
                                      self.resource_array, self.kelong_mat, self.t ]])
             np.save(filename, linear_save)
         
+        if fmt == '.npz':
+            # compress everything into npz format
+            
+            np.savez_compressed(filename, 
+                                constants=[self.solve_time, self.n_traj, self.L, self.n_colors, self.burnin],
+                                ribosome_array=self.ribosome_array,
+                                state_array=self.state_array,
+                                resource_array=self.resource_array,
+                                kelong_mat = self.kelong_mat,
+                                t=self.t, allow_pickle=False)
+        
         return
+    
     
 
 class TranslationSolvers():
