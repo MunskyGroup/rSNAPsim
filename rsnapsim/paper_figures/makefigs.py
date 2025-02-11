@@ -78,12 +78,12 @@ resave = True       # resave the simulations and overwrite
 data_save_folder = './figuredata/' # where to save the simulations
 
 #figure 3 figsize
-model_figsize = (5, 7)
+model_figsize = (7,5)
 
 figure_folder = '.' #where to save the figures
 figure_format = '.svg' #what format for the figures
 
-n_model_runs = 50 #for figure 3 how many times to run the models
+n_model_runs = 10 #for figure 3 how many times to run the models
 use_cplus = False
 
 ##############################################################################
@@ -264,11 +264,11 @@ soln = rsnp.solver.solve_ssa(model, t, n_traj=1, seed=42)
 
 soln.L = mRNA_length +1
 fig = plt.figure(tight_layout=True, dpi=global_dpi, figsize = model_figsize)
-gs = gridspec.GridSpec(2, 3, width_ratios=(4,1,1), height_ratios=(4, 1),)
+gs = gridspec.GridSpec(2, 2, width_ratios=(4,1), height_ratios=(4, 1),)
 kym = fig.add_subplot(gs[0,0])
 intense = fig.add_subplot(gs[0, 1])
 profile = fig.add_subplot(gs[1,0])
-states = fig.add_subplot(gs[0,2])
+#states = fig.add_subplot(gs[0,2])
 
 un = len(np.unique(soln.ribosome_array[0][:,:,0]))
 for i in np.unique(soln.ribosome_array[0][:,:,0]):
@@ -300,15 +300,15 @@ for i in range(5001):
   if soln.state_array[0][i,0] == 1 and soln.state_array[0][i,1] == 1:
     s_arr[i,0] = 3
 
-states.plot(s_arr, soln.t, lw=.5)
-states.scatter(s_arr, soln.t, c=[[colors[0], colors[2], colors[4], colors[1]][int(i)] for i in s_arr], edgecolor='none', s=3, zorder=2)
-states.invert_yaxis()
-states.set_yticks([])
-states.set_title('States', fontsize=8)
-states.set_xlim([-1,4])
-states.get_yaxis().set_visible(False)
-states.get_xaxis().set_ticks([0,1,2,3])
-states.get_xaxis().set_ticklabels(['CAP Off/IRES Off', 'CAP On/IRES Off', 'CAP Off/IRES On','CAP On/IRES On'], rotation=90, fontsize=6)
+# states.plot(s_arr, soln.t, lw=.5)
+# states.scatter(s_arr, soln.t, c=[[colors[0], colors[2], colors[4], colors[1]][int(i)] for i in s_arr], edgecolor='none', s=3, zorder=2)
+# states.invert_yaxis()
+# states.set_yticks([])
+# states.set_title('States', fontsize=8)
+# states.set_xlim([-1,4])
+# states.get_yaxis().set_visible(False)
+# states.get_xaxis().set_ticks([0,1,2,3])
+# states.get_xaxis().set_ticklabels(['CAP Off/IRES Off', 'CAP On/IRES Off', 'CAP Off/IRES On','CAP On/IRES On'], rotation=90, fontsize=6)
 
 profile.plot(np.mean(soln.lattice_arr[0],axis=0),'.', markersize=2, alpha=.5)
 profile.set_ylabel('Density')
