@@ -88,6 +88,49 @@ use_cplus = False
 
 ##############################################################################
 
+def make_kymograph(soln, title='', filename=''):
+
+    soln.L = mRNA_length +1
+    fig = plt.figure(tight_layout=True, dpi=global_dpi, figsize = model_figsize)
+    gs = gridspec.GridSpec(2, 2, width_ratios=(4,1), height_ratios=(4, 1),)
+    kym = fig.add_subplot(gs[0,0])
+    intense = fig.add_subplot(gs[0, 1])
+    profile = fig.add_subplot(gs[1,0])
+    #states = fig.add_subplot(gs[0,2])
+    
+    un = len(np.unique(soln.ribosome_array[0][:,:,0]))
+    for i in np.unique(soln.ribosome_array[0][:,:,0]):
+        if i != 0:
+            rib_traj = soln.ribosome_array[0][soln.ribosome_array[0][:,:,0]==i]
+            kym.plot( rib_traj[:,3], np.where(soln.ribosome_array[0][:,:,0]==i)[0], color=cm.viridis(i/un))
+    
+    kym.set_ylabel('Time (s)')
+    kym.invert_yaxis()
+    kym.set_title('Ribosome movement', fontsize=12, loc='left')
+    kym.set_xticks([])
+    
+    intense.plot(soln.I[0], soln.t)
+    intense.invert_yaxis()
+    intense.set_yticks([])
+    intense.set_title('Intensity', fontsize=8)
+    ticks = np.round(np.linspace(0,np.max(soln.I)+10, 5).astype(int),decimals=-1 )
+    intense.get_xaxis().set_ticks(ticks)
+    intense.get_xaxis().set_ticklabels([str(x) for x in ticks], rotation=90, fontsize=6)
+    ncolors=soln.n_colors
+    intense.legend(['C' + str(x) for x in ncolors], fontsize=6, bbox_to_anchor=(1,.96), loc='best')
+    
+    profile.plot(np.mean(soln.lattice_arr[0],axis=0),'.', markersize=2, alpha=.5)
+    profile.set_ylabel('Density')
+    profile.set_xlabel('Codon')
+    profile.invert_yaxis()
+    
+    fig.suptitle(title)
+    if resave:
+        plt.savefig('%s/%s%s'%(figure_folder,filename,figure_format))
+
+
+##############################################################################
+
 
 
 # Figure 1
