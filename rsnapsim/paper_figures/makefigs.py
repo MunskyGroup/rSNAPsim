@@ -319,46 +319,58 @@ fig.suptitle('CAP-IRES Model')
 if resave:
     plt.savefig('%s/cap_ires_model_kym%s'%(figure_folder,figure_format))
 
-spottypes = [0,0,0,0]
 
-k_on_c = 4.8e-4
-k_off_c = 2e-3
-k_on_i = 1.8e-4
-k_off_i = 6.6e-3
-k_on_ic = 1.5e-3
+# spottypes = [0,0,0,0]
 
-for i in tqdm.tqdm(range(n_model_runs)):
-  r1 = np.random.rand()
-  model._state_arr0[0] = 0 # CAP off
-  model._state_arr0[0] = 0 # IRES off
-  if r1 < k_off_c/(k_on_c+k_off_c):
-    model._state_arr0[0] = 1 # CAP on
-  else:
-    model._state_arr0[0] = 0 # CAP off
+# k_on_c = 4.8e-4
+# k_off_c = 2e-3
+# k_on_i = 1.8e-4
+# k_off_i = 6.6e-3
+# k_on_ic = 1.5e-3
 
-  r2 = np.random.rand()
-  if model._state_arr0[0] == 1: # CAP on
-    if r2 < k_off_i/(k_on_ic+k_off_i):
-      model._state_arr0[1] = 1 # IRES on
-    else:
-      model._state_arr0[1] = 0 # IRES off
-  else:
-    if r2 < k_off_i/(k_on_i+k_off_i):
-      model._state_arr0[1] = 1 # IRES on
-    else:
-      model._state_arr0[1] = 0 # IRES off
-      
-  t = np.linspace(0,5000,5000)
-  soln = rsnp.solver.solve_ssa(model, t, n_traj=1)
-  c1,c2 = soln.I[0,-1,:]
-  if c1 > 5 and c2 > 5:
-    spottypes[3] = spottypes[3] +1
-  if c1 <= 5 and c2 > 5:
-    spottypes[2] = spottypes[2] +1
-  if c1 > 5 and c2 <= 5:
-    spottypes[1] = spottypes[1] +1
-  if c1 <= 5 and c2 <= 5:
-    spottypes[0] = spottypes[0] +1
+if regenerate: 
+    #for i in tqdm.tqdm(range(n_model_runs)):
+    soln = rsnp.solver.solve_ssa(model, t, n_traj=n_model_runs, burnin=10000, verbose=True)
+    
+    if resave:
+        soln.save(data_save_folder + 'cap_ires.npz')
+else:
+    soln = rsnp.solver.load_soln(data_save_folder + 'cap_ires.npz')
+
+1/0
+#       r1 = np.random.rand()
+#       model._state_arr0[0] = 0 # CAP off
+#       model._state_arr0[0] = 0 # IRES off
+#       if r1 < k_off_c/(k_on_c+k_off_c):
+#         model._state_arr0[0] = 1 # CAP on
+#       else:
+#         model._state_arr0[0] = 0 # CAP off
+
+#       r2 = np.random.rand()
+#       if model._state_arr0[0] == 1: # CAP on
+#         if r2 < k_off_i/(k_on_ic+k_off_i):
+#           model._state_arr0[1] = 1 # IRES on
+#         else:
+#           model._state_arr0[1] = 0 # IRES off
+#       else:
+#         if r2 < k_off_i/(k_on_i+k_off_i):
+#           model._state_arr0[1] = 1 # IRES on
+#         else:
+#           model._state_arr0[1] = 0 # IRES off
+          
+#       t = np.linspace(0,5000,5000)
+#       soln = rsnp.solver.solve_ssa(model, t, n_traj=1)
+# else:
+    
+#   c1,c2 = soln.I[0,-1,:]
+#   if c1 > 5 and c2 > 5:
+#     spottypes[3] = spottypes[3] +1
+#   if c1 <= 5 and c2 > 5:
+#     spottypes[2] = spottypes[2] +1
+#   if c1 > 5 and c2 <= 5:
+#     spottypes[1] = spottypes[1] +1
+#   if c1 <= 5 and c2 <= 5:
+#     spottypes[0] = spottypes[0] +1
 
 plt.figure(dpi=global_dpi)
 plt.bar([0,1,2,3],np.array(spottypes)/np.sum(spottypes),color=[colors[2],colors[1], colors[0], colors[3]])
@@ -374,10 +386,10 @@ plt.ylabel('percentage')
 
 if resave:
     plt.savefig('%s/cap_ires_model_spots%s'%(figure_folder,figure_format))
+    
 
 
-
-
+1/0
 
 
 

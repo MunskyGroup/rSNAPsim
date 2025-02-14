@@ -14,6 +14,8 @@ SSA_Soln = SSA_Soln.SSA_Soln
 ODE_Soln = ODE_Soln.ODE_Soln
 
 
+
+import tqdm as tqdm
 import time
 import warnings
 import os
@@ -105,6 +107,11 @@ class Solver():
             
             loaded = np.load(filename)
             solve_time, n_traj, L, n_colors, burnin = loaded['constants']
+            
+            n_traj = int(n_traj)
+            L = int(L)
+            n_colors = int(n_colors)
+
             ribosome_array = loaded['ribosome_array']
             state_array = loaded['state_array']
             resource_array = loaded['resource_array']
@@ -175,7 +182,7 @@ class Solver():
         return soln
 
     def solve_ssa(self, mRNA_model, t, n_traj=1, burnin=0, seed=None, parallel=False, cplus=False, cores=4, 
-                  probe_list=None, ki=None, kt=None):
+                  probe_list=None, ki=None, kt=None, verbose=False):
         
         # check if the user passed a model object or an mRNA object
         
@@ -198,9 +205,13 @@ class Solver():
     
             else:
                 solns = []
-                for i in range(n_traj):
-                    solns.append(self.__run(*constants, t, burnin, seeds[i]))
-            
+                if verbose:
+                    for i in tqdm.tqdm(range(n_traj)):
+                        solns.append(self.__run(*constants, t, burnin, seeds[i]))
+                else:
+                    for i in range(n_traj):
+                        solns.append(self.__run(*constants, t, burnin, seeds[i]))
+                
             rib_array = np.array([solns[i][0] for i in range(len(solns))])
             resource_array = np.array([solns[i][2] for i in range(len(solns))])
             state_array = np.array([solns[i][1] for i in range(len(solns))])
@@ -724,7 +735,7 @@ class CustomSSASoln:
 
         '''
         max_ind = 0
-        while self.ribosome_array[:,:,max_ind,:].sum() != 0 and max_ind < self.ribosome_array.shape[2]:
+        while self.ribosome_array[:,:,max_ind,:].sum() != 0 and max_ind < self.ribosome_array.shape[2]-1:
             max_ind += 1
         if max_ind < self.ribosome_array.shape[2]:
             self.ribosome_array = self.ribosome_array[:,:,:max_ind,:]
