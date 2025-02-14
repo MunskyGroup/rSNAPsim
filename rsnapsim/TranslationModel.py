@@ -34,78 +34,12 @@ from itertools import product
 import inspect
 import importlib
 
-class GenericMetaData():
-    '''
-    Class that generates some generic metadata and returns it in dictionary
-
-    meta data currently returned:
-        * user
-        * id
-        * datetime this function was called
-        * python version
-        * platform this is being run on
-
-    '''
-
-    def __init__(self):
-        self.id = ''
-        self.created_at = time.strftime('%Y-%m-%d %H:%M:%S',
-                                        time.localtime(time.time()))
-        self.user = os.path.expanduser("~")
-        self.platform = platform.platform()
-        self.python_version = sys.version
-
-    def get(self):
-        '''
-        generate and return a metadata dictionary for a solver object
-
-        Returns
-        -------
-        dict
-            a dictionary of metadata such as solution id, time ran, user,
-            platform and rss version.
-
-        '''
-        return self.__dict__
-
-
-class CustomSSASoln:
-    def __init__(self, mRNA_model, rib_array, state_array, resource_array, t, burnin, n_traj, solve_time):
-        self.ribosome_array = rib_array
-        self.state_array = state_array
-        self.resource_array = resource_array
-        self.t = t
-        self.burnin = burnin
-       # self.__meta = GenericMetaData.GenericMetaData().get()
-        self.L = mRNA_model._length
-        self.kelong_mat = mRNA_model._kelong_mat
-        self.model_id = mRNA_model.ID
-        self.n_traj = n_traj
-        self.n_colors = mRNA_model._n_colors
-        self.solve_time = solve_time
-        
-    @property
-    def lattice_arr(self):
-        lattice_arr = np.zeros([self.n_traj, len(self.t), self.L ] ,dtype=int)
-        for i in range(self.n_traj):
-            for t in range(len(self.t)):
-                rtraj = self.ribosome_array[i,t,:,3][self.ribosome_array[i,t,:,1]==1]
-                if len(rtraj) > 0:
-                    lattice_arr[i,t,rtraj] = 1
-        return lattice_arr
-    
-    @property
-    def intensity_arr(self):
-        arr = np.zeros([self.n_traj, len(self.t), self.n_colors ] ,dtype=int)
-        for i in range(self.n_traj):
-            for t in range(len(self.t)):
-                traj = np.sum(self.ribosome_array[i,t,:,4:4+self.n_colors],axis=0)
-                arr[i,t,:] = traj
-        return arr
-    
-    @property
-    def I(self):
-        return self.intensity_arr
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib import cm
+import matplotlib.patches as mpatches
+from matplotlib.patches import PathPatch
+from matplotlib.path import Path
 
 
 class TranslationModel:
@@ -468,8 +402,24 @@ class TranslationModel:
         
         self.cmodel = importlib.import_module('rsnapsim.models.%s'%(self.name))
 
+    
+    def save(self):
+        return
+    
+    def load(self):
+        return 
+    
+    def __get_mats(self):
+        return self.kelong_mat, self.resource_mat, self.rxn_mat, self.state_mat, self.probe_mat
 
-    def visualize(self, ax=None, show_speed=True, **kwargs):
+
+class ModelVisualizer():
+    
+    def __init__(self):
+        pass
+    
+    
+    def visualize(self, model, ax=None, show_speed=True, **kwargs):
         
         def movmean(a, window=3) :
             csum = np.cumsum(a, dtype=float)
@@ -835,325 +785,8 @@ class TranslationModel:
                 
         return fig, ax
     
-    
-    def __get_mats(self):
-        return kelong_mat, resource_mat, rxn_mat, state_mat, probe_mat
-
-
-def arrow_3( start, stop, m1, m2, point):
-    r1 = mpatches.Rectangle(start,1,m1[1]-start[1],ec='k',lw=2)
-    r2 = mpatches.Rectangle(m1,m2[0]-m1[0],1,ec='k',lw=1)
-    r3 = mpatches.Rectangle(m2,1,stop[1]-m2[1],ec='k',lw=2)
+        
     
     
-    return [r1,r2,r3]
-
-from matplotlib.patches import PathPatch
-from matplotlib.path import Path
-def arrow3(fig, start, m1, stop, cap, width, capsize):
-    w, h = fig.get_figwidth(), fig.get_figheight()
-    lx = start[0] - stop[0]
-    xwidth= width*h/w
-    ywidth = width*1
-    path = [[start[0]-xwidth, start[1]-ywidth],
-            [start[0]+xwidth, start[1]-ywidth],
-            [start[0]+xwidth, m1[1]-ywidth],
-            [stop[0]+xwidth,  m1[1]-ywidth],
-            [stop[0]+xwidth, stop[1]],
-            [stop[0]+xwidth+capsize, stop[1]],
-            [stop[0], cap[1]],
-            [stop[0]-xwidth-capsize, stop[1]],
-            [stop[0]-xwidth, stop[1]],
-            [stop[0]-xwidth, m1[1]+ywidth],
-            [start[0]-xwidth, m1[1]+ywidth],
-            [start[0]-xwidth, start[1]-ywidth]]
-            
-    path = Path(path)
-    patch = PathPatch(path, facecolor='none', ec='k', lw=2)
-    return patch
-
-
-
-
-
-
-
-
-
-class SSASolver:
-    def __init__(self, NUMBER_OF_CORES=None):
-        if NUMBER_OF_CORES == None:
-            self.NUMBER_OF_CORES = int(multiprocessing.cpu_count()/2) #claim half the cores
-        else:
-            self.NUMBER_OF_CORES = 1
-        
-
-    def solve_ssa(self, mRNA_model, t, n_traj=1, burnin=0, seed=None, parallel=False):
-        st = time.time()
-        if seed == None:
-            seeds = np.random.randint(0x7FFFFF, size=n_traj)
-        
-        if parallel:
-            solns = Parallel(n_jobs = self.NUMBER_OF_CORES, prefer="threads")(delayed(self.__run)(*args, **kwargs) for args, kwargs in ([[(model, t), {'burnin':burnin, 'seed':seeds[i]}] for i in range(0,n_traj)]))
-
-        else:
-            solns = []
-            for i in range(n_traj):
-                print(seeds[i])
-                solns.append(self.__run(mRNA_model, t, burnin=burnin, seed=seeds[i]))
-        
-        rib_array = np.array([solns[i][0] for i in range(len(solns))])
-        resource_array = np.array([solns[i][2] for i in range(len(solns))])
-        state_array = np.array([solns[i][1] for i in range(len(solns))])
-        solve_time = time.time() - st
-        soln = CustomSSASoln(mRNA_model, rib_array, state_array, resource_array, t, burnin, n_traj, solve_time) 
-        
-        return soln
-        
-        
-    def __initalize_trajs(self, mRNA_model):
-        rib_arr, lattice_arr, state_arr, resource_arr = mRNA_model._x0()
-        NR = np.sum(lattice_arr)
-        occupied = rib_arr[:,3]
-        return np.copy(rib_arr), np.copy(lattice_arr), np.copy(state_arr), np.copy(resource_arr), np.copy(occupied), NR
-        
-    def __constants(self, mRNA_model):
-        particle_size = mRNA_model.particle_size
-        rxn_mat = mRNA_model._rxn_mat.astype(int)
-        n_colors = int(np.max(mRNA_model._probe_mat))
-        n_states = mRNA_model._n_states
-        n_resources = mRNA_model._n_resources
-        n_rxns = int(rxn_mat.shape[0])
-        n_ribosome_reactions = np.sum(rxn_mat[:,0] == 0)
-        max_rib = mRNA_model._max_particles
-        n_constant_reactions = len(rxn_mat) - n_ribosome_reactions
-        L = kelong_mat.shape[1]
-        
-        return particle_size, max_rib, rxn_mat, n_colors, n_states, n_rxns, n_resources, n_constant_reactions, n_ribosome_reactions, L
-        
-
-
-        
-    def __run(self, mRNA_model, t, burnin=0, seed=None):
-        
-        # initalize constants, flags, and initial state of the simulation
-        footprint, max_rib, rxn_mat, n_colors, n_states, n_rxns, n_resources, n_constant_reactions, n_ribosome_reactions, L = self.__constants(mRNA_model)
-        reaction_taken, dexist, rib_id, ribosome_moved, tindex = [0,]*5
-        rib_arr, lattice_arr, state_arr, resource_arr, occupied, NR = self.__initalize_trajs(mRNA_model)
-        kelong_mat = mRNA_model._kelong_mat
-        probe_mat = mRNA_model._probe_mat.astype(int)
-        #rint(state_arr)
-        if seed != None:
-            np.random.seed(seed)
-            
-        # initalize propensities
-        constant_props = [mRNA_model._propensities[i] for i in mRNA_model._constant_reactions]
-        constant_parameters = [mRNA_model._parameters[i] for i in mRNA_model._constant_reactions]
-
-        def get_constant_props(*props):
-            return [props[i](constant_parameters[i],tc, rib_arr, kelong_mat, occupied, lattice_arr, probe_mat, state_arr, resource_arr, NR) for i in range(len(props))]
-            
-        ribosome_props = [mRNA_model._propensities[i] for i in mRNA_model._ribosome_reactions]
-        ribosome_parameters = [mRNA_model._parameters[i] for i in mRNA_model._ribosome_reactions]
-        
-        def get_ribosome_props(*props):
-            rates = [props[i](ribosome_parameters[i],tc, rib_arr, kelong_mat, occupied, lattice_arr, probe_mat, state_arr, resource_arr, NR) for i in range(len(props))]
-            return [item for sublist in rates for item in sublist]
-        
-        probe_function = mRNA_model._probe_function
-        probe_fun = inspect.getsourcelines(probe_function)[0][0].split(':')[-1].replace('\n','').replace(' ','')
-        if probe_fun == '1':
-            use_probe_fun = False
-        else:
-            use_probe_fun = True
-        
-        probe_parameters = mRNA_model._probe_parameters
-        
-        reaction_ids = mRNA_model._constant_reactions + mRNA_model._ribosome_reactions 
-        
-        # Initalize arrays to store the trajectory
-        #intensity_array = np.zeros([len(t), n_colors], dtype=int)
-        ribosome_array = np.zeros([len(t), max_rib, 4+n_colors+n_constant_reactions+n_ribosome_reactions], dtype=int)
-        state_array = np.zeros([len(t), n_states], dtype=int)
-        resource_array = np.zeros([len(t), n_resources], dtype=int)
-        
-        
-        tc = 0-burnin # current time
-        tf = t[-1] # final time point
-        
-        while tc < tf:
-
-            # get propensities and where
-            rates = get_constant_props(*constant_props) + get_ribosome_props(*ribosome_props)
-            if sum(n < 0 for n in rates):
-                msg = 'Negative Rate detected, double check model design.'\
-                    ''
-                raise custom_err.NegativeRateError(msg)
-
-            # select propensity
-
-            rate_sum = np.cumsum(rates)
-
-            tc = (tc-np.log(np.random.rand())/rate_sum[-1]) # Update the time point randomly
-            ro = rate_sum[-1]*np.random.rand()  #draw random number for reaction
-
-            # record
-            while tc >= t[tindex]:
-
-
-                ribosome_array[tindex] = rib_arr
-                state_array[tindex] = state_arr
-                resource_array[tindex] = resource_arr
-                #intensity_array[tindex] = np.sum(rib_arr[:,4:4+n_colors],axis=0)
-                tindex += 1
-                if tindex == len(t):
-                    return ribosome_array, state_array, resource_array
-                    break
-
-
-            for i in range(len(rates)): #pick the next reaction rate
-                if rate_sum[i] >= ro:
-                    event = i #which raction happened
-                    rid = i
-                    break
-            if event>=n_constant_reactions: #if its a ribosome reaction, on which ribosome did it occur
-
-                rib_ind = (event-n_constant_reactions)%NR  #edit event to match reaction matrix
-                event = int((event-n_constant_reactions)/NR) + n_constant_reactions
-
-            event = reaction_ids.index(event) # map the event to the reactions (reaction matrix and propensities may not match)
-            # do the reaction
-            ribosome_moved = 0
-            if rxn_mat[event][0] == 2: # lattice reaction
-                # find the matching ribosome
-                fr = rxn_mat[event][2]
-                loc = rxn_mat[event][3]
-
-
-                if rxn_mat[event][4] == 1: #ribosome arriving
-                    rib_ind = NR
-                    rib_id += 1
-                    rib_arr[NR,0] = rib_id
-                    rib_arr[NR,1] = 1
-                    rib_arr[NR,2] += rxn_mat[event][2]
-                    rib_arr[NR,3] += rxn_mat[event][3]
-                    rib_arr[NR,4+n_colors+event] += 1
-                    NR += 1
-                    ribosome_moved = 1
-
-
-
-                elif rxn_mat[event][4] == -1: #ribosome leaving
-                    rib_ind = np.where(rib_arr[:,3] == loc)[0][0]
-                    rib_arr[rib_ind,[1,2,3]] = rib_arr[rib_ind, [1,2,3]] + rxn_mat[event,4:7]
-                    NR -= 1
-                    rib_arr[rib_ind] = 0
-                    rib_arr[rib_ind:-1] = rib_arr[rib_ind+1:]
-                    rib_arr[-1] = 0
-                    lattice_arr[:] = 0
-                    lattice_arr[occupied[:NR]] = 1
-
-                else: # ribosome moving
-                    rib_ind = np.where(rib_arr[:,3] == loc)[0][0]
-                    #rib_arr[rib_ind,[1,2,3]] = rib_arr[rib_ind, [1,2,3]] + rxn_mat[event,4:7]
-                    rib_arr[rib_ind, 1:(n_colors+4+1)] = rib_arr[rib_ind, 1:(n_colors+4+1)] + rxn_mat[event,4:n_colors+8]
-                    rib_arr[NR,4+n_colors+event] += 1
-                #change states
-                if n_states > 0:
-                    state_arr = state_arr +  rxn_mat[event][n_colors+7:n_colors+7+n_states]
-                    if sum(n < 0 for n in state_arr):
-                        msg = 'Negative state detected, check model design.'\
-                            ''
-                        raise custom_err.StatesError(msg)
-                    #print('***')
-                    #print(rxn_mat[event][n_colors+7:n_colors+7+n_states]  )
-
-                #change resources
-                if n_resources > 0:
-                    resource_arr = resource_arr +  rxn_mat[event][n_colors+7+n_states:]
-                    if sum(n < 0 for n in resource_arr):
-                        msg = 'Negative resource detected, check model design.'\
-                            ''
-                        raise custom_err.NegativeResourcesError(msg)
-
-
-                if rxn_mat[event][6] !=0:
-                    ribosome_moved = 1
-
-            if rxn_mat[event][0] == 0: #ribosome reaction
-                # change movement and colors
-                # dexist, dframe, dloc, dprobe1... dprobeN
-                rib_arr[rib_ind, 1:(n_colors+4)] = rib_arr[rib_ind, 1:(n_colors+4)] + rxn_mat[event,4:n_colors+7]
-
-                #change states
-                if n_states > 0:
-                    state_arr = state_arr +  rxn_mat[event][n_colors+7:n_colors+7+n_states]
-                    if sum(n < 0 for n in state_arr):
-                        msg = 'Negative state detected, check model design.'\
-                            ''
-                        raise custom_err.StatesError(msg)
-
-                #change resources
-                if n_resources > 0:
-                    resource_arr = resource_arr +  rxn_mat[event][n_colors+7+n_states:]
-                    if sum(n < 0 for n in resource_arr):
-                        msg = 'Negative resource detected, check model design.'\
-                            ''
-                        raise custom_err.NegativeResourcesError(msg)
-
-                ribosome_moved = 0
-                if rxn_mat[event][6] !=0:
-                    ribosome_moved = 1
-
-                if rxn_mat[event][4] == -1: #ribosome left
-                    NR -= 1
-                    rib_arr[rib_ind] = 0
-                    rib_arr[rib_ind] = 0
-                    rib_arr[rib_ind:-1] = rib_arr[rib_ind+1:]
-                    rib_arr[-1] = 0
-                    lattice_arr[:] = 0
-                    lattice_arr[occupied[:NR]] = 1
-
-                rib_arr[rib_ind,4+n_colors+event] += 1
-
-
-            if rxn_mat[event][0] == 1: # state reaction
-                state_arr = state_arr +  rxn_mat[event][n_colors+7:n_colors+7+n_states]
-                if sum(n < 0 for n in state_arr):
-                    msg = 'Negative state detected, check model design.'\
-                        ''
-                    raise custom_err.StatesError(msg)
-
-            if rxn_mat[event][0] == 3: # resource reaction
-                resource_arr = resource_arr +  rxn_mat[event][n_colors+7+n_states:]
-                if sum(n < 0 for n in resource_arr):
-                    msg = 'Negative resource detected, check model design.'\
-                        ''
-                    raise custom_err.NegativeResourcesError(msg)
-
-            if rxn_mat[event][0] == 4: # probe reaction
-                state_mat[rxn_mat[event][1]] += rxn_mat[event][2]
-                state_mat[rxn_mat[event][3]] += rxn_mat[event][4]
-                state_mat[rxn_mat[event][5]] += rxn_mat[event][6]
-
-
-            # Check probes
-            if ribosome_moved:
-                # update occupied vector
-                occupied = rib_arr[:,3]
-
-                # update the lattice vector
-                lattice_arr[:] = 0
-                lattice_arr[occupied[:NR]] = 1
-
-                # check for probes
-                pr = probe_mat[rib_arr[rib_ind,2], rib_arr[rib_ind,3]]
-                if pr != 0:
-                    if use_probe_fun:
-                        if probe_function(ribosome_parameters[i],tc, rib_arr, kelong_mat, occupied, lattice_arr, probe_mat, state_arr, resource_arr, NR):
-                            rib_arr[rib_ind, 3+pr] +=1 #add a probe if it passed a location and passes the probe function
-                    else:
-                        rib_arr[rib_ind, 3+pr] +=1
-                ribosome_moved = 0
 
 

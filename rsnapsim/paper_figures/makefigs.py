@@ -83,7 +83,7 @@ model_figsize = (7,5)
 figure_folder = '.' #where to save the figures
 figure_format = '.svg' #what format for the figures
 
-n_model_runs = 10 #for figure 3 how many times to run the models
+n_model_runs = 100 #for figure 3 how many times to run the models
 use_cplus = False
 
 ##############################################################################
@@ -330,14 +330,14 @@ if resave:
 
 if regenerate: 
     #for i in tqdm.tqdm(range(n_model_runs)):
-    soln = rsnp.solver.solve_ssa(model, t, n_traj=n_model_runs, burnin=10000, verbose=True)
+    soln = rsnp.solver.solve_ssa(model, t, n_traj=n_model_runs, burnin=5000, verbose=True)
     
     if resave:
-        soln.save(data_save_folder + 'cap_ires.npz')
+        soln.save(data_save_folder + 'cap_ires',fmt='.npz')
 else:
     soln = rsnp.solver.load_soln(data_save_folder + 'cap_ires.npz')
 
-1/0
+
 #       r1 = np.random.rand()
 #       model._state_arr0[0] = 0 # CAP off
 #       model._state_arr0[0] = 0 # IRES off
@@ -361,16 +361,18 @@ else:
 #       t = np.linspace(0,5000,5000)
 #       soln = rsnp.solver.solve_ssa(model, t, n_traj=1)
 # else:
-    
-#   c1,c2 = soln.I[0,-1,:]
-#   if c1 > 5 and c2 > 5:
-#     spottypes[3] = spottypes[3] +1
-#   if c1 <= 5 and c2 > 5:
-#     spottypes[2] = spottypes[2] +1
-#   if c1 > 5 and c2 <= 5:
-#     spottypes[1] = spottypes[1] +1
-#   if c1 <= 5 and c2 <= 5:
-#     spottypes[0] = spottypes[0] +1
+
+spottypes = [0,0,0,0]
+for i in range(soln.n_traj):
+  c1,c2 = soln.I[i,-1,:]
+  if c1 > 5 and c2 > 5:
+    spottypes[3] = spottypes[3] +1
+  if c1 <= 5 and c2 > 5:
+    spottypes[2] = spottypes[2] +1
+  if c1 > 5 and c2 <= 5:
+    spottypes[1] = spottypes[1] +1
+  if c1 <= 5 and c2 <= 5:
+    spottypes[0] = spottypes[0] +1
 
 plt.figure(dpi=global_dpi)
 plt.bar([0,1,2,3],np.array(spottypes)/np.sum(spottypes),color=[colors[2],colors[1], colors[0], colors[3]])
