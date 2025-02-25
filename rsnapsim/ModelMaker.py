@@ -110,7 +110,7 @@ class RuleConverterLambda():
                                                 ' parenthesis at %i'%i)
 
         if len(istart) != 0:  # still a ( that cant be matched
-            raise MisMatchedParenthesis('Mismatched ")" ')
+            raise custom_err.MisMatchedParenthesis('Mismatched ")" ')
         return list(bracket_dict.items())
 
     @staticmethod
@@ -232,6 +232,7 @@ class RuleConverterLambda():
         
         
         print(number_elements)
+        print(operator_elements)
         print(elements)
         unknown_elements = []
         print(unknown_elements)
@@ -263,7 +264,7 @@ class RuleConverterLambda():
         new_elem3 = []
         for i in range(len(new_elem)):
             if operator_elements[i] > 0:
-                if operator_elements[i] in operator_dict.keys():
+                if new_elem2[i] in operator_dict.keys():
                     new_elem3 = new_elem3 + [operator_dict[new_elem2[i]]]
                 else:
                     new_elem3 = new_elem3 + [new_elem2[i]]      
@@ -848,12 +849,14 @@ class RuleConverterLambda():
     def convert_lambda_function_to_c(self, rule_string):
         
         
-        
+        print(rule_string)
         # first parse out comment if applicable and convert it
         function_str, comment_str = self.split_out_comments(rule_string)
         c_comment = self.convert_comment(comment_str)
+        print('Detected comment:')
         print(c_comment)
         
+        print('fstring:')
         print(function_str)
         # DETECT IF ITS A LIST COMPREHENSION
         if 'in range(nr)]' in function_str:
@@ -881,7 +884,7 @@ class RuleConverterLambda():
         ## CONVERT 1D INDEXES 
         # convert lattice_arr
         if 'lattice_arr' in function_str:
-            function_str = self.convert_1d_array_inds(function_str,'lattice_arr', 'L')
+            function_str = self.convert_1d_array_inds(function_str,'lattice_arr', 'L-1')
 
         # convert state_arr
         if 'state_arr' in function_str:
@@ -943,7 +946,9 @@ class RuleConverterLambda():
 
         propensities_str_list = [y[0].replace('\n','') for y in [inspect.getsourcelines(x)[0] for x in propensity_lambdas]]
         propensity_names_list = [y[0].replace('\n','').split('=')[0].replace(' ','') for y in [inspect.getsourcelines(x)[0] for x in propensity_lambdas]]
-        propensity_function_list = [y[0].replace('\n','').split('=')[1].replace('lambda k,t,p,ke,o,l,pr,s,r,nr: ','') for y in [inspect.getsourcelines(x)[0] for x in propensity_lambdas]]
+        
+        # =.join is to handle stuff like s == 1 in the lambda string since we have to split on the first =
+        propensity_function_list = ['='.join(y[0].replace('\n','').split('=')[1:]).replace('lambda k,t,p,ke,o,l,pr,s,r,nr: ','') for y in [inspect.getsourcelines(x)[0] for x in propensity_lambdas]]
         
         rules = []
         for i in range(len(propensities_str_list)):
@@ -1543,6 +1548,8 @@ class ModelFactory():
         # convert the rules passed
         if verbose:
             print('converting propensities to c...')
+            print(constant_prop)
+            
         constant_propensities_c = RuleConverterLambda().make_c_propensities(constant_prop)
         ribosome_propensities_c = RuleConverterLambda().make_c_propensities(ribosome_prop, ribosome=1)
         propensities_str_list = [y[0].replace('\n','') for y in [inspect.getsourcelines(x)[0] for x in constant_prop + ribosome_prop]]
@@ -1579,12 +1586,14 @@ class ModelFactory():
 
         # check if the model compiled
         if compile_run.returncode != 0:
-            if verbose:
-                print('compilation failed...')
-                print(compile_run.stdout.decode('utf-8'))
-                print(compile_run.stderr.decode('utf-8'))
+
+            print('compilation failed...')
+            print(compile_run.stdout.decode('utf-8'))
+            print(compile_run.stderr.decode('utf-8'))
         else:
             if verbose:
                 print('model compiled!')
         os.chdir(cwd)
+        
+        return compile_run.returncode
 

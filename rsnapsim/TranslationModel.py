@@ -380,7 +380,7 @@ class TranslationModel:
             print('error')
         
 
-    def compile_model_c(self):
+    def compile_model_c(self, overwrite=True):
         '''
         propensities_str_list = [y[0].replace('\n','') for y in [inspect.getsourcelines(x)[0] for x in self._propensities]]
         propensity_names_list = [y[0].replace('\n','').split('=')[0].replace(' ','') for y in [inspect.getsourcelines(x)[0] for x in self._propensities]]
@@ -397,10 +397,11 @@ class TranslationModel:
         
         '''
         
-        mm.ModelFactory().compile_model(self.name, self.model_id, [self._propensities[x] for x in self._constant_reactions],
-                                     [self._propensities[x] for x in self._ribosome_reactions], overwrite=True )        
+        return_code = mm.ModelFactory().compile_model(self.name, self.model_id, [self._propensities[x] for x in self._constant_reactions],
+                                     [self._propensities[x] for x in self._ribosome_reactions], overwrite=overwrite )        
         
-        self.cmodel = importlib.import_module('rsnapsim.models.%s'%(self.name))
+        if return_code == 0:
+            self.cmodel = importlib.import_module('rsnapsim.models.%s.%s'%(self.name,self.name))
 
     
     def save(self):

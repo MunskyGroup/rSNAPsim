@@ -26,7 +26,8 @@ void BLANKPROP( Eigen::VectorXd& wn, double* parameters, double t, const Eigen::
                                     int rib_arr_col_size,
                                     int n_states,
                                     int n_resources,
-                                    int n_parameters){
+                                    int n_parameters,
+                                    double tc){
 
     wn.setZero();
     int k;
@@ -39,17 +40,11 @@ void BLANKPROP( Eigen::VectorXd& wn, double* parameters, double t, const Eigen::
 
             //INSERT_GENERATED_RIBOSOME_PROPENSITY_HERE
 
+
         //}
         k += n_ribosome_rxns;
     }
-    std::cout << "______________" << std::endl;
-    std::cout << wn << std::endl;
-    std::cout << "______________" << std::endl;
-    std::cout << parameters[0] << std::endl;
-    std::cout << "______________" << std::endl;
-    std::cout << occupied << std::endl;
-    std::cout << "______________" << std::endl;
-    std::cout << rib_arr << std::endl;
+
 }
 
 
@@ -262,7 +257,8 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
                                  rib_arr_size,
                                  n_states,
                                  n_resources,
-                                 npars);
+                                 npars,
+                                 tc);
                                
 
         // CHECK IF ANYTHING WENT WRONG IN THE SIMULATION AND ERROR OUT WITH A CODE!
@@ -304,6 +300,7 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
         }
         event -=1;
 
+        
         // fill up recording matrixes if time passed current time index
         while( (tindex < Nt) && (tc > time_vector[tindex])) {
             Eigen::Map<VectorXi> v(rib_arr.data(),rib_arr.size());
@@ -318,7 +315,15 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
             event = ((event-n_constant_reactions)/NR) + n_constant_reactions; // WHICH REACTION IS HAPPENING
         }
 
+
+
         event = rxn_ids[event]; // edit event to match rxn matrix since it can be in any order
+        
+
+
+        
+
+        
         ribosome_moved = 0; // reset moved/left booleans
         ribosome_left = 0;
 
@@ -408,11 +413,11 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
         
         }        
 
-
         if (rxn_mat(event,0) == 1){ // state reaction
-            state_arr = state_arr +  rxn_mat.row(event).block(0, n_colors+6, 1, n_states);
+            state_arr = state_arr +  rxn_mat.row(event).block(0, n_colors+7, 1, n_states).transpose();
         }
 
+        
         if (rxn_mat(event,0) == 3){ // resource reaction
             resource_arr = resource_arr +  rxn_mat.row(event).block(0, n_colors+6+n_states, 1, n_resources);
         }

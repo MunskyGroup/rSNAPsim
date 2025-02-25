@@ -255,15 +255,15 @@ class Solver():
             
             
             ribosome_array = np.zeros([n_traj, len(t), mRNA_model._rib_arr0.shape[0], mRNA_model._rib_arr0.shape[1] ])
-            state_array = np.zeros([n_traj, len(t), len(mRNA_model._state_arr0)+1])
-            resource_array = np.zeros([n_traj, len(t), len(mRNA_model._resource_arr0)+1])
+            state_array = np.zeros([n_traj, len(t), max(len(mRNA_model._state_arr0),1)]) # minimum of shape one for C++, wont allow 0 shaped arrays
+            resource_array = np.zeros([n_traj, len(t),  max(len(mRNA_model._resource_arr0),1)])
             
             for i in range(n_traj):
                 seed = seeds[i]
 
                 pa = np.zeros([ mRNA_model._rib_arr0.shape[0]*mRNA_model._rib_arr0.shape[1], len(t)], dtype=np.int32, order='C')
-                sa = np.zeros([len(t), len(mRNA_model._state_arr0)+1], dtype=np.int32)
-                ra = np.zeros([len(t), len(mRNA_model._resource_arr0)+1], dtype=np.int32)
+                sa = np.zeros([len(t), max(len(mRNA_model._state_arr0),1) ], dtype=np.int32)
+                ra = np.zeros([len(t), max(len(mRNA_model._resource_arr0),1)], dtype=np.int32)
                 
                 mRNA_model.cmodel.run_ssa_cpp(pa, sa, ra, mRNA_model._rib_arr0, temp_state_arr0, temp_resource_arr0,
                                            mRNA_model._rxn_mat.astype(np.int32), np.array(mRNA_model._constant_reactions + mRNA_model._ribosome_reactions),
