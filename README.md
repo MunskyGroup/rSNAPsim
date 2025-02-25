@@ -13,7 +13,7 @@ Translated by Will Raymond - 2018/2019
 ssa c++ library [![PyPI version](https://badge.fury.io/py/rsnapsim-ssa-cpp.svg)](https://badge.fury.io/py/rsnapsim-ssa-cpp)
 
 
-![alt text](https://github.com/MunskyGroup/rSNAPsim/blob/packaged/rsnapsim/docs/images/flowchart.png?raw=true)
+![rsnapsim package flowchart](https://github.com/MunskyGroup/rSNAPsim/blob/refactor2024/rsnapsim/docs/images/flowchart.png?raw=true)
 
 
 ### Project Goal
