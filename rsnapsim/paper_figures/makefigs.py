@@ -84,12 +84,39 @@ figure_folder = '.' #where to save the figures
 figure_format = '.svg' #what format for the figures
 
 n_model_runs = 500 #for figure 3 how many times to run the models
-use_cplus = False
+use_cplus = False # use c++ models vs python for generation of the data (will change the outcomes due to RNG algorithm differences)
 
 ##############################################################################
 
-def plot_kymograph(soln, title='', filename='', show_states=False, profile_t=-1, plot_range = -1, n=0):
 
+# general functions
+
+def plot_kymograph(soln, title='', filename='', show_states=False, profile_t=-1, plot_range = -1, n=0):
+    '''
+    
+    This function makes the kymographs for figure 3 from a given solution object
+    
+    Parameters
+    ----------
+    soln : rsnapsim solution object
+        The TASEP solution to plot nicely.
+    title : str, optional
+        suptitle of the plot. The default is ''.
+    filename : str, optional
+        filename to save the plot as. The default is ''.
+    show_states : bool, optional
+        also plot the state array? The default is False.
+    profile_t : int, optional
+        which time point to generate the ribosomal profile from. The default is -1.
+    plot_range : int, optional
+        what time point to plot too. The default is -1.
+    n : str, optional
+        which trajectory to generate the kymograph from. The default is 0.
+
+    Returns
+    -------
+    '''
+    
     fig = plt.figure(tight_layout=True, dpi=global_dpi, figsize = model_figsize)
     if show_states:
         gs = gridspec.GridSpec(3, 2, width_ratios=(4,1,1), height_ratios=(4, 1),)
@@ -167,8 +194,31 @@ def plot_kymograph(soln, title='', filename='', show_states=False, profile_t=-1,
 
 
 def plot_spot_types(soln, n=4, title='', filename='', xtick_labels='', int_thresh=5):
-    spottypes = [0,]*n
+    '''
+    This function makes the spot type bar charts for figure 3, given a solution object
 
+    Parameters
+    ----------
+    soln : rsnapsim solution object
+        soln to generate spot types from.
+    n : int, optional
+        how many spot types? For example, 4 spot types for 2 colors: no int, C1, C2, C1+C2. The default is 4.
+    title : str, optional
+        title of the plot. The default is ''.
+    filename : str, optional
+        filename to save the plot as. The default is ''.
+    xtick_labels : list, optional
+        list of strings to replace the xtick labels. The default is ''.
+    int_thresh : int, optional
+        Intensity threshold to consider that a spot contains a given color. The default is 5.
+
+    Returns
+    -------
+    None.
+
+    '''
+    
+    spottypes = [0,]*n
     if n == 4:
         I = soln.I
         for i in range(soln.n_traj):
