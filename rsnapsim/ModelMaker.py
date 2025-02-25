@@ -1071,6 +1071,9 @@ class ModelFactory():
                 
         for path in paths:
 
+            if path[-4:] == 'DLLs':
+                potential_paths.append(path)
+                potential_paths.append(path[:-3] + 'Library')
             if path[-3:] == 'Lib':
                 potential_paths.append(path)
                 potential_paths.append(path[:-3] + 'Library')

@@ -163,7 +163,7 @@ class SequenceManipMethods(SequenceCore):
                 protein.orf = orf_keys[i]
                 protein.loc = (orfs[orf_keys[i]][j][0], orfs[orf_keys[i]][j][1])
                 protein.tags = []
-
+                protein.generate_3frame_tags() #automatically do this call now
                 protein_objs[orf_keys[i]].append(protein)
 
 

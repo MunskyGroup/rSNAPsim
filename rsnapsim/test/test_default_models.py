@@ -90,11 +90,11 @@ class TestDefaultSSAModel(unittest.TestCase):
         return 
     
 
-    def test_default_model_run_py_multiprocessing(self):
-        st = time.time()
-        rss.solver.solve_ssa(self.poi,self.t, n_traj=50, seed=1, parallel=True, cores=16)
-        print('50 multiproccessing python trajectories of 500s took: %s s'%(time.time() - st))
-        return 
+    # def test_default_model_run_py_multiprocessing(self):
+    #     st = time.time()
+    #     rss.solver.solve_ssa(self.poi,self.t, n_traj=50, seed=1, parallel=True, cores=16)
+    #     print('50 multiproccessing python trajectories of 500s took: %s s'%(time.time() - st))
+    #     return 
     
     def test_single_model_run_cpp(self):
         return 

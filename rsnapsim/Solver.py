@@ -9,6 +9,12 @@ from . import CodonDictionaries
 from . import translation_models as models
 from . import ODE_Soln
 from . import SSA_Soln
+from . import custom_errors as custom_err
+
+from . import seqmanip
+from . import propf
+from . import TranslationModel
+
 
 SSA_Soln = SSA_Soln.SSA_Soln
 ODE_Soln = ODE_Soln.ODE_Soln
@@ -222,65 +228,142 @@ class Solver():
             
         if cplus:
             
-            mRNA_model.cmodel
-
-            parameters = mRNA_model._parameters
-            pars = []
-            npars = []
-            for i in range(len(parameters)):
-                if isinstance(parameters[i], list):
-                    npars.append(len(parameters[i]))
-                    for j in range(len(parameters[i])):
-                        pars.append(parameters[i][j])
+            # see if we were given a poi object, a list, or a custom model object
+            try:
+                mRNA_model.cmodel
+                is_custom_model = True
+            except:
+                is_custom_model = False
+            
+            if is_custom_model:
+                # C++ solver for custom TASEP model objects
+                # most of their information is stored in the model object.
+                parameters = mRNA_model._parameters
+                pars = []
+                npars = []
+                for i in range(len(parameters)):
+                    if isinstance(parameters[i], list):
+                        npars.append(len(parameters[i]))
+                        for j in range(len(parameters[i])):
+                            pars.append(parameters[i][j])
+                    else:
+                        npars.append(1)
+                        pars.append(parameters[i])
+                    
+                
+                if len(mRNA_model._state_arr0) == 0:
+                    temp_state_arr0 = np.zeros([1], dtype=np.int32)
                 else:
-                    npars.append(1)
-                    pars.append(parameters[i])
+                    temp_state_arr0 = mRNA_model._state_arr0
+                    
+                if len(mRNA_model._resource_arr0) == 0:
+                    temp_resource_arr0 = np.zeros([1], dtype=np.int32)
+                else:
+                    temp_resource_arr0 = mRNA_model._resource_arr0
+                n_states = 0
+                n_resources = 0 
                 
+                st = time.time()
+                def convert_c_pa(pa):
+                    return pa.swapaxes(1,0).reshape([1,len(t), mRNA_model._rib_arr0.shape[1], mRNA_model._rib_arr0.shape[0]]).swapaxes(-1,-2)
+                
+                
+                ribosome_array = np.zeros([n_traj, len(t), mRNA_model._rib_arr0.shape[0], mRNA_model._rib_arr0.shape[1] ])
+                state_array = np.zeros([n_traj, len(t), max(len(mRNA_model._state_arr0),1)]) # minimum of shape one for C++, wont allow 0 shaped arrays
+                resource_array = np.zeros([n_traj, len(t),  max(len(mRNA_model._resource_arr0),1)])
+                
+                for i in range(n_traj):
+                    seed = seeds[i]
+    
+                    pa = np.zeros([ mRNA_model._rib_arr0.shape[0]*mRNA_model._rib_arr0.shape[1], len(t)], dtype=np.int32, order='C')
+                    sa = np.zeros([len(t), max(len(mRNA_model._state_arr0),1) ], dtype=np.int32)
+                    ra = np.zeros([len(t), max(len(mRNA_model._resource_arr0),1)], dtype=np.int32)
+                    
+                    mRNA_model.cmodel.run_ssa_cpp(pa, sa, ra, mRNA_model._rib_arr0, temp_state_arr0, temp_resource_arr0,
+                                               mRNA_model._rxn_mat.astype(np.int32), np.array(mRNA_model._constant_reactions + mRNA_model._ribosome_reactions),
+                                               mRNA_model._kelong_mat,
+                                               mRNA_model._probe_mat.astype(np.int32), np.array(pars),
+                                               t,
+                                               mRNA_model._rib_arr0.shape[0], mRNA_model._n_states, mRNA_model._n_resources, len(mRNA_model._constant_reactions),
+                                               len(mRNA_model._ribosome_reactions),
+                                               burnin, seed, )
+                    
+                    ribosome_array[i] = convert_c_pa(pa)
+                    state_array[i] = np.copy(sa)
+                    resource_array[i] = np.copy(ra)
+                    
+                    #print(pa)
+                solve_time = time.time() - st
+                soln = CustomSSASoln(mRNA_model, 0, ribosome_array, state_array, resource_array, t, burnin, n_traj, solve_time)         
             
-            if len(mRNA_model._state_arr0) == 0:
-                temp_state_arr0 = np.zeros([1], dtype=np.int32)
             else:
-                temp_state_arr0 = mRNA_model._state_arr0
+                # C++ SOLVING WHEN GIVEN A LIST OR CDS OBJECT
+                # if the use gives only a list, or a cds object to solve taseps, make a new blank model
+                # and load the default compiled c++ model to use.
                 
-            if len(mRNA_model._resource_arr0) == 0:
-                temp_resource_arr0 = np.zeros([1], dtype=np.int32)
-            else:
-                temp_resource_arr0 = mRNA_model._resource_arr0
-            n_states = 0
-            n_resources = 0 
-            
-            st = time.time()
-            def convert_c_pa(pa):
-                return pa.swapaxes(1,0).reshape([1,len(t), mRNA_model._rib_arr0.shape[1], mRNA_model._rib_arr0.shape[0]]).swapaxes(-1,-2)
-            
-            
-            ribosome_array = np.zeros([n_traj, len(t), mRNA_model._rib_arr0.shape[0], mRNA_model._rib_arr0.shape[1] ])
-            state_array = np.zeros([n_traj, len(t), max(len(mRNA_model._state_arr0),1)]) # minimum of shape one for C++, wont allow 0 shaped arrays
-            resource_array = np.zeros([n_traj, len(t),  max(len(mRNA_model._resource_arr0),1)])
-            
-            for i in range(n_traj):
-                seed = seeds[i]
-
-                pa = np.zeros([ mRNA_model._rib_arr0.shape[0]*mRNA_model._rib_arr0.shape[1], len(t)], dtype=np.int32, order='C')
-                sa = np.zeros([len(t), max(len(mRNA_model._state_arr0),1) ], dtype=np.int32)
-                ra = np.zeros([len(t), max(len(mRNA_model._resource_arr0),1)], dtype=np.int32)
                 
-                mRNA_model.cmodel.run_ssa_cpp(pa, sa, ra, mRNA_model._rib_arr0, temp_state_arr0, temp_resource_arr0,
-                                           mRNA_model._rxn_mat.astype(np.int32), np.array(mRNA_model._constant_reactions + mRNA_model._ribosome_reactions),
-                                           mRNA_model._kelong_mat,
-                                           mRNA_model._probe_mat.astype(np.int32), np.array(pars),
-                                           t,
-                                           mRNA_model._rib_arr0.shape[0], mRNA_model._n_states, mRNA_model._n_resources, len(mRNA_model._constant_reactions),
-                                           len(mRNA_model._ribosome_reactions),
-                                           burnin, seed, )
+                # make a new default_model and use it to load the precompiled c++ one
+                mRNA_model = self.__cds_or_list_to_mRNA_model(mRNA_model, probe_list, ki, kt)
+                mRNA_model.load_model_c('default') #MUST BE NAMED DEFAULT FOR NOW
+                L = mRNA_model._length
+                parameters = [ki, kt, L]
                 
-                ribosome_array[i] = convert_c_pa(pa)
-                state_array[i] = np.copy(sa)
-                resource_array[i] = np.copy(ra)
+                pars = []
+                npars = []
+                for i in range(len(parameters)):
+                    if isinstance(parameters[i], list):
+                        npars.append(len(parameters[i]))
+                        for j in range(len(parameters[i])):
+                            pars.append(parameters[i][j])
+                    else:
+                        npars.append(1)
+                        pars.append(parameters[i])
+                    
                 
-                #print(pa)
-            solve_time = time.time() - st
-            soln = CustomSSASoln(mRNA_model, 0, ribosome_array, state_array, resource_array, t, burnin, n_traj, solve_time)         
+                if len(mRNA_model._state_arr0) == 0:
+                    temp_state_arr0 = np.zeros([1], dtype=np.int32)
+                else:
+                    temp_state_arr0 = mRNA_model._state_arr0
+                    
+                if len(mRNA_model._resource_arr0) == 0:
+                    temp_resource_arr0 = np.zeros([1], dtype=np.int32)
+                else:
+                    temp_resource_arr0 = mRNA_model._resource_arr0
+                n_states = 0
+                n_resources = 0 
+                
+                st = time.time()
+                def convert_c_pa(pa):
+                    return pa.swapaxes(1,0).reshape([1,len(t), mRNA_model._rib_arr0.shape[1], mRNA_model._rib_arr0.shape[0]]).swapaxes(-1,-2)
+                
+                
+                ribosome_array = np.zeros([n_traj, len(t), mRNA_model._rib_arr0.shape[0], mRNA_model._rib_arr0.shape[1] ])
+                state_array = np.zeros([n_traj, len(t), max(len(mRNA_model._state_arr0),1)]) # minimum of shape one for C++, wont allow 0 shaped arrays
+                resource_array = np.zeros([n_traj, len(t),  max(len(mRNA_model._resource_arr0),1)])
+                
+                for i in range(n_traj):
+                    seed = seeds[i]
+    
+                    pa = np.zeros([ mRNA_model._rib_arr0.shape[0]*mRNA_model._rib_arr0.shape[1], len(t)], dtype=np.int32, order='C')
+                    sa = np.zeros([len(t), max(len(mRNA_model._state_arr0),1) ], dtype=np.int32)
+                    ra = np.zeros([len(t), max(len(mRNA_model._resource_arr0),1)], dtype=np.int32)
+                    
+                    mRNA_model.cmodel.run_ssa_cpp(pa, sa, ra, mRNA_model._rib_arr0, temp_state_arr0, temp_resource_arr0,
+                                               mRNA_model._rxn_mat.astype(np.int32), np.array(mRNA_model._constant_reactions + mRNA_model._ribosome_reactions),
+                                               mRNA_model._kelong_mat,
+                                               mRNA_model._probe_mat.astype(np.int32), np.array(pars),
+                                               t,
+                                               mRNA_model._rib_arr0.shape[0], mRNA_model._n_states, mRNA_model._n_resources, len(mRNA_model._constant_reactions),
+                                               len(mRNA_model._ribosome_reactions),
+                                               burnin, seed, )
+                    
+                    ribosome_array[i] = convert_c_pa(pa)
+                    state_array[i] = np.copy(sa)
+                    resource_array[i] = np.copy(ra)
+                    
+                    #print(pa)
+                solve_time = time.time() - st
+                soln = CustomSSASoln(mRNA_model, 0, ribosome_array, state_array, resource_array, t, burnin, n_traj, solve_time)         
 
         return soln
     
@@ -432,7 +515,201 @@ class Solver():
                 reaction_ids =[0,1,2]
             
         return particle_size, max_rib, rxn_mat, n_colors, n_states, n_rxns, n_resources, n_constant_reactions, n_ribosome_reactions, L, kelong_mat, probe_mat, constant_props, constant_parameters, ribosome_props, ribosome_parameters, probe_function, probe_parameters, reaction_ids
+
+    def __cds_or_list_to_mRNA_model(self, mRNA_model, probe_list, ki, kt):
         
+                                 
+        if isinstance(mRNA_model, list):
+            
+            example_mRNA = '''ATGGCGAACCTTGGCTGCTGGATGCTGGTTCTCTTTGTGGCCACATGGAGTGACCTGGGC
+                                CTCTGCAAGAAGCGCCCGAAGCCTGGAGGATGGAACACTGGGGGCAGCCGATACCCGGGG
+                                CAGGGCAGCCCTGGAGGCAACCGCTACCCACCTCAGGGCGGTGGTGGCTGGGGGCAGCCT
+                                CATGGTGGTGGCTGGGGGCAGCCTCATGGTGGTGGCTGGGGGCAGCCCCATGGTGGTGGC
+                                TGGGGACAGCCTCATGGTGGTGGCTGGGGTCAAGGAGGTGGCACCCACAGTCAGTGGAAC
+                                AAGCCGAGTAAGCCAAAAACCAACATGAAGCACATGGCTGGTGCTGCAGCAGCTGGGGCA
+                                GTGGTGGGGGGCCTTGGCGGCTACATGCTGGGAAGTGCCATGAGCAGGCCCATCATACAT
+                                TTCGGCAGTGACTATGAGGACCGTTACTATCGTGAAAACATGCACCGTTACCCCAACCAA
+                                GTGTACTACAGGCCCATGGATGAGTACAGCAACCAGAACAACTTTGTGCACGACTGCGTC
+                                AATATCACAATCAAGCAGCACACGGTCACCACAACCACCAAGGGGGAGAACTTCACCGAG
+                                ACCGACGTTAAGATGATGGAGCGCGTGGTTGAGCAGATGTGTATCACCCAGTACGAGAGG
+                                GAATCTCAGGCCTATTACCAGAGAGGATCGAGCATGGTCCTCTTCTCCTCTCCACCTGTG
+                                ATCCTCCTGATCTCTTTCCTCATCTTCCTGATAGTGGGATGA'''.replace('\n','').replace(' ','')
+            
+            
+            
+            # Make the mRNA object
+            poi = seqmanip.seq_to_CDS_obj(example_mRNA) # convert a given sequence to a protein of interest object
+            mRNA = poi['0'][0]                              # pull out the main open reading frame
+            mRNA_length = len(mRNA.kelong)                  # get the length of the mRNA
+            mRNA.generate_3frame_tags()                     # call to generate all open reading frames
+            
+            # manually adding epitopes for two colors
+            mRNA.multiframe_epitopes[0] = {'T_Flag': [1, 10, 19, 195, 205, 217, 227, 299, 308, 317], 'T_HA':[400,410,420,430]}
+            
+                        # Make the mRNA object
+            #poi = seqmanip.seq_to_CDS_obj(example_mRNA) # convert a given sequence to a protein of interest object
+            #mRNA = poi['0'][0]                              # pull out the main open reading frame
+            mRNA_length = len(mRNA_model)                  # get the length of the mRNA
+            #mRNA.generate_3frame_tags()                     # call to generate all open reading frames
+            
+            # manually adding epitopes for two colors
+            #mRNA.multiframe_epitopes[0] = {'T_Flag': [1, 10, 19, 195, 205, 217, 227, 299, 308, 317], 'T_HA':[400,410,420,430]}
+            
+            
+            model = TranslationModel.TranslationModel(mRNA, 'default') # model object
+            
+            
+            # Make the kelong mat (manually adding an extra location that is equal to zero, so particles dont run over the simulation)
+            kelong_mat = np.zeros([3, mRNA_length+1])
+            kelong_mat[0, :-1] = mRNA_model
+            #kelong_mat[1, :-2] = propf.get_k(mRNA.nt_seq[1:-2], .1, 10, 10)[1:-1]
+            #kelong_mat[2, :-2] = propf.get_k(mRNA.nt_seq[2:-1], .1, 10, 10)[1:-1]
+            kelong_mat[0, -2] = 0
+            
+            model._kelong_mat = kelong_mat #override the current kelongation mat
+            
+            footprint = 9
+            parameters = [0.03, 10, 591]
+            
+            # DEFAULT STEPPING INITIATION
+            init = lambda k,t,p,ke,o,l,pr,s,r,nr: (1-np.any(l[0:0+footprint]))*k[0]
+            model.add_lattice_reaction(init, parameters, rxn_name = 'initiation', exclusion=1, frame=0, loc=0, dexist=1,)
+            
+            
+            # DEFAULT TERMINATION 
+            leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[k[2]-1]*k[1] #(lattice location 590 = 1) * parameter
+            model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
+            
+            
+            # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
+            #default stepping
+            elong_step = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint])) for i in range(nr)]
+            model.add_ribosome_reaction(elong_step, parameters, rxn_name='elongation', exclusion=1, dloc=1) 
+            
+            
+            # finally specify which reactions are ribosome specific
+            model._ribosome_reactions = [2]
+            model._constant_reactions = [0,1,]
+            model._lattice_arr0 = np.zeros([model._length+1], dtype=int)
+
+            return model
+
+            # #overwrite to a default model if just a stepping list was used
+            # particle_size = self.default_footprint_size 
+            # n_colors = int(len(probe_list)) # number of color tags
+            # n_states = 0
+            # n_resources = 0
+
+            # max_rib = int(len(mRNA_model)/particle_size)+5 #total number of ribosomes possible
+            
+
+            # L = len(mRNA_model)
+            # #build the default reaction matrix
+            # rxn_mat = np.array([[  2.,   1.,   0.,   0.,   1.,   0.,   0.,   0.,   0.],  #initiation
+            #                     [  2.,   0.,   0., L-1,  -1.,   0.,   0.,   0.,   0.],     #termination
+            #                     [  0.,   1.,   0.,   0.,   0.,   0.,   1.,   0.,   0.]]).astype(np.int32) #stepping
+
+            # n_rxns = int(rxn_mat.shape[0])
+            # n_ribosome_reactions = np.sum(rxn_mat[:,0] == 0)
+            # n_constant_reactions = len(rxn_mat) - n_ribosome_reactions
+            # #kelong_mat = mRNA_model.kelong_mat
+            # kelong_mat = np.zeros([3,L])
+            # kelong_mat[0,:] = mRNA_model
+            # kelong_mat[0,-1] = 0
+            # #probe_mat = mRNA_model.probe_mat
+            # probe_mat = np.zeros([3,L])
+            # k = 1
+            # for i in range(len(probe_list)):
+            #     probe_mat[0,probe_list[i]] = k
+            #     k+=1
+            
+            
+            # init = lambda k,t,p,ke,o,l,pr,s,r,nr: (1-np.any(l[0:0+int(particle_size)]))*k[0]
+            # leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[L-1]*k[1]
+            # elong_step = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+particle_size])) for i in range(nr)]
+            # probe_function = lambda k,t,p,ke,o,l,pr,s,r,nr: 1
+            # constant_props = [init, leave]
+            # constant_parameters = [[ki], [0,kt]]
+            # probe_parameters = 0
+            # ribosome_props = [elong_step]
+            # ribosome_parameters = [[1]]
+            # reaction_ids =[0,1,2]                
+        else:
+            
+            mRNA_length = len(mRNA_model.kelong)                  # get the length of the mRNA
+            mRNA_model.generate_3frame_tags()                     # call to generate all open reading frames
+
+            model = TranslationModel.TranslationModel(mRNA_model, 'default') # model object
+            
+            
+            # Make the kelong mat (manually adding an extra location that is equal to zero, so particles dont run over the simulation)
+            kelong_mat = np.zeros([3, mRNA_length+1])
+            kelong_mat[0, :-1] = propf.get_k(mRNA.nt_seq, .033, 10, 10)[1:-1]
+            kelong_mat[1, :-2] = propf.get_k(mRNA.nt_seq[1:-2], .1, 10, 10)[1:-1]
+            kelong_mat[2, :-2] = propf.get_k(mRNA.nt_seq[2:-1], .1, 10, 10)[1:-1]
+            kelong_mat[0, -2] = 0
+            
+            model._kelong_mat = kelong_mat #override the current kelongation mat
+            
+            footprint = 9
+            parameters = [0.03, 10, 591]
+            
+            # DEFAULT STEPPING INITIATION
+            init = lambda k,t,p,ke,o,l,pr,s,r,nr: (1-np.any(l[0:0+footprint]))*k[0]
+            model.add_lattice_reaction(init, parameters, rxn_name = 'initiation', exclusion=1, frame=0, loc=0, dexist=1,)
+            
+            
+            # DEFAULT TERMINATION 
+            leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[k[2]-1]*k[1] #(lattice location 590 = 1) * parameter
+            model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
+            
+            
+            # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
+            #default stepping
+            elong_step = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint])) for i in range(nr)]
+            model.add_ribosome_reaction(elong_step, parameters, rxn_name='elongation', exclusion=1, dloc=1) 
+            
+            
+            # finally specify which reactions are ribosome specific
+            model._ribosome_reactions = [2]
+            model._constant_reactions = [0,1,]
+            model._lattice_arr0 = np.zeros([model._length+1], dtype=int)
+
+            return model
+        
+            # #overwrite to a default model if just a protein obj was passed
+            # particle_size = self.default_footprint_size 
+            # n_colors = int(len(mRNA_model.tag_epitopes)) # number of color tags
+            # n_states = 0
+            # n_resources = 0
+
+            # max_rib = int(mRNA_model.total_length/particle_size)+5 #total number of ribosomes possible
+            
+
+            # L = len(mRNA_model.kelong)
+            # #build the default reaction matrix
+            # rxn_mat = np.array([[  2.,   1.,   0.,   0.,   1.,   0.,   0.,   0.,   0.],  #initiation
+            #                     [  2.,   0.,   0., L-1,  -1.,   0.,   0.,   0.,   0.],     #termination
+            #                     [  0.,   1.,   0.,   0.,   0.,   0.,   1.,   0.,   0.]]).astype(np.int32) #stepping
+
+            # n_rxns = int(rxn_mat.shape[0])
+            # n_ribosome_reactions = np.sum(rxn_mat[:,0] == 0)
+            # n_constant_reactions = len(rxn_mat) - n_ribosome_reactions
+            # kelong_mat = mRNA_model.kelong_mat
+            # kelong_mat[0,-1] = 0
+            # probe_mat = mRNA_model.probe_mat
+            
+            
+            # init = lambda k,t,p,ke,o,l,pr,s,r,nr: (1-np.any(l[0:0+int(particle_size)]))*k[0]
+            # leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[L-1]*k[1]
+            # elong_step = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+particle_size])) for i in range(nr)]
+            # probe_function = lambda k,t,p,ke,o,l,pr,s,r,nr: 1
+            # constant_props = [init, leave]
+            # constant_parameters = [[mRNA_model.ki], [0,mRNA_model.kt]]
+            # probe_parameters = 0
+            # ribosome_props = [elong_step]
+            # ribosome_parameters = [[mRNA_model.ke_mu]]
+            # reaction_ids =[0,1,2]
 
     def __setup_python_sim(self, mRNA_model, probe_list, ki, kt):
         # initalize constants, flags, and initial state of the simulation
@@ -627,7 +904,7 @@ class Solver():
                         ''
                     raise custom_err.NegativeResourcesError(msg)
 
-            if rxn_mat[event][0] == 4: # probe reaction
+            if rxn_mat[event][0] == 4: # probe reaction not implemented yet
                 state_mat[rxn_mat[event][1]] += rxn_mat[event][2]
                 state_mat[rxn_mat[event][3]] += rxn_mat[event][4]
                 state_mat[rxn_mat[event][5]] += rxn_mat[event][6]
@@ -660,7 +937,6 @@ class Solver():
                         rib_arr[rib_ind, 3+pr] +=1
                 ribosome_moved = 0
                 
-        
 
     
 class CustomSSASoln:

@@ -203,7 +203,7 @@ class CDS():
         self.multiframe_aa_seq = []
         self._colors = ['#fa8174', '#b3de69', '#bc82bd','#ccebc4',
                         '#ffed6f','#81b1d2']
-        self.generate_3frame_tags()
+        
 
 
     @property
