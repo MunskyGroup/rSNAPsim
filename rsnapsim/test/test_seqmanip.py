@@ -21,7 +21,7 @@ import os
 cwd = os.getcwd()
 os.chdir('../../')
 print(os.getcwd())
-import rsnapsim as rss
+import rsnapsim as rsnp
 from rsnapsim import seqmanip
 
 import numpy as np
@@ -65,7 +65,7 @@ class TestSeqmanip(unittest.TestCase):
         files = os.listdir(example_file_paths)
         for f in files:
             if f == 'multiline_fasta.fasta':
-                a,c,b,d = rss.seqmanip.open_seq_file(example_file_paths + f, add_tag=True)    
+                a,c,b,d = rsnp.seqmanip.open_seq_file(example_file_paths + f, add_tag=True)    
         self.assertEqual(a['0'][0], aa) #check that both sequences are right from each multiline
         self.assertEqual(a['0'][1], aa)
             
@@ -80,8 +80,8 @@ class TestSeqmanip(unittest.TestCase):
         codon is provided and cant be decoded
         '''
         test_sequence = 'aaacccggguuuaax'
-        with self.assertRaises(rss.custom_errors.UnrecognizedAAError): 
-            rss.seqmanip.optimize_ntseq(test_sequence)
+        with self.assertRaises(rsnp.custom_errors.UnrecognizedAAError): 
+            rsnp.seqmanip.optimize_ntseq(test_sequence)
             
     def test_invalid_length_sequence_nt_optimization(self):
         '''
@@ -89,8 +89,8 @@ class TestSeqmanip(unittest.TestCase):
         codon for optimization
         '''
         test_sequence = 'aaacccggguuuaaau'
-        with self.assertRaises(rss.custom_errors.InvalidSequenceLengthError): 
-            rss.seqmanip.optimize_ntseq(test_sequence)
+        with self.assertRaises(rsnp.custom_errors.InvalidSequenceLengthError): 
+            rsnp.seqmanip.optimize_ntseq(test_sequence)
         
     def test_unknown_codon_to_optimize_nt_optimization(self):
         '''
@@ -99,8 +99,8 @@ class TestSeqmanip(unittest.TestCase):
         '''
         test_sequence = 'aaacccggguuuaau'
         opt_dict = {'AAA':1,'CCC':2,'GGG':3,'UUU':3,}
-        with self.assertRaises(rss.custom_errors.UnrecognizedCodonError): 
-            rss.seqmanip.optimize_ntseq(test_sequence, opt_dict=opt_dict)
+        with self.assertRaises(rsnp.custom_errors.UnrecognizedCodonError): 
+            rsnp.seqmanip.optimize_ntseq(test_sequence, opt_dict=opt_dict)
             
 ##############################################################################            
 # Sequence DeOptimization Tests
@@ -111,8 +111,8 @@ class TestSeqmanip(unittest.TestCase):
         codon is provided and cant be decoded
         '''
         test_sequence = 'aaacccggguuuaax'
-        with self.assertRaises(rss.custom_errors.UnrecognizedAAError): 
-            rss.seqmanip.deoptimize_ntseq(test_sequence)
+        with self.assertRaises(rsnp.custom_errors.UnrecognizedAAError): 
+            rsnp.seqmanip.deoptimize_ntseq(test_sequence)
             
     def test_invalid_length_sequence_nt_deoptimization(self):
         '''
@@ -120,8 +120,8 @@ class TestSeqmanip(unittest.TestCase):
         codon for optimization
         '''
         test_sequence = 'aaacccggguuuaaau'
-        with self.assertRaises(rss.custom_errors.InvalidSequenceLengthError): 
-            rss.seqmanip.deoptimize_ntseq(test_sequence)
+        with self.assertRaises(rsnp.custom_errors.InvalidSequenceLengthError): 
+            rsnp.seqmanip.deoptimize_ntseq(test_sequence)
         
     def test_unknown_codon_to_optimize_nt_deoptimization(self):
         '''
@@ -130,8 +130,8 @@ class TestSeqmanip(unittest.TestCase):
         '''
         test_sequence = 'aaacccggguuuaau'
         opt_dict = {'AAA':1,'CCC':2,'GGG':3,'UUU':3,}
-        with self.assertRaises(rss.custom_errors.UnrecognizedCodonError): 
-            rss.seqmanip.deoptimize_ntseq(test_sequence, deopt_dict=opt_dict)
+        with self.assertRaises(rsnp.custom_errors.UnrecognizedCodonError): 
+            rsnp.seqmanip.deoptimize_ntseq(test_sequence, deopt_dict=opt_dict)
         
 
 ##############################################################################            
@@ -172,7 +172,7 @@ class TestSeqmanip(unittest.TestCase):
         self.assertEqual(seqmanip.nt2aa(example_mRNA),example_protein)
 
     def test_nt2aa_invalid_length(self):
-        with self.assertRaises(rss.custom_errors.InvalidSequenceLengthError): 
+        with self.assertRaises(rsnp.custom_errors.InvalidSequenceLengthError): 
             seqmanip.nt2aa(example_mRNA + 'A')
 
 if __name__ == '__main__':

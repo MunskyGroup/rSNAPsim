@@ -462,7 +462,7 @@ class Solver():
                 kelong_mat[0,:] = mRNA_model
                 kelong_mat[0,-1] = 0
                 #probe_mat = mRNA_model.probe_mat
-                probe_mat = np.zeros([3,L])
+                probe_mat = np.zeros([3,L]).astype(int)
                 k = 1
                 for i in range(len(probe_list)):
                     probe_mat[0,probe_list[i]] = k
