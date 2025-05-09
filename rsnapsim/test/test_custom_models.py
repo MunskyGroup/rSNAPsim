@@ -22,8 +22,8 @@ import inspect
 
 run_CAP_IRES = False
 run_dropoff = False
-run_FSS = False
-run_FSS_ROA = True
+run_FSS = True
+run_FSS_ROA = False
 run_FRAP = False
 
 if run_CAP_IRES:
@@ -380,6 +380,154 @@ AAAACTCATTTGCACCACTGCTGTGCCTTGGAATGCTAGTTGGAGTAATAAATCTCTGGAACAGATTTGG
 AATCACACGACCTGGATGGAGTGGGACAGAGAAATTAACAATTACACAAGCTTAATACACTCCTTAATTG
 AAGAATCGCAAAACCAGC
 '''
+
+
+
+if run_FSS:
+    
+    
+
+        
+    orf1_nt =''.join(ken_sequence_frame_0.split('\n'))[304*3:1428*3+3*304]
+    orf2_nt = orf1_nt[:370*3] + orf1_nt[370*3+2:-1]
+    
+    #ken_sequence_frame_3 = ''.join(ken_sequence_frame_0.split('\n')[304*3:1428*3+3*304])
+    aa_seq1 = rsnp.seqmanip.nt2aa(orf1_nt)
+    
+    #ken_sequence_frame_4 = '''ATGAGCACCGCCTCCTCTGGCACAGCCAGTAGTGGGACTGCATCCTCAGGTGCGGGTACCCTGCATGGTTTTTTAGGGAAGATCTGGCCTTCCCACAAGGGAAGGCCAGGGAATTTTCTTCAGAGCAGACCAGAGCCAACAGCCGCACCGTTTCTAGAGGACTACAAGGACGACGACGACAAAGGGAAGAACTTTTGTCAAAGAATTATCATCTCGAGAACGAAGTGGCTCGTCTCAAGAAAGGATTACAAAGACGACGACGACAAGGGGAAGAACTGCTTTCAAAGAATTACCACCTGGAAAACGAGGTCGCGAGACTCAAAAAGAGATTACAAAGACGACGACGACAAGGGGAAGAATTACTCAGCAAAAATTATCATCTGGAAAACGAGGTTGCGAGACTCAAAAAGGGACTACAAAGACGACGACGACAAAGCGAAGAACTTTTGTCCAAGAATTATCATCTGGAGAACGAAGTGGCTCGTCTCAAGAAAGGATTACAAGGACGACGACGACAAGGGGAAGAACTGCTTTCAAAGAATTACCACCTGGAAAATGAGGTGGCTAGACTCAAAAAGGGATTACAAGGACGACGACGACAAGGGGAGGAACTACTTTCAAAGAATTACCACCTCGAAAACGAAGTGGCTCGACTTAAGAAAGGACTACAAAGACGACGACGACAAGGGGAGGAATTGCTATCGAAAAATTATCATCTTGAGAACGAAGTTGCTAGGCTCAAAAAGCGATTACAAGGACGACGACGACAAGCGGAAGAATTACTGTCCAAAAATTATCATCTGGAAAATGAGGTGGCGAGACTCAAAAAGGGACTACAAGGACGACGACGACAAACCGAGGAACTGCTCTCGAAGAACTATCATCTTGAAAATGAGGTCGCTCGACTCAAAAAGAGATTACAAGGACGACGACGACAAGCAGAAGAGCTATTATCTAAAAACTACCACCTCGAAAATGAGGTGGCACGCCTCAAAAAGGGATTACAAAGACGACGACGACAAAAGGAAGAGCTACTATCCAAGAATTATCATCTTGAGAACGAGGTGGCGCGTCTCAAGAAGCGACTACAAGGACGACGACGACAAAGAGAGGAGTTGCTTAGCAAAAATTATCATTTGGAGAACGAAGTCGCACGACTCAAGAAAACTAGTGGCGGTCATATGGGCGTGCGCAACTGCCTCTACGGCAATAATATGTCAGGACAACGCGATATCCCCCCTGAAATCGGGGAACAGCCCGAGCAACCACCTTTGGAGGCCCCAGGGGCAGCTGCCCCCGGTGCTGGGCCTAGCCCAGCCGAAGAGATGGAGACCGAACCGCCTCACAACGAGCCCATCCCCGTCGAGAATGATGGCGAGGCCTGTGGACCCCCAGAGGTCTCCAGACCCAACTTTCAGGTCCTCAACCCGGCATTCAGGGAAGCTGGAGCCCATGGAAGCTACAGCCCACCTCCTGAGGAAGCAATGCCCTTCGAGGCTGAACAGCCCAGCTTGGGAGGCTTCTGGCCTACACTGGAGCAGCCTGGATTCCCCAGTGGGGTCCATGCAGGCCTTGAGGCCTTCGGCCCAGCACTCATGGAGCCCGGAGCCTTCAGTGGTGCCAGACCAGGCCTGGGAGGATACAGCCCTCCACCAGAAGAAGCTATGCCCTTTGAGTTTGACCAGCCTGCCCAGAGAGGCTGCAGTCAACTTCTCTTACAGGTCCCAGACCTTGCTCCAGGAGGCCCAGGTGCTGCAGGGGTCCCCGGAGCTCCTCCCGAGGAGCCCCAAGCCCTCAGGCCTGCAAAGGCTGGCTCCAGAGGAGGCTACAGCCCTCCCCCTGAGGAGACTATGCCATTTGAGCTTGATGGAGAAGGATTTGGGGACGACAGCCCACCCCCGGGGCTTTCCCGAGTTATCGCACAAGTCGACGGCAGCAGCCAGTTCGCGGCAGTCGCGGCCTCGAGTGCGGTCCGCCTCACTCCCGCCGCGAACGCGCCTCCCCTCTGGGTCCCAGGCGCCATCGGCAGCCCATCCCAAGAGGCTGTCAGACCTCCTTCTAACTTCACGGGCAGCAGCCCCTGGATGGAGATCTCCGGACCCCCGTTCGAGATTGGCAGCGCCCCCGCTGGGGTCGACGACACTCCCGTCAACATGGACAGCCCCCCAATCGCGCTTGACGGCCCGCCCATCAAGGTCTCCGGAGCCCCAGATAAGAGAGAGCGAGCAGAGAGACCCCCAGTTGAGGAGGAAGCAGCAGAGATGGAAGGAGCCGCTGATGCCGCGGAGGGAGGAAAAGTACCCTCTCCGGGGTACGGATCCCCTGCCGCCGGGGCAGCCTCAGCGGATACCGCTGCCAGGGCAGCCCCTGCAGCCCCAGCCGATCCTGACTCCGGGGCAACCCCAGAAGATCCCGACTCCGGGACAGCACCAGCCGATCCTGACTCCGGGGCATTCGCAGCCGATCCCGACTCCGGGGCAGCCCCTGCCGCCCCAGCCGATCCCGACTCCGGGGCGGCCCCTGACGCCCCAGCCGATCCCGACTCCGGGGCGGCCCCTGACGCCCCAGCCGATCCAGATGCCGGGGCGGCCCCTGAGGCTCCCGCCGCCCCTGCGGCTGCTGAGACCCGGGCAGCCCATGTCGCCCCAGCTGCGCCAGACGCAGGGGCTCCCACTGCCCCAGCCGCTTCTGCCACCCGGGCAGCCCAAGTCCGCCGGGCGGCCTCTGCAGCCCCTGCCTCCGGGGCCAGACGCAAGATCCATCTCAGACCCCCCAGCCCCGAGATCCAGGCTGCCGATCCGCCTACTCCGCGGCCTACTCGCGCGTCTGCCTGGCGGGGCAAGTCCGAGAGCAGCCGCGGCCGCCGCGTGTACTACGATGAAGGGGTGGCCAGCAGCGACGATGACTCCAGCGGAGACGAGTCCGACGATGGGACCTCCGGATGCCTCCGCTGGTTTCAGCATCGGCGAAATCGCCGCCGCCGAAAGCCCCAGCGCAACTTACTCCGCAACTTTCTCGTGCAAGCCTTCGGGGGCTGCTTCGGTCGATCTGAGAGTCCCCAGCCCAAAGCCTCGCGCTCTCTCAAGGTCAAGAAGGTACCCCTGGCGGAGAAGCGCAGACAGATGCGCAAAGAAGCCCTGGAGAAGCGGGCCCAGAAGCGCGCAGAGAAGAAACGCAGTAAGCTCATCGACAAACAACTCCAGGACGAAAAGATGGGCTACATGTGTACGCACCGCCTGCTGCTTCTAG'''
+    aa_seq2 = rsnp.seqmanip.nt2aa(orf2_nt)
+    
+    
+    #full_construct = ken_sequence_frame_0 + ken_sequence_frame_1
+    kelong = rsnp.propf.get_k( orf1_nt, .03, 3, 0)[1:]
+    kelong[1083] = 0  # frame one stop codon
+    ki = .0244
+    kon = 9.6e-5
+    koff = 1.3e-4
+    kpause_fss_off = .0234
+    kelong[370] = 1/((1/kelong[370]) + (1/kpause_fss_off))
+    kpause_fss_on = .0139
+    length = 1083
+    kout_frame0 = 3
+    kout_frame1 = 3
+    frameshift_location = 370
+    
+    ha_epitope = 'YPYDVPDYA'
+    flag_epitope = 'DYKDDDDK'
+    sun_epitope = 'EELLSKNYHLENEVARLKK'
+    
+    
+    #poi_0 = rsnp.seqmanip.seq_to_protein_obj(orf1_nt)
+    poi_1 = rsnp.seqmanip.seq_to_CDS_obj(orf2_nt)
+    
+    flagtags = [398, 426, 454, 482, 510, 538, 566, 594, 622, 650, 678, 706]
+    suntags = [406, 434, 462, 490, 518, 546, 574, 602, 630, 658, 686, 714]
+    hatags = [1, 11, 21, 206, 217, 230, 241, 320, 330, 340]
+    L = 1428
+    
+    probe_locations = np.zeros([3,L] )
+    probe_locations[0,hatags] = 1 # HA tags
+    #probe_locations[0,flagtags['T_Flag']] = 0 # FLAG TAGS OFF
+    probe_locations[1,suntags  ] = 2
+    
+    
+    # Make the mRNA object
+    poi = rsnp.seqmanip.seq_to_CDS_obj(orf2_nt + 'TGA') # convert a given sequence to a protein of interest object
+    mRNA = poi['0'][0]                             # pull out the main open reading frame
+    mRNA_length = 1428             # get the length of the mRNA
+    mRNA.generate_3frame_tags()                     # call to generate all open reading frames tags
+    
+    #mRNA.visualize_mrna_strand() # plot open reading frame 1
+    # class mRNA:
+    #   def __init__(self):
+    #     self.length = 1428
+    #     self.kelong = np.ones([self.length]).tolist()
+    #     self.multiframe_epitopes = [{'HA':hatags}, {'Sun':suntags},{}]
+    #     self.multiframe_nt_seq = ['aaa','aaa','aaa']
+    
+    #   def generate_3frame_tags(self):
+    #     pass
+    
+    #
+    model = rsnp.tasep_model(mRNA, 'FSS_HA') # model object
+    # Make the kelong mat (manually adding an extra location that is equal to zero, so particles dont run over the simulation)
+    kelong_mat = np.zeros([3, mRNA_length+1])
+    kelong_mat[0, :-1] = rsnp.propf.get_k(orf1_nt, ki, 3, 3)[1:-1]
+    kelong_mat[1, :-2] = rsnp.propf.get_k(orf2_nt, .1, 3, 3)[1:-1]
+    #kelong_mat[2, :-2] = rsnp.propf.get_k(mRNA.nt_seq[2:-1], .1, 3, 3)[1:-1]
+    kelong_mat[0, -2] = 0
+    kelong_mat[1,:370] = 0
+    kelong_mat[1,370] = kpause_fss_on # PAUSING DUE TO FSS SEQUENCE
+    kelong_mat[0,370] = kpause_fss_off
+    model._kelong_mat = kelong_mat #override the current kelongation mat
+    
+    
+    
+    ############ resources ####################
+    
+    
+    ############ states ####################
+    
+    # we need two states for the mRNA FSS turning on and off:
+    model.add_states(2, state0=[1,0], names=['off','on'])
+    
+    ############ RXNS ####################
+    
+    
+    parameters = [ki,3,3, kon, koff, 1e5, frameshift_location]
+    
+    # ribosomal initiation
+    footprint = 9
+    # first add the reaction, in this case, we want a lattice reaction at the first
+    # location for a ribosome to bind (excluded)
+    init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k[0]*(t<3000)
+    model.add_lattice_reaction(init, parameters, rxn_name='initiation', exclusion=1, frame=0, loc=0, dexist=1,)
+    
+    # Now we need a reaction for ribosomes to leave the lattice frame 0 at the end (location 1083)
+    leave_f0 = lambda k,t,p,ke,o,l,pr,s,r,nr: l[1427]*k[1] #(lattice location 1084 = 1) * parameter
+    model.add_lattice_reaction(leave_f0, parameters, rxn_name='termination_frame0', exclusion=0, frame=0, loc=1427, dexist=-1,)
+    
+    # Now we need a reaction for ribosomes to leave the lattice frame 1 at the end (location 1083)
+    leave_f1 = lambda k,t,p,ke,o,l,pr,s,r,nr: l[1427]*k[2] #(lattice location 1084 = 1) * parameter
+    model.add_lattice_reaction(leave_f1, parameters, rxn_name='termination_frame1', exclusion=0, frame=0, loc=1427, dexist=-1,)
+    
+    
+    ############# state RXNS ##############
+    
+    # mRNA turning on
+    mRNA_on = lambda k,t,p,ke,o,l,pr,s,r,nr: s[0]*k[3]
+    model.add_state_reaction(mRNA_on, parameters, rxn_name='mRNA on', inds=[0,1],dstates=[-1, 1])
+    
+    # mRNA turning off
+    mRNA_off = lambda k,t,p,ke,o,l,pr,s,r,nr: s[1]*k[4]
+    model.add_state_reaction(mRNA_off, parameters, rxn_name='mRNA off', inds=[0,1],dstates=[1, -1])
+    
+    
+    # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
+    default_step = lambda k,t,p,ke,o,l,pr,s,r,nr:  [(ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint])) for i in range(nr)]
+    model.add_ribosome_reaction(default_step, parameters, rxn_name='elongation', exclusion=1, dloc=1) #default stepping
+    
+    # FSS
+    # JUMP +1 frame if greater than or equal to frameshift location, on frame 0, state = on
+    FSS = lambda k,t,p,ke,o,l,pr,s,r,nr: [k[5]*(p[i,2] == 0)*(p[i,3] >= k[6])*s[1] for i in range(nr)]
+    model.add_ribosome_reaction(FSS, parameters, rxn_name='FSS', exclusion=1, dframe=1, dloc=0)
+    
+    #initial state
+    model._state_arr0[0] = 1 # FSS off
+    # finally specify which reactions are ribosome specific
+    model._ribosome_reactions = [5,6]
+    model._constant_reactions = [0,1,2,3,4]
+    
+    model._lattice_arr0 = np.zeros([model._length+1], dtype=int)
+    
+    
+      
+    print('COMPILING FSS ROA.....')
+    model.compile_model_c()
+    
+    t = np.linspace(0,10000,5001)
+    soln = rsnp.solver.solve_ssa(model, t, n_traj=1, seed=35)
+
 
 if run_FSS_ROA:
     

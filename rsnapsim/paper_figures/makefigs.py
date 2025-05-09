@@ -128,8 +128,8 @@ def plot_kymograph(soln, title='', filename='', show_states=False, profile_t=-1,
     if show_states:
         states = fig.add_subplot(gs[0,2])
     
-    un = len(np.unique(soln.ribosome_array[n][:,:,0]))
-    for i in np.unique(soln.ribosome_array[n][:,:,0]):
+    un = len(np.unique(soln.ribosome_array[n][:plot_range,:,0]))
+    for i in np.unique(soln.ribosome_array[n][:plot_range,:,0]):
         if i != 0:
             rib_traj = soln.ribosome_array[n][soln.ribosome_array[n][:,:,0]==i]
             kym.plot( rib_traj[:,3], soln.t[np.where(soln.ribosome_array[n][:,:,0]==i)[0]], color=cm.viridis(i/un))
@@ -1037,11 +1037,11 @@ else:
     soln = rsnp.solver.load_soln(data_save_folder + 'drafting_on.npz')
     soln2 = rsnp.solver.load_soln(data_save_folder + 'drafting_off.npz')
 
-plot_kymograph(soln, title='drafting', filename='drafting_on_model_kym', n=6)
+plot_kymograph(soln, title='drafting', filename='drafting_on_model_kym', n=6,profile_t=-1, plot_range=250)
 
-1/0
-profile_drafting = np.vstack( [soln.lattice_arr[:,i] for i in np.linspace(1000,6000,30).astype(int)])
-profile_control = np.vstack( [soln2.lattice_arr[:,i] for i in np.linspace(1000,6000,30).astype(int)])
+
+profile_drafting =  soln.lattice_arr[:,np.linspace(1000,6000,30).astype(int),:]
+profile_control = soln2.lattice_arr[:,np.linspace(1000,6000,30).astype(int),:]
 
 # n = n_model_runs
 # profile_drafting = np.zeros((n,592))
@@ -1066,18 +1066,29 @@ def movmean(a, w=3):
 
 
 plt.figure(dpi=global_dpi)
-plt.plot(movmean(np.mean(profile_control, axis=0), 20))
-plt.plot(movmean(np.mean(profile_drafting, axis=0), 20))
-plt.xlabel('Codon')
-plt.ylabel('Moving Average of Occupation Probability')
-plt.legend(['no drafting', 'drafting'])
+plt.plot(movmean(np.mean(np.mean(profile_drafting, axis=1), axis=0), 10))
+plt.plot(movmean(np.mean(np.mean(profile_control, axis=1), axis=0), 10), lw=1, color='#c496d6')
+plt.xlabel('Codon (sliding window of 10)')
+plt.ylabel('Occupation Probability')
+plt.text(450,0.0016, 'n=%i'%(int(profile_control.shape[0]* profile_control.shape[1])))
+plt.legend(['w/ drafting', 'w/o drafting'])
+
+
+plt.figure(dpi=global_dpi)
+plt.plot(movmean(np.mean(np.mean(profile_drafting, axis=1), axis=0), 200))
+plt.plot(movmean(np.mean(np.mean(profile_control, axis=1), axis=0), 200), lw=1, color='#c496d6')
+plt.xlabel('Codon (sliding window of 200)')
+plt.ylabel('Occupation Probability')
+plt.legend(['w/ drafting', 'w/o drafting'])
+plt.text(320,0.0023, 'n=%i'%(int(profile_control.shape[0]* profile_control.shape[1])))
 
 
 if resave:
     plt.savefig('%s/drafting_model_profile%s'%(figure_folder,figure_format))
     
+
 1/0
-    
+
 ###############################################################################
 # Experiment Design example.
 ###############################################################################
@@ -1207,11 +1218,11 @@ leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[590]*k[1] #(lattice location 590 = 1) *
 hairpin_model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
 
 
-hairpin_on = lambda k,t,p,ke,o,l,pr,s,r,nr: (np.sum(l[hairpin_location:hairpin_location+50]) > 0)*(1-s[0])*k[2]
-hairpin_model.add_state_reaction(hairpin_on, parameters, rxn_name='hairpin_on', dstates=[1,-1])
+hairpin_on = lambda k,t,p,ke,o,l,pr,s,r,nr: (np.sum(l[hairpin_location:hairpin_location+50]) > 0)*s[0]*k[2]
+hairpin_model.add_state_reaction(hairpin_on, parameters, rxn_name='hairpin_on', inds = [0,1], dstates=[-1,1])
 
-hairpin_off = lambda k,t,p,ke,o,l,pr,s,r,nr: s[0]*k[3]
-hairpin_model.add_state_reaction(hairpin_off, parameters, rxn_name='hairpin_off', dstates=[-1,1])
+hairpin_off = lambda k,t,p,ke,o,l,pr,s,r,nr: s[1]*k[3]
+hairpin_model.add_state_reaction(hairpin_off, parameters, rxn_name='hairpin_off', inds=[0,1], dstates=[1,-1])
 
 # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
 elongation = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint]))  for i in range(nr)]
@@ -1280,11 +1291,101 @@ elongation = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[
 dropoff_model.add_ribosome_reaction(elongation, parameters, rxn_name='elongation', exclusion=1, dloc=1) #default stepping
 
 # Dropping off
-drop_off = lambda k,t,p,ke,o,l,pr,s,r,nr: [k for i in range(nr)]
+drop_off = lambda k,t,p,ke,o,l,pr,s,r,nr: [k[2] for i in range(nr)]
 dropoff_model.add_ribosome_reaction(drop_off, parameters, rxn_name='drop_off', dexist=-1)
 
 # finally specify which reactions are ribosome specific
 dropoff_model._ribosome_reactions = [2,3]
 dropoff_model._constant_reactions = [0,1,]
 dropoff_model._lattice_arr0 = np.zeros([dropoff_model._length+1], dtype=int)
+
+
+
+n_model_runs = 100
+t = np.linspace(0,6000,6001)
+
+if regenerate: 
+    #for i in tqdm.tqdm(range(n_model_runs)):
+    base_model_soln = rsnp.solver.solve_ssa(base_model, t, n_traj=n_model_runs, burnin=0, verbose=True)
+    hairpin_model_soln = rsnp.solver.solve_ssa(hairpin_model, t, n_traj=n_model_runs, burnin=100, verbose=True)
+    dropoff_model_soln = rsnp.solver.solve_ssa(dropoff_model, t, n_traj=n_model_runs, burnin=0, verbose=True)
+    if resave:
+        base_model_soln.save(data_save_folder + 'base_model',fmt='.npz')
+        hairpin_model_soln.save(data_save_folder + 'hairpin_model',fmt='.npz')
+        dropoff_model_soln.save(data_save_folder + 'dropoff_model',fmt='.npz')
+else:
+    
+    base_model_soln = rsnp.solver.load_soln(data_save_folder + 'base_model.npz')
+    hairpin_model_soln = rsnp.solver.load_soln(data_save_folder + 'hairpin_model.npz')
+    dropoff_model_soln = rsnp.solver.load_soln(data_save_folder + 'dropoff_model.npz')
+
+
+def get_acc(intensity, FR, start, color=0):
+  acc, acc_err = rsnp.inta.get_autocov(np.swapaxes(intensity[:,start::FR,:], -1,0), norm='global')
+  acc, acc_err = rsnp.inta.get_autocorr(acc)
+  return np.mean(acc[color,:,:],axis=-1), acc_err[color], acc
+
+def get_mean_int(intensity, n, FR, start, stop, color=0):
+  return np.mean(intensity[:n,start:stop:FR,color], axis=0), np.std(intensity[:n,start:stop:FR,color], axis=0)/np.sqrt(n)
+
+def movmean(a, w=3):
+    ret = np.cumsum(a, dtype=float)
+    ret[w:] = ret[w:] - ret[:-w]
+    return ret[w - 1:] / w
+
+def get_ribosomal_occupancy(lattices, binning = 10):
+  return movmean(np.mean(lattices,axis=0),w=binning)
+
+def get_LL(acc1, acc2, acc1_err, acc2_err, pts):
+  return -1/len(pts) * np.sum((acc1[pts] - acc2[pts])**2 / (np.sqrt(acc1_err[pts])*np.sqrt(acc2_err[pts])) )
+
+
+distance_metrics = np.zeros([5,3])
+
+Is = [base_model_soln.I, hairpin_model_soln.I, dropoff_model_soln.I]
+mean_accs_5 = []
+mean_accs_2 = []
+mean_accs_5b = []
+mean_accs_2b = []
+n = 50
+for i in range(3):
+    mean_accs_5.append((get_acc(Is[i][:n], 5, 1000)))
+    mean_accs_2.append((get_acc(Is[i][:n], 2, 1000)))
+    
+for i in range(3):
+    mean_accs_5b.append((get_acc(Is[i][n:2*n], 5, 1000)))
+    mean_accs_2b.append((get_acc(Is[i][n:2*n], 2, 1000)))
+    
+    
+combos = [(0,1),(1,2),(0,2), (0,0), (1,1), (2,2)]
+LLs = []
+for i in range(len(combos)):
+    LLs.append(get_LL(mean_accs_5[combos[i][0]][0], mean_accs_5b[combos[i][1]][0], mean_accs_5[combos[i][0]][1], mean_accs_5b[combos[i][1]][1], [x for x in range(1,15)] ))
+    
+distance_metrics[0,0] = -LLs[0] / (max(-LLs[3],-LLs[4]))
+distance_metrics[0,1] = -LLs[2] / (max(-LLs[4],-LLs[5]))
+distance_metrics[0,2] = -LLs[2] / (max(-LLs[3],-LLs[5]))
+
+LLs = []
+for i in range(len(combos)):
+    LLs.append(get_LL(mean_accs_2[combos[i][0]][0], mean_accs_2b[combos[i][1]][0], mean_accs_2[combos[i][0]][1], mean_accs_2b[combos[i][1]][1], [x for x in range(1,15)] ))
+    
+distance_metrics[1,0] = -LLs[0] / (max(-LLs[3],-LLs[4]))
+distance_metrics[1,1] = -LLs[2] / (max(-LLs[4],-LLs[5]))
+distance_metrics[1,2] = -LLs[2] / (max(-LLs[3],-LLs[5]))
+
+mean_ints = []
+mean_intsb = []
+for i in range(3):
+    mean_ints.append((get_mean_int(Is[i][:n], 100, 5, 1400,1800)))
+    mean_intsb.append((get_mean_int(Is[i][n:2*n], 100, 5, 1400,1800)))
+LLs = []
+for i in range(len(combos)):
+    LLs.append(get_LL(mean_ints[combos[i][0]][0], mean_intsb[combos[i][1]][0], mean_ints[combos[i][0]][1], mean_intsb[combos[i][1]][1], np.arange(10,40) ))
+    
+
+distance_metrics[2,0] = LLs[0] / (max(LLs[3],LLs[4]))
+distance_metrics[2,1] = LLs[2] / (max(LLs[4],LLs[5]))
+distance_metrics[2,2] = LLs[2] / (max(LLs[3],LLs[5]))
+
 
