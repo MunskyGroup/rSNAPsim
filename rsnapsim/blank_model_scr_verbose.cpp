@@ -46,7 +46,7 @@ void BLANKPROP( Eigen::VectorXd& wn, double* parameters, double t, const Eigen::
     std::cout << "______________" << std::endl;
     std::cout << wn << std::endl;
     std::cout << "______________" << std::endl;
-    std::cout << parameters[0] << std::endl;
+    std::cout << parameters << std::endl;
     std::cout << "______________" << std::endl;
     std::cout << occupied << std::endl;
     std::cout << "______________" << std::endl;

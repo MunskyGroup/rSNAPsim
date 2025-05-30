@@ -279,18 +279,29 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
 
         // sum of the propensities
 		a0 = wn.sum();
-
-        // Generate 2 random numbers.
-        r1 =  unif(rng);
-        r2 =  unif(rng);
-
-        // MAKE SURE r1 IS NOT ZERO OR THIS WILL CRASH
-		while((r1==0)){
-			r1 =  unif(rng);			
-		}
+		if (a0 == 0){ // special case if all reactions are zero, end the simulation, fast_rxn 
+                	 // should be added as an option in the future!! TODO
+    		tc = time_vector[Nt-1] + 1; // increment the time to be past the recording
+    		// this will fill the remainder of the arrays with the previous state
+    		}
 		
-        // Update the time vector, what time did the next reaction happen?
-        tc -= log(r1)/a0;
+		else{
+            // Update the time vector, what time did the next reaction happen?
+            tc -= log(r1)/a0;
+        }
+
+        // fill up recording matrixes if time passed current time index
+        while( (tindex < Nt) && (tc > time_vector[tindex])) {
+            Eigen::Map<VectorXi> v(rib_arr.data(),rib_arr.size());
+            Particle_array.row(tindex) = v;
+            State_array.row(tindex) << state_arr;
+            Resource_array.row(tindex) << resource_arr;
+            tindex +=1;
+            if (tindex == Nt){  // manually end the while loop if tc > time_vector[-1]
+                error_code = 0; // 0 means ran successfully
+                return;
+            }
+         }	
 
         // figure out which event happened based on unif r2
         event = 0;
@@ -300,15 +311,7 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
         }
         event -=1;
 
-        
-        // fill up recording matrixes if time passed current time index
-        while( (tindex < Nt) && (tc > time_vector[tindex])) {
-            Eigen::Map<VectorXi> v(rib_arr.data(),rib_arr.size());
-            Particle_array.row(tindex) = v;
-            State_array.row(tindex) << state_arr;
-            Resource_array.row(tindex) << resource_arr;
-            tindex +=1;
-         }	
+    
 
         if (event >= n_constant_reactions){ //if its a ribosome reaction, on which ribosome did it occur
             rib_ind = (event-n_constant_reactions)%NR ; // WHICH RIBOSOME IS THIS REACTION HAPPENING TOO

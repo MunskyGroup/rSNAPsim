@@ -1009,12 +1009,18 @@ class CustomSSASoln:
     
     @property
     def intensity_arr(self):
-        arr = np.zeros([self.n_traj, len(self.t), self.n_colors ] ,dtype=int)
-        for i in range(self.n_traj):
-            for t in range(len(self.t)):
-                traj = np.sum(self.ribosome_array[i,t,:,4:4+self.n_colors],axis=0)
-                arr[i,t,:] = traj
-        return arr
+        try:
+            return self._I
+        except:
+            
+            arr = np.zeros([self.n_traj, len(self.t), self.n_colors ] ,dtype=int)
+            for i in range(self.n_traj):
+                for t in range(len(self.t)):
+                    traj = np.sum(self.ribosome_array[i,t,:,4:4+self.n_colors],axis=0)
+                    arr[i,t,:] = traj
+            self._I = arr
+            
+            return arr
     
     @property
     def I(self):

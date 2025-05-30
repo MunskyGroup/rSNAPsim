@@ -1087,7 +1087,7 @@ if resave:
     plt.savefig('%s/drafting_model_profile%s'%(figure_folder,figure_format))
     
 
-1/0
+
 
 ###############################################################################
 # Experiment Design example.
@@ -1135,17 +1135,19 @@ kelong_mat[0, -2] = 0
 
 base_model._kelong_mat = kelong_mat #override the current kelongation mat
 
+parameters = [0.03, 10, 1000]
+
 # ribosomal initiation
 footprint = 9
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
-init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k
-base_model.add_lattice_reaction(init, 0.03, rxn_name='init', exclusion=1, frame=0, loc=0, dexist=1,)
+init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k[0]*(t <= 1000)
+base_model.add_lattice_reaction(init, parameters, rxn_name='init', exclusion=1, frame=0, loc=0, dexist=1,)
 
 
 # Now we need a reaction for ribosomes to leave the lattice at the end (location 590)
-leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[590]*k #(lattice location 590 = 1) * parameter
-base_model.add_lattice_reaction(leave, 10, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
+leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[590]*k[1] #(lattice location 590 = 1) * parameter
+base_model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
 
 # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
 elongation = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint]))  for i in range(nr)]
@@ -1157,9 +1159,12 @@ base_model._ribosome_reactions = [2,]
 base_model._constant_reactions = [0,1,]
 base_model._lattice_arr0 = np.zeros([base_model._length+1], dtype=int)
 
-base_model._parameters[0] = .03
+#base_model._parameters[0] = .03
 
-
+base_model.compile_model_c()
+t = np.linspace(0,15000,15001)
+base_soln = rsnp.solver.solve_ssa(base_model, t, n_traj=1, seed=35, cplus=True)
+print('ran C++ base')
     
 #######################################
 #Model two, hairpin model with exclusion
@@ -1203,13 +1208,13 @@ hairpin_model._kelong_mat = kelong_mat #override the current kelongation mat
 
 hairpin_model.add_states(2, state0=[1,0], names=['off','on'])
 
-parameters = [0.03, 10, 0.05, 0.05, 0]
+parameters = [0.03, 10, 0.05, 0.05, 0, 10000]
 
 # ribosomal initiation
 footprint = 9
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
-init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k[0]
+init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k[0]*(t<k[5])
 hairpin_model.add_lattice_reaction(init, parameters, rxn_name='init', exclusion=1, frame=0, loc=0, dexist=1,)
 
 
@@ -1262,8 +1267,8 @@ mRNA.generate_3frame_tags()                     # call to generate all open read
 mRNA.multiframe_epitopes[0] = {'T_Flag': [1, 10, 19, 195, 205, 217, 227, 299, 308, 317], 'T_HA':[400,410,420,430]}
 
 
-dropoff_model = rsnp.tasep_model(mRNA,'base') # model object
-parmeters = [0.03, 10, 0.02]
+dropoff_model = rsnp.tasep_model(mRNA,'dropoff') # model object
+parmeters = [0.03, 10, 0.02, 10000]
 
 # Make the kelong mat (manually adding an extra location that is equal to zero, so particles dont run over the simulation)
 kelong_mat = np.zeros([3, mRNA_length+1])
@@ -1278,7 +1283,7 @@ dropoff_model._kelong_mat = kelong_mat #override the current kelongation mat
 footprint = 9
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
-init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k[0]
+init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k[0]*(t<k[3])
 dropoff_model.add_lattice_reaction(init, parameters, rxn_name='init', exclusion=1, frame=0, loc=0, dexist=1,)
 
 
@@ -1298,6 +1303,11 @@ dropoff_model.add_ribosome_reaction(drop_off, parameters, rxn_name='drop_off', d
 dropoff_model._ribosome_reactions = [2,3]
 dropoff_model._constant_reactions = [0,1,]
 dropoff_model._lattice_arr0 = np.zeros([dropoff_model._length+1], dtype=int)
+
+
+base_model.compile_model_c()
+hairpin_model.compile_model_c()
+dropoff_model.compile_model_c()
 
 
 
@@ -1320,6 +1330,8 @@ else:
     dropoff_model_soln = rsnp.solver.load_soln(data_save_folder + 'dropoff_model.npz')
 
 
+## Generate the heatmaps
+
 def get_acc(intensity, FR, start, color=0):
   acc, acc_err = rsnp.inta.get_autocov(np.swapaxes(intensity[:,start::FR,:], -1,0), norm='global')
   acc, acc_err = rsnp.inta.get_autocorr(acc)
@@ -1340,23 +1352,37 @@ def get_LL(acc1, acc2, acc1_err, acc2_err, pts):
   return -1/len(pts) * np.sum((acc1[pts] - acc2[pts])**2 / (np.sqrt(acc1_err[pts])*np.sqrt(acc2_err[pts])) )
 
 
+# 5 experiments by 3 models
+
 distance_metrics = np.zeros([5,3])
+
+##########################
+# Experiment 1 and 2, FCS
+
+
+framerate_1 = 5      # 5 second framerate
+framerate_2 = 2        # 2 second framerate
+start_t = 1000
+n_spots = 50
 
 Is = [base_model_soln.I, hairpin_model_soln.I, dropoff_model_soln.I]
 mean_accs_5 = []
 mean_accs_2 = []
 mean_accs_5b = []
 mean_accs_2b = []
-n = 50
+
+# get 50 ACCs from the intensities of each model for A-B comparison
 for i in range(3):
-    mean_accs_5.append((get_acc(Is[i][:n], 5, 1000)))
-    mean_accs_2.append((get_acc(Is[i][:n], 2, 1000)))
+    mean_accs_5.append((get_acc(Is[i][:n_spots], framerate_1, start_t)))
+    mean_accs_2.append((get_acc(Is[i][:n_spots], framerate_1, start_t)))
     
+# get 50 more ACCs from the intensities of each model for A-A comparison to normalize
 for i in range(3):
-    mean_accs_5b.append((get_acc(Is[i][n:2*n], 5, 1000)))
-    mean_accs_2b.append((get_acc(Is[i][n:2*n], 2, 1000)))
+    mean_accs_5b.append((get_acc(Is[i][n_spots:2*n_spots], framerate_1, start_t)))
+    mean_accs_2b.append((get_acc(Is[i][n_spots:2*n_spots], framerate_1, start_t)))
     
-    
+
+# Get LL normalized metric for both frame rates
 combos = [(0,1),(1,2),(0,2), (0,0), (1,1), (2,2)]
 LLs = []
 for i in range(len(combos)):
@@ -1373,6 +1399,10 @@ for i in range(len(combos)):
 distance_metrics[1,0] = -LLs[0] / (max(-LLs[3],-LLs[4]))
 distance_metrics[1,1] = -LLs[2] / (max(-LLs[4],-LLs[5]))
 distance_metrics[1,2] = -LLs[2] / (max(-LLs[3],-LLs[5]))
+
+
+####################
+# Experiment 3, mean intensity differences
 
 mean_ints = []
 mean_intsb = []
