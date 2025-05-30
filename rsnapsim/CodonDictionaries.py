@@ -70,7 +70,9 @@ class CodonDictionaries():
                          'T_Strep':'WSHPQFEK',
                          'T_Hist':'HHHHHH',
                          'T_V5':'GKPIPNPLLGLDST',
-                         'T_TC':'CCPGCC'}
+                         'T_TC':'CCPGCC',
+                         'T_GFP':'GMDELYK',
+                         'T_ALFA':'SRLEEELRRRLTE'}
         
         #some default colors for those tags
         self.tag_colors = {'T_SunTag':'green',
