@@ -303,8 +303,21 @@ class Solver():
                 
                 
                 # make a new default_model and use it to load the precompiled c++ one
+                if isinstance(mRNA_model, list):
+                    pass
+                else:
+                    if ki is None: #if the model is a CDS object, and ki/kt is not passed, pull out ki and kt.
+                        ki = mRNA_model.ki
+                    if kt is None:
+                        kt = mRNA_model.kt  
+
                 mRNA_model = self.__cds_or_list_to_mRNA_model(mRNA_model, probe_list, ki, kt)
-                mRNA_model.load_model_c('default') #MUST BE NAMED DEFAULT FOR NOW
+                try:
+                    mRNA_model.load_model_c('default') #MUST BE NAMED DEFAULT FOR NOW
+                except:
+                    print('DEFAULT MODEL NOT COMPILED..... ATTEMPTING TO COMPILE....')
+                    mRNA_model.compile_model_c()
+                    print('COMPILED DEFAULT MODEL SUCCESSFULLY.')
                 L = mRNA_model._length
                 parameters = [ki, kt, L]
                 
@@ -341,21 +354,25 @@ class Solver():
                 state_array = np.zeros([n_traj, len(t), max(len(mRNA_model._state_arr0),1)]) # minimum of shape one for C++, wont allow 0 shaped arrays
                 resource_array = np.zeros([n_traj, len(t),  max(len(mRNA_model._resource_arr0),1)])
                 
-                for i in range(n_traj):
+                for i in (tqdm.tqdm(range(n_traj), desc='Running mRNA simulation...') if verbose else range(n_traj)):
                     seed = seeds[i]
     
                     pa = np.zeros([ mRNA_model._rib_arr0.shape[0]*mRNA_model._rib_arr0.shape[1], len(t)], dtype=np.int32, order='C')
                     sa = np.zeros([len(t), max(len(mRNA_model._state_arr0),1) ], dtype=np.int32)
                     ra = np.zeros([len(t), max(len(mRNA_model._resource_arr0),1)], dtype=np.int32)
                     
+                    #print(mRNA_model.__dict__)
+                    #1/0
+                    # PARAMETERS, BURNIN, TIME, AND KELONG MUST BE DOUBLES,
+                    # everything else int32 or int.
                     mRNA_model.cmodel.run_ssa_cpp(pa, sa, ra, mRNA_model._rib_arr0, temp_state_arr0, temp_resource_arr0,
                                                mRNA_model._rxn_mat.astype(np.int32), np.array(mRNA_model._constant_reactions + mRNA_model._ribosome_reactions),
                                                mRNA_model._kelong_mat,
                                                mRNA_model._probe_mat.astype(np.int32), np.array(pars),
-                                               t,
+                                               t.astype(np.float64), #convert t to a double
                                                mRNA_model._rib_arr0.shape[0], mRNA_model._n_states, mRNA_model._n_resources, len(mRNA_model._constant_reactions),
                                                len(mRNA_model._ribosome_reactions),
-                                               burnin, seed, )
+                                               float(burnin), seed, )
                     
                     ribosome_array[i] = convert_c_pa(pa)
                     state_array[i] = np.copy(sa)
@@ -363,6 +380,7 @@ class Solver():
                     
                     #print(pa)
                 solve_time = time.time() - st
+                print(solve_time)
                 soln = CustomSSASoln(mRNA_model, 0, ribosome_array, state_array, resource_array, t, burnin, n_traj, solve_time)         
 
         return soln
@@ -644,16 +662,17 @@ class Solver():
             
             # Make the kelong mat (manually adding an extra location that is equal to zero, so particles dont run over the simulation)
             kelong_mat = np.zeros([3, mRNA_length+1])
-            kelong_mat[0, :-1] = propf.get_k(mRNA.nt_seq, .033, 10, 10)[1:-1]
-            kelong_mat[1, :-2] = propf.get_k(mRNA.nt_seq[1:-2], .1, 10, 10)[1:-1]
-            kelong_mat[2, :-2] = propf.get_k(mRNA.nt_seq[2:-1], .1, 10, 10)[1:-1]
+            kelong_mat[0, :-1] = propf.get_k(mRNA_model.nt_seq, .033, 10, 10)[1:-1]
+            kelong_mat[1, :-2] = propf.get_k(mRNA_model.nt_seq[1:-2], .1, 10, 10)[1:-1]
+            kelong_mat[2, :-2] = propf.get_k(mRNA_model.nt_seq[2:-1], .1, 10, 10)[1:-1]
             kelong_mat[0, -2] = 0
             
             model._kelong_mat = kelong_mat #override the current kelongation mat
             
             footprint = 9
-            parameters = [0.03, 10, 591]
-            
+
+            parameters = [ki, kt, mRNA_length]
+            print(parameters)
             # DEFAULT STEPPING INITIATION
             init = lambda k,t,p,ke,o,l,pr,s,r,nr: (1-np.any(l[0:0+footprint]))*k[0]
             model.add_lattice_reaction(init, parameters, rxn_name = 'initiation', exclusion=1, frame=0, loc=0, dexist=1,)
@@ -661,7 +680,7 @@ class Solver():
             
             # DEFAULT TERMINATION 
             leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[k[2]-1]*k[1] #(lattice location 590 = 1) * parameter
-            model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
+            model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=parameters[2]-1, dexist=-1,)
             
             
             # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
@@ -674,6 +693,7 @@ class Solver():
             model._ribosome_reactions = [2]
             model._constant_reactions = [0,1,]
             model._lattice_arr0 = np.zeros([model._length+1], dtype=int)
+            model._parameters = parameters #overwrite the parameters
 
             return model
         

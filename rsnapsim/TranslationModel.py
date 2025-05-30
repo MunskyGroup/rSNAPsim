@@ -375,7 +375,7 @@ class TranslationModel:
         return id_str
 
     def load_model_c(self, model_name):
-        cmodel = importlib.import_module('rsnapsim.models.%s.%s'%(self.name,self.name))
+        self.cmodel = importlib.import_module('rsnapsim.models.%s.%s'%(self.name,self.name))
         #if self.model_id != cmodel.__model_id:
            # print('error')
         
