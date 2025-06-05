@@ -276,6 +276,13 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
             return;
         }
 
+        // Generate 2 random numbers.
+        r1 =  unif(rng);
+
+        // MAKE SURE r1 IS NOT ZERO OR THIS WILL CRASH
+		while((r1==0)){
+			r1 =  unif(rng);			
+		}
 
         // sum of the propensities
 		a0 = wn.sum();
@@ -289,6 +296,8 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
             // Update the time vector, what time did the next reaction happen?
             tc -= log(r1)/a0;
         }
+
+        r2 =  unif(rng);
 
         // fill up recording matrixes if time passed current time index
         while( (tindex < Nt) && (tc > time_vector[tindex])) {

@@ -202,7 +202,9 @@ class Solver():
             seeds = np.random.randint(0x7FFFFF, size=n_traj)
         
         if not cplus:
-            
+
+            if verbose:
+                print('Using Python.....')
             constants = self.__setup_python_sim(mRNA_model, probe_list, ki, kt)
             if parallel:
                 NUMBER_OF_CORES = cores
@@ -211,11 +213,7 @@ class Solver():
     
             else:
                 solns = []
-                if verbose:
-                    for i in tqdm.tqdm(range(n_traj)):
-                        solns.append(self.__run(*constants, t, burnin, seeds[i]))
-                else:
-                    for i in range(n_traj):
+                for i in (tqdm.tqdm(range(n_traj), desc='Running mRNA simulation...') if verbose else range(n_traj)):
                         solns.append(self.__run(*constants, t, burnin, seeds[i]))
                 
             rib_array = np.array([solns[i][0] for i in range(len(solns))])
@@ -227,7 +225,8 @@ class Solver():
             
             
         if cplus:
-            
+            if verbose:
+                print('Using C++.....')
             # see if we were given a poi object, a list, or a custom model object
             try:
                 mRNA_model.cmodel
@@ -272,7 +271,7 @@ class Solver():
                 state_array = np.zeros([n_traj, len(t), max(len(mRNA_model._state_arr0),1)]) # minimum of shape one for C++, wont allow 0 shaped arrays
                 resource_array = np.zeros([n_traj, len(t),  max(len(mRNA_model._resource_arr0),1)])
                 
-                for i in range(n_traj):
+                for i in (tqdm.tqdm(range(n_traj), desc='Running mRNA simulation...') if verbose else range(n_traj)):
                     seed = seeds[i]
     
                     pa = np.zeros([ mRNA_model._rib_arr0.shape[0]*mRNA_model._rib_arr0.shape[1], len(t)], dtype=np.int32, order='C')
@@ -672,7 +671,6 @@ class Solver():
             footprint = 9
 
             parameters = [ki, kt, mRNA_length]
-            print(parameters)
             # DEFAULT STEPPING INITIATION
             init = lambda k,t,p,ke,o,l,pr,s,r,nr: (1-np.any(l[0:0+footprint]))*k[0]
             model.add_lattice_reaction(init, parameters, rxn_name = 'initiation', exclusion=1, frame=0, loc=0, dexist=1,)
