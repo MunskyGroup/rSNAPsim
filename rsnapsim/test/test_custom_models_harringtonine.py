@@ -107,7 +107,7 @@ model_pause_twostate.add_states(1, state0=[0], names=['off'])
 footprint = 9
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
-init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k[0]*(t<20000)
+init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~(np.any(l[0:0+footprint]))*k[0]*(t<20000)
 model_pause_twostate.add_lattice_reaction(init, parameters, rxn_name='init', exclusion=1, frame=0, loc=0, dexist=1,)
 
 # Now we need a reaction for ribosomes to leave the lattice frame 0 at its end
@@ -144,7 +144,7 @@ model_pause_twostate._ribosome_reactions = [5,6]
 model_pause_twostate._constant_reactions = [0,1,2,3,4]
 
 model_pause_twostate.load_model_c('GagPol_twostate_bursting_FSS')
-
+1/0
 t = np.linspace(0,15000,15001)
 base_soln = rsnp.solver.solve_ssa(model_pause_twostate, t, n_traj=1, seed=35, cplus=True)
 print('ran C++ base')
