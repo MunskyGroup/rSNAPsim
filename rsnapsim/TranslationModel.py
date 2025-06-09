@@ -87,7 +87,7 @@ class TranslationModel:
         self._n_frames = 1
         self._n_states = 0
         self._n_resources = 0
-                                # rxn type, exclusion?, frame, loc, dexist, dframe, dloc, 
+                                # rxn type, updates_states_resources?, frame, loc, dexist, dframe, dloc, 
                                 # dprobe1, dprobe2... dprobeN, dstate1, dstate2... dstateN,
                                 # dresource1, dresource2 ... dresourceN, 
         self._rxn_mat = np.zeros([0, 7 + self._n_colors+ self._n_states + self._n_resources])
@@ -149,19 +149,35 @@ class TranslationModel:
         
         
     ## Everything that can happen in the model
-    def add_ribosome_reaction(self, propensity, parameters, rxn_name='', exclusion=0, dexist = 0, dframe = 0, dloc = 0,
+    def add_ribosome_reaction(self, propensity, parameters, rxn_name='', dexist = 0, dframe = 0, dloc = 0,
                               dprobes=[], dprobe_inds=[],
                               dstates=[], dstate_inds=[],
                               dresources=[], dresource_inds=[]):
-        self.__make_rib_or_lattice_rxn(0, exclusion, 0,0, dexist, dframe, dloc, dprobes, dprobe_inds, dstates, dstate_inds, dresources, dresource_inds)
+        
+        # update the flag for resources / state changes
+        updates_states_resources = 0
+        if np.any(dstates):
+            updates_states_resources = 1
+        if np.any(dresources):
+            updates_states_resources = 1
+
+        self.__make_rib_or_lattice_rxn(0, updates_states_resources, 0,0, dexist, dframe, dloc, dprobes, dprobe_inds, dstates, dstate_inds, dresources, dresource_inds)
         self.__add_propensity(propensity, parameters, rxn_name=rxn_name)
         
         
-    def add_lattice_reaction(self, propensity, parameters, rxn_name='', frame=0, loc=0, exclusion=0, dexist = 0, dframe = 0, dloc = 0,
+    def add_lattice_reaction(self, propensity, parameters, rxn_name='', frame=0, loc=0, dexist = 0, dframe = 0, dloc = 0,
                               dprobes=[], dprobe_inds=[],
                               dstates=[], dstate_inds=[],
                               dresources=[], dresource_inds=[]):
-        self.__make_rib_or_lattice_rxn(2, exclusion,frame,loc, dexist, dframe, dloc, dprobes, dprobe_inds, dstates, dstate_inds, dresources, dresource_inds)
+        
+        # update the flag for resources / state changes
+        updates_states_resources = 0
+        if np.any(dstates):
+            updates_states_resources = 1
+        if np.any(dresources):
+            updates_states_resources = 1
+            
+        self.__make_rib_or_lattice_rxn(2, updates_states_resources, frame,loc, dexist, dframe, dloc, dprobes, dprobe_inds, dstates, dstate_inds, dresources, dresource_inds)
         self.__add_propensity(propensity, parameters, rxn_name=rxn_name)
         
 
@@ -185,8 +201,8 @@ class TranslationModel:
     def _x0(self):
         return self._rib_arr0, self._lattice_arr0, self._state_arr0, self._resource_arr0
 
-    def __make_rib_or_lattice_rxn(self, rtype, exclusion, frame, loc, dexist, dframe, dloc, dprobes, dprobe_inds, dstates, dstate_inds, dresources, dresource_inds):
-        change1 = [exclusion, frame, loc, dexist, dframe, dloc,]
+    def __make_rib_or_lattice_rxn(self, rtype, updates_states_resources, frame, loc, dexist, dframe, dloc, dprobes, dprobe_inds, dstates, dstate_inds, dresources, dresource_inds):
+        change1 = [updates_states_resources, frame, loc, dexist, dframe, dloc,]
                 ### calculate and add probe related changes
         if len(dprobe_inds) < len(dprobes):
             change = dprobes + [0,]*(len(dprobes)-len(self._n_colors))
