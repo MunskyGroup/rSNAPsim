@@ -378,13 +378,14 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
 
             }
             // if there are states, update states based on reaction taken
-            if (n_states > 0){
-                state_arr = state_arr +  rxn_mat.row(event).block(0, n_colors+7, 1, n_colors+7+n_states);
+            if (rxn_mat(event,1) == 1){
+                if (n_states > 0){
+                    state_arr = state_arr +  rxn_mat.row(event).block(0, n_colors+7, 1, n_states).transpose();
+                }
+                if (n_resources > 0){// if there are resources, update states based on reaction taken
+                    resource_arr = resource_arr +  rxn_mat.row(event).block(0, n_colors+7+n_states, 1, n_resources).transpose();
+                }
             }
-            if (n_resources > 0){// if there are resources, update states based on reaction taken
-                resource_arr = resource_arr +  rxn_mat.row(event).block(0, n_colors+7+n_states, 1, n_colors+7+n_states+n_resources);
-            }
-
             if (rxn_mat(event,6) !=0){ // MOVING ALONG LATTICE
                 ribosome_moved = 1;
             } 
@@ -400,15 +401,19 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
             rib_arr.row(rib_ind).block(0,1,1,n_colors+4) << rib_arr.row(rib_ind).block(0,1,1,n_colors+3) + rxn_mat.row(event).block(0, 4, 1, n_colors+3); // place the dexist, dframe, dloc, dcolors
             rib_arr(rib_ind,4+n_colors+event) += 1; // update the reaction that happened counter
             
-            // update states if needed
-            if (n_states > 0){
-                state_arr = state_arr +  rxn_mat.row(event).block(0, n_colors+6, 1, n_states);
+            if (rxn_mat(event,1) == 1){
+                // update states if needed
+                if (n_states > 0){
+                    state_arr = state_arr +  rxn_mat.row(event).block(0, n_colors+7, 1, n_states).transpose();
+                }
+    
+                // update resources if needed
+                if (n_resources > 0){
+                    resource_arr = resource_arr +  rxn_mat.row(event).block(0, n_colors+7+n_states, 1, n_resources).transpose();
+                    }
             }
-
-            // update resources if needed
-            if (n_resources > 0){
-                resource_arr = resource_arr +  rxn_mat.row(event).block(0, n_colors+6+n_states, 1, n_resources);
-            }
+            
+            
             ribosome_moved = 0;
             if (rxn_mat(event,6) != 0){ // ribosome moved in lattice (dlocation !=0 )
                 ribosome_moved = 1;
@@ -422,6 +427,7 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
                 rib_arr.row(NR).setZero();
                 NR -=1;
             }
+            
         
         }        
 
@@ -431,7 +437,7 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
 
         
         if (rxn_mat(event,0) == 3){ // resource reaction
-            resource_arr = resource_arr +  rxn_mat.row(event).block(0, n_colors+6+n_states, 1, n_resources);
+            resource_arr = resource_arr +  rxn_mat.row(event).block(0, n_colors+7+n_states, 1, n_resources).transpose();
         }
 
         if (ribosome_left == 1){
