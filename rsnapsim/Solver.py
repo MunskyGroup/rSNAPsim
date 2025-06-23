@@ -278,12 +278,13 @@ class Solver():
                     sa = np.zeros([len(t), max(len(mRNA_model._state_arr0),1) ], dtype=np.int32)
                     ra = np.zeros([len(t), max(len(mRNA_model._resource_arr0),1)], dtype=np.int32)
                     
-                    mRNA_model.cmodel.run_ssa_cpp(pa, sa, ra, mRNA_model._rib_arr0, temp_state_arr0, temp_resource_arr0,
-                                               mRNA_model._rxn_mat.astype(np.int32), np.array(mRNA_model._constant_reactions + mRNA_model._ribosome_reactions),
+                    mRNA_model.cmodel.run_ssa_cpp(pa, sa, ra, mRNA_model._rib_arr0.astype(np.int32), temp_state_arr0.astype(np.int32),
+                                                  temp_resource_arr0.astype(np.int32),
+                                               mRNA_model._rxn_mat.astype(np.int32), np.array(mRNA_model._constant_reactions + mRNA_model._ribosome_reactions).astype(np.int32),
                                                mRNA_model._kelong_mat,
                                                mRNA_model._probe_mat.astype(np.int32), np.array(pars),
-                                               t,
-                                               mRNA_model._rib_arr0.shape[0], mRNA_model._n_states, mRNA_model._n_resources, len(mRNA_model._constant_reactions),
+                                               t.astype(np.float64),
+                                               int(mRNA_model._rib_arr0.shape[0]), int(mRNA_model._n_states), int(mRNA_model._n_resources), len(mRNA_model._constant_reactions),
                                                len(mRNA_model._ribosome_reactions),
                                                burnin, seed, )
                     
@@ -364,7 +365,7 @@ class Solver():
                     #1/0
                     # PARAMETERS, BURNIN, TIME, AND KELONG MUST BE DOUBLES,
                     # everything else int32 or int.
-                    mRNA_model.cmodel.run_ssa_cpp(pa, sa, ra, mRNA_model._rib_arr0, temp_state_arr0, temp_resource_arr0,
+                    mRNA_model.cmodel.run_ssa_cpp(pa, sa, ra, mRNA_model._rib_arr0.astype(np.int32), temp_state_arr0.astype(np.int32), temp_resource_arr0.astype(np.int32),
                                                mRNA_model._rxn_mat.astype(np.int32), np.array(mRNA_model._constant_reactions + mRNA_model._ribosome_reactions, dtype=np.int32),
                                                mRNA_model._kelong_mat,
                                                mRNA_model._probe_mat.astype(np.int32), np.array(pars),
