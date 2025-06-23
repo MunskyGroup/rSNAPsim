@@ -84,8 +84,10 @@ hairpin_off = lambda k,t,p,ke,o,l,pr,s,r,nr: s[0]*k[3]
 hairpin_model.add_state_reaction(hairpin_off, parameters, rxn_name='hairpin_off', inds=[0], dstates=[-1])
 
 # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
-elongation = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint]))*(1-s[0]) + s[0]*(1-(p[i,3] == 199))*(ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint]))  for i in range(nr)]
+elongation = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint]))*(1-s[0])  for i in range(nr)]
+hairpin_model.add_ribosome_reaction(elongation, parameters, rxn_name='elongation', dloc=1) #default stepping
 
+elongation = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint]))*(s[0])*(1-(p[i,3]==199))   for i in range(nr)]
 hairpin_model.add_ribosome_reaction(elongation, parameters, rxn_name='elongation', dloc=1) #default stepping
 
 # finally specify which reactions are ribosome specific

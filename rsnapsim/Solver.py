@@ -320,6 +320,8 @@ class Solver():
                     print('COMPILED DEFAULT MODEL SUCCESSFULLY.')
                 L = mRNA_model._length
                 parameters = [ki, kt, L]
+                print(parameters)
+                print(np.mean(mRNA_model._kelong_mat[0]))
                 
                 pars = []
                 npars = []
@@ -659,12 +661,11 @@ class Solver():
 
             model = TranslationModel.TranslationModel(mRNA_model, 'default') # model object
             
-            
             # Make the kelong mat (manually adding an extra location that is equal to zero, so particles dont run over the simulation)
             kelong_mat = np.zeros([3, mRNA_length+1])
-            kelong_mat[0, :-1] = propf.get_k(mRNA_model.nt_seq, .033, 10, 10)[1:-1]
-            kelong_mat[1, :-2] = propf.get_k(mRNA_model.nt_seq[1:-2], .1, 10, 10)[1:-1]
-            kelong_mat[2, :-2] = propf.get_k(mRNA_model.nt_seq[2:-1], .1, 10, 10)[1:-1]
+            kelong_mat[0, :-1] = propf.get_k(mRNA_model.nt_seq, .033, mRNA_model.ke_mu, 10)[1:-1]
+            kelong_mat[1, :-2] = propf.get_k(mRNA_model.nt_seq[1:-2], .1, mRNA_model.ke_mu, 10)[1:-1]
+            kelong_mat[2, :-2] = propf.get_k(mRNA_model.nt_seq[2:-1], .1, mRNA_model.ke_mu, 10)[1:-1]
             kelong_mat[0, -2] = 0
             
             model._kelong_mat = kelong_mat #override the current kelongation mat
