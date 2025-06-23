@@ -37,6 +37,7 @@ class RuleConverterLambda():
         self.special_func_just_name = {
                              'np.max':'std::max',
                              'np.min':'std::min',
+                             'np.sum':'std::accumulate',
                              'min':'std::min',
                              'max':'std::max',
                              '.max':'.max',
@@ -235,13 +236,15 @@ class RuleConverterLambda():
         print(operator_elements)
         print(elements)
         unknown_elements = []
-        print(unknown_elements)
+        
         esum = np.sum(np.array([predefined_elements, commacolon_elements, keyword_elements, functionname_elements, function_elements, index_elements, operator_elements , bracket_elements, number_elements ]), axis=0)
         unknown_elements = [elements[int(x)] for x in np.where(esum==0)[0]]
-        
+        print('UNKNOWN ELEMENTS: ')
+        print(unknown_elements)
+        print(esum)
         if not np.all(esum):
             print(esum)
-            custom_err.UnknownElementError('The following elements are undefined: ' + str(unknown_elements))
+            raise custom_err.UnknownElementError('The following elements are undefined or unimplemented yet: ' + str(unknown_elements) + ' in the following propensity function: ' + propensity_string)
             
         
         # convert keywords here
@@ -792,11 +795,12 @@ class RuleConverterLambda():
 
     def convert_special_function_name_only(self, string):
         elements = re.split(self.re_splitw, string, 0)
+        print(elements)
         for special_func in self.special_func_just_name.keys():
-            if special_func in elements:
+            if special_func + '(' in elements:
                 for i in range(len(elements)):
-                    if element[i] == special_func:
-                        elements[i] = self.special_func_just_name[special_func]
+                    if elements[i] == special_func + '(':
+                        elements[i] = self.special_func_just_name[special_func] + '('
             
         return ''.join(elements)
     

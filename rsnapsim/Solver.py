@@ -590,18 +590,18 @@ class Solver():
             
             # DEFAULT STEPPING INITIATION
             init = lambda k,t,p,ke,o,l,pr,s,r,nr: (1-np.any(l[0:0+footprint]))*k[0]
-            model.add_lattice_reaction(init, parameters, rxn_name = 'initiation', exclusion=1, frame=0, loc=0, dexist=1,)
+            model.add_lattice_reaction(init, parameters, rxn_name = 'initiation', frame=0, loc=0, dexist=1,)
             
             
             # DEFAULT TERMINATION 
             leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[k[2]-1]*k[1] #(lattice location 590 = 1) * parameter
-            model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
+            model.add_lattice_reaction(leave, parameters, rxn_name='termination', frame=0, loc=590, dexist=-1,)
             
             
             # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
             #default stepping
             elong_step = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint])) for i in range(nr)]
-            model.add_ribosome_reaction(elong_step, parameters, rxn_name='elongation', exclusion=1, dloc=1) 
+            model.add_ribosome_reaction(elong_step, parameters, rxn_name='elongation', dloc=1) 
             
             
             # finally specify which reactions are ribosome specific
@@ -673,18 +673,18 @@ class Solver():
             parameters = [ki, kt, mRNA_length]
             # DEFAULT STEPPING INITIATION
             init = lambda k,t,p,ke,o,l,pr,s,r,nr: (1-np.any(l[0:0+footprint]))*k[0]
-            model.add_lattice_reaction(init, parameters, rxn_name = 'initiation', exclusion=1, frame=0, loc=0, dexist=1,)
+            model.add_lattice_reaction(init, parameters, rxn_name = 'initiation', frame=0, loc=0, dexist=1,)
             
             
             # DEFAULT TERMINATION 
             leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[k[2]-1]*k[1] #(lattice location 590 = 1) * parameter
-            model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=parameters[2]-1, dexist=-1,)
+            model.add_lattice_reaction(leave, parameters, rxn_name='termination', frame=0, loc=parameters[2]-1, dexist=-1,)
             
             
             # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
             #default stepping
             elong_step = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint])) for i in range(nr)]
-            model.add_ribosome_reaction(elong_step, parameters, rxn_name='elongation', exclusion=1, dloc=1) 
+            model.add_ribosome_reaction(elong_step, parameters, rxn_name='elongation' , dloc=1) 
             
             
             # finally specify which reactions are ribosome specific

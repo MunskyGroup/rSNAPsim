@@ -357,21 +357,21 @@ footprint = 9
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
 init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k*s[0]
-model.add_lattice_reaction(init, k_init_cap, rxn_name='initiation_cap', exclusion=1, frame=0, loc=0, dexist=1)
+model.add_lattice_reaction(init, k_init_cap, rxn_name='initiation_cap', frame=0, loc=0, dexist=1)
 
 # ribosomal initiation IRES
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
 init_ires = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[1886:1886+footprint])*k*s[1]
-model.add_lattice_reaction(init_ires, k_init_ires, rxn_name='initiation_ires', exclusion=1, frame=0, loc=1886, dexist=1,)
+model.add_lattice_reaction(init_ires, k_init_ires, rxn_name='initiation_ires', frame=0, loc=1886, dexist=1,)
 
 # Now we need a reaction for ribosomes to leave the lattice frame 0 at the end (location 1885)
 leave_cap = lambda k,t,p,ke,o,l,pr,s,r,nr: l[1885]*k #(lattice location 1084 = 1) * parameter
-model.add_lattice_reaction(leave_cap, kout_cap, rxn_name='termination_cap', exclusion=0, frame=0, loc=1885, dexist=-1,)
+model.add_lattice_reaction(leave_cap, kout_cap, rxn_name='termination_cap', frame=0, loc=1885, dexist=-1,)
 
 # Now we need a reaction for ribosomes to leave the lattice frame 1 at the end (location 3351)
 leave_ires = lambda k,t,p,ke,o,l,pr,s,r,nr: l[3351]*k #(lattice location 1084 = 1) * parameter
-model.add_lattice_reaction(leave_ires, kout_ires, rxn_name='termination_ires', exclusion=0, frame=0, loc=3351, dexist=-1,)
+model.add_lattice_reaction(leave_ires, kout_ires, rxn_name='termination_ires', frame=0, loc=3351, dexist=-1,)
 
 ############ STATE RXNS ##################
 
@@ -405,7 +405,7 @@ model.add_state_reaction(i_on_c_on, k_on_ic, rxn_name='i_on_c_on', inds=[0,1],ds
 
 # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
 default_step = lambda k,t,p,ke,o,l,pr,s,r,nr:  [(ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint])) for i in range(nr)]
-model.add_ribosome_reaction(default_step, 0, rxn_name='elongation', exclusion=1, dloc=1) #default stepping
+model.add_ribosome_reaction(default_step, 0, rxn_name='elongation', dloc=1) #default stepping
 
 #initial state
 model._state_arr0[0] = 0 #both off
@@ -698,15 +698,15 @@ footprint = 9
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
 init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k*(t<3000)
-model.add_lattice_reaction(init, ki, rxn_name='initiation', exclusion=1, frame=0, loc=0, dexist=1,)
+model.add_lattice_reaction(init, ki, rxn_name='initiation', frame=0, loc=0, dexist=1,)
 
 # Now we need a reaction for ribosomes to leave the lattice frame 0 at the end (location 1083)
 leave_f0 = lambda k,t,p,ke,o,l,pr,s,r,nr: l[1427]*k #(lattice location 1084 = 1) * parameter
-model.add_lattice_reaction(leave_f0, 3, rxn_name='termination_frame0', exclusion=0, frame=0, loc=1427, dexist=-1,)
+model.add_lattice_reaction(leave_f0, 3, rxn_name='termination_frame0', frame=0, loc=1427, dexist=-1,)
 
 # Now we need a reaction for ribosomes to leave the lattice frame 1 at the end (location 1083)
 leave_f1 = lambda k,t,p,ke,o,l,pr,s,r,nr: l[1427]*k #(lattice location 1084 = 1) * parameter
-model.add_lattice_reaction(leave_f1, 3, rxn_name='termination_frame1', exclusion=0, frame=0, loc=1427, dexist=-1,)
+model.add_lattice_reaction(leave_f1, 3, rxn_name='termination_frame1',  frame=0, loc=1427, dexist=-1,)
 
 
 ############# state RXNS ##############
@@ -722,12 +722,12 @@ model.add_state_reaction(mRNA_off, koff, rxn_name='mRNA off', inds=[0,1],dstates
 
 # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
 default_step = lambda k,t,p,ke,o,l,pr,s,r,nr:  [(ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint])) for i in range(nr)]
-model.add_ribosome_reaction(default_step, 0, rxn_name='elongation', exclusion=1, dloc=1) #default stepping
+model.add_ribosome_reaction(default_step, 0, rxn_name='elongation',  dloc=1) #default stepping
 
 # FSS
 # JUMP +1 frame if greater than or equal to frameshift location, on frame 0, state = on
 FSS = lambda k,t,p,ke,o,l,pr,s,r,nr: [k*(p[i,2] == 0)*(p[i,3] >= frameshift_location)*s[1] for i in range(nr)]
-model.add_ribosome_reaction(FSS, 1e5, rxn_name='FSS', exclusion=1, dframe=1, dloc=0)
+model.add_ribosome_reaction(FSS, 1e5, rxn_name='FSS', dframe=1, dloc=0)
 
 #initial state
 model._state_arr0[0] = 1 # FSS off
@@ -880,23 +880,23 @@ parameters=[.03, 10, 500]
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
 init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k[0]
-model.add_lattice_reaction(init, parameters, rxn_name='initiation', exclusion=1, frame=0, loc=0, dexist=1,)
+model.add_lattice_reaction(init, parameters, rxn_name='initiation',  frame=0, loc=0, dexist=1,)
 
 # Now we need a reaction for ribosomes to leave the lattice at the end (location 590)
 leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[590]*k[1] #(lattice location 590 = 1) * parameter
-model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
+model.add_lattice_reaction(leave, parameters, rxn_name='termination',frame=0, loc=590, dexist=-1,)
 
 # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
 elongation = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint])) for i in range(nr)]
-model.add_ribosome_reaction(elongation, parameters, rxn_name='elong', exclusion=1, dloc=1) #default stepping
+model.add_ribosome_reaction(elongation, parameters, rxn_name='elong',  dloc=1) #default stepping
 
 # FRAP COLOR 1
 frap = lambda k,t,p,ke,o,l,pr,s,r,nr: [ ((p[i,4] > 0)*k[2])*(t > 1000)*(t < 1200) for i in range(nr)]
-model.add_ribosome_reaction(frap, parameters, rxn_name='frap', exclusion=1, dprobes=[-1], dprobe_inds=[0]) #default stepping
+model.add_ribosome_reaction(frap, parameters, rxn_name='frap', dprobes=[-1], dprobe_inds=[0]) #default stepping
 
 # FRAP COLOR 1
 frap2 = lambda k,t,p,ke,o,l,pr,s,r,nr: [ ((p[i,5] > 0)*k[2])*(t > 1000)*(t < 1200) for i in range(nr)]
-model.add_ribosome_reaction(frap2, parameters, rxn_name='frap2', exclusion=1, dprobes=[-1], dprobe_inds=[1]) #default stepping
+model.add_ribosome_reaction(frap2, parameters, rxn_name='frap2', dprobes=[-1], dprobe_inds=[1]) #default stepping
 
 
 # finally specify which reactions are ribosome specific
@@ -997,12 +997,12 @@ footprint = 9
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
 init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k
-model.add_lattice_reaction(init, 0.03, rxn_name='init', exclusion=1, frame=0, loc=0, dexist=1,)
+model.add_lattice_reaction(init, 0.03, rxn_name='init', frame=0, loc=0, dexist=1,)
 
 
 # Now we need a reaction for ribosomes to leave the lattice at the end (location 590)
 leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[590]*k #(lattice location 590 = 1) * parameter
-model.add_lattice_reaction(leave, 10, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
+model.add_lattice_reaction(leave, 10, rxn_name='termination', frame=0, loc=590, dexist=-1,)
 
 
 # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
@@ -1014,7 +1014,7 @@ drafting_step = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]] + (sum(l[p[
 
 look_ahead = 300
 speed = 5
-model.add_ribosome_reaction(drafting_step, [look_ahead, speed], rxn_name='drafting', exclusion=1, dloc=1) #default stepping
+model.add_ribosome_reaction(drafting_step, [look_ahead, speed], rxn_name='drafting',dloc=1) #default stepping
 
 # finally specify which reactions are ribosome specific
 model._ribosome_reactions = [2,]
@@ -1123,7 +1123,7 @@ mRNA.multiframe_epitopes[0] = {'T_Flag': [1, 10, 19, 195, 205, 217, 227, 299, 30
 
 
 #@title model setup
-base_model = rsnp.tasep_model(mRNA,'base') # model object
+base_model = rsnp.tasep_model(mRNA,'base1') # model object
 
 
 # Make the kelong mat (manually adding an extra location that is equal to zero, so particles dont run over the simulation)
@@ -1142,17 +1142,17 @@ footprint = 9
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
 init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k[0]*(t <= 1000)
-base_model.add_lattice_reaction(init, parameters, rxn_name='init', exclusion=1, frame=0, loc=0, dexist=1,)
+base_model.add_lattice_reaction(init, parameters, rxn_name='init', frame=0, loc=0, dexist=1,)
 
 
 # Now we need a reaction for ribosomes to leave the lattice at the end (location 590)
 leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[590]*k[1] #(lattice location 590 = 1) * parameter
-base_model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
+base_model.add_lattice_reaction(leave, parameters, rxn_name='termination', frame=0, loc=590, dexist=-1,)
 
 # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
 elongation = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint]))  for i in range(nr)]
 
-base_model.add_ribosome_reaction(elongation, 0, rxn_name='elongation', exclusion=1, dloc=1) #default stepping
+base_model.add_ribosome_reaction(elongation, 0, rxn_name='elongation', dloc=1) #default stepping
 
 # finally specify which reactions are ribosome specific
 base_model._ribosome_reactions = [2,]
@@ -1161,11 +1161,6 @@ base_model._lattice_arr0 = np.zeros([base_model._length+1], dtype=int)
 
 #base_model._parameters[0] = .03
 
-base_model.compile_model_c()
-t = np.linspace(0,15000,15001)
-base_soln = rsnp.solver.solve_ssa(base_model, t, n_traj=1, seed=35, cplus=True)
-print('ran C++ base')
-    
 #######################################
 #Model two, hairpin model with exclusion
 example_mRNA = '''ATGGCGAACCTTGGCTGCTGGATGCTGGTTCTCTTTGTGGCCACATGGAGTGACCTGGGC
@@ -1215,12 +1210,12 @@ footprint = 9
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
 init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k[0]*(t<k[5])
-hairpin_model.add_lattice_reaction(init, parameters, rxn_name='init', exclusion=1, frame=0, loc=0, dexist=1,)
+hairpin_model.add_lattice_reaction(init, parameters, rxn_name='init', frame=0, loc=0, dexist=1,)
 
 
 # Now we need a reaction for ribosomes to leave the lattice at the end (location 590)
 leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[590]*k[1] #(lattice location 590 = 1) * parameter
-hairpin_model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
+hairpin_model.add_lattice_reaction(leave, parameters, rxn_name='termination', frame=0, loc=590, dexist=-1,)
 
 
 hairpin_on = lambda k,t,p,ke,o,l,pr,s,r,nr: (np.sum(l[hairpin_location:hairpin_location+50]) > 0)*s[0]*k[2]
@@ -1232,7 +1227,7 @@ hairpin_model.add_state_reaction(hairpin_off, parameters, rxn_name='hairpin_off'
 # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
 elongation = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint]))  for i in range(nr)]
 
-hairpin_model.add_ribosome_reaction(elongation, parameters, rxn_name='elongation', exclusion=1, dloc=1) #default stepping
+hairpin_model.add_ribosome_reaction(elongation, parameters, rxn_name='elongation', dloc=1) #default stepping
 
 # finally specify which reactions are ribosome specific
 hairpin_model._ribosome_reactions = [4,]
@@ -1284,16 +1279,16 @@ footprint = 9
 # first add the reaction, in this case, we want a lattice reaction at the first
 # location for a ribosome to bind (excluded)
 init = lambda k,t,p,ke,o,l,pr,s,r,nr: ~np.any(l[0:0+footprint])*k[0]*(t<k[3])
-dropoff_model.add_lattice_reaction(init, parameters, rxn_name='init', exclusion=1, frame=0, loc=0, dexist=1,)
+dropoff_model.add_lattice_reaction(init, parameters, rxn_name='init', frame=0, loc=0, dexist=1,)
 
 
 # Now we need a reaction for ribosomes to leave the lattice at the end (location 590)
 leave = lambda k,t,p,ke,o,l,pr,s,r,nr: l[590]*k[1] #(lattice location 590 = 1) * parameter
-dropoff_model.add_lattice_reaction(leave, parameters, rxn_name='termination', exclusion=0, frame=0, loc=590, dexist=-1,)
+dropoff_model.add_lattice_reaction(leave, parameters, rxn_name='termination', frame=0, loc=590, dexist=-1,)
 
 # DEFAULT STEPPING OF ELONGATION USING THE ELONGATION MATRIX
 elongation = lambda k,t,p,ke,o,l,pr,s,r,nr: [ (ke[p[i,2], p[i,3]])*(1 - sum(l[p[i,3]+1:p[i,3]+footprint]))  for i in range(nr)]
-dropoff_model.add_ribosome_reaction(elongation, parameters, rxn_name='elongation', exclusion=1, dloc=1) #default stepping
+dropoff_model.add_ribosome_reaction(elongation, parameters, rxn_name='elongation', dloc=1) #default stepping
 
 # Dropping off
 drop_off = lambda k,t,p,ke,o,l,pr,s,r,nr: [k[2] for i in range(nr)]
