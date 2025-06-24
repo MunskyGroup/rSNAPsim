@@ -94,13 +94,14 @@ hairpin_model._constant_reactions = [0,1,2,3]
 hairpin_model._lattice_arr0 = np.zeros([hairpin_model._length+1], dtype=int)
 hairpin_model._state_arr0[0] = 1
 
-hairpin_model.compile_model_c()
+#hairpin_model.compile_model_c()
 
-#hairpin_model.load_model_c('hairpin')
+hairpin_model.load_model_c('hairpin')
 
 n_model_runs = 1
 t = np.linspace(0,1000,1001)
 hairpin_model_soln = rsnp.solver.solve_ssa(hairpin_model, t, n_traj=n_model_runs, burnin=0, verbose=True, cplus=True)
 
+print(hairpin_model_soln.state_array[0])
 import matplotlib.pyplot as plt
 plt.plot(hairpin_model_soln.state_array[0])

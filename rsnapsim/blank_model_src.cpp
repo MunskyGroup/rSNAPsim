@@ -226,8 +226,8 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
 
 	// map the vectors to fill and return to python
 	Eigen::Map<Eigen::MatrixXi> Particle_array(particle_array, Nt, (4 + n_colors + n_rxns)*max_rib);
-    Eigen::Map<Eigen::MatrixXi> State_array(state_array,Nt,n_states);
-    Eigen::Map<Eigen::MatrixXi> Resource_array(resource_array,Nt,n_resources);
+    Eigen::Map<Eigen::MatrixXi> State_array(state_array,n_states,Nt);
+    Eigen::Map<Eigen::MatrixXi> Resource_array(resource_array,n_resources,Nt);
 
     Eigen::VectorXd wn(n_constant_reactions + n_ribosome_reactions*max_rib); // initalize the largest possible propensity
     wn.setZero();
@@ -303,8 +303,8 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
         while( (tindex < Nt) && (tc > time_vector[tindex])) {
             Eigen::Map<VectorXi> v(rib_arr.data(),rib_arr.size());
             Particle_array.row(tindex) = v;
-            State_array.row(tindex) << state_arr;
-            Resource_array.row(tindex) << resource_arr;
+            State_array.col(tindex) << state_arr;
+            Resource_array.col(tindex) << resource_arr;
             tindex +=1;
             if (tindex == Nt){  // manually end the while loop if tc > time_vector[-1]
                 error_code = 0; // 0 means ran successfully
