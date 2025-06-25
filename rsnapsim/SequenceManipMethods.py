@@ -197,6 +197,29 @@ class SequenceManipMethods(SequenceCore):
         return proteins_strs, protein_objs, proteins_w_tags
 
 
+
+    def get_largest_CDS(self,seqfile, min_codons=80, add_tag=True):
+        '''
+        Convenience function to get the largest poi if you know your file 
+        has multiple orfs
+
+        Parameters
+        ----------
+        seqfile : sequence file
+            a file containting sequence data to get a mRNA sequence out of.
+        min_codons : iny, optional
+            minimum contingous codons to consider an ORF. The default is 80.
+        add_tag : bool, optional
+            Add a fluorescent tag if none is found. The default is True.
+
+        Returns
+        -------
+        CDS obj.
+
+        '''
+
+        return self.get_largest_cds(seqfile, min_codons=min_codons, add_tag=add_tag)
+
     def get_largest_cds(self,seqfile, min_codons=80, add_tag=True):
         '''
         Convenience function to get the largest poi if you know your file 
@@ -213,26 +236,78 @@ class SequenceManipMethods(SequenceCore):
 
         Returns
         -------
-        POI obj.
+        CDS obj.
 
         '''
         fp = FileParser.FileParser()
-        sequence_str = fp.get_sequence(seqfile).upper()
-        orfs = self.get_orfs(sequence_str, min_codons=min_codons)
-        protein_strs, proteins, tagged_proteins = self.get_proteins(orfs,
-                                                                    sequence_str,
-                                                                    add_tag=add_tag)
         
-        sizes = [[len(y) for y in x] for x in protein_strs.values()]
-        maxsize = max([item for sublist in sizes for item in sublist])
+        sequence_str = fp.get_sequence(seqfile)
         
-        orf_keys = ['0','+1','+2','-1']
-        for i in range(4):
-            if maxsize in sizes[i]:
-                frame = orf_keys[i]
-                pindex = sizes[i].index(maxsize)
+        if isinstance(sequence_str, list):
+            sequence_str = [x.upper() for x in sequence_str]
+            
+            largest_proteins = []
+            for i in range(len(sequence_str)):
+                s = sequence_str[i]
+                orfs = self.get_orfs(s, min_codons=min_codons)
+            
+                protein_strs, proteins, tagged_proteins = self.get_proteins(orfs,
+                                                                            s,
+                                                                            add_tag=add_tag)
                 
-        return proteins[frame][pindex]
+                sizes = [[len(y) for y in x] for x in protein_strs.values()]
+                maxsize = max([item for sublist in sizes for item in sublist])
+                
+                orf_keys = ['0','+1','+2','-1']
+                for i in range(4):
+                    if maxsize in sizes[i]:
+                        frame = orf_keys[i]
+                        pindex = sizes[i].index(maxsize)
+            
+                largest_proteins.append(proteins[frame][pindex])
+            return largest_proteins
+                
+            
+        else:
+            sequence_str = sequence_str.upper()
+        
+            orfs = self.get_orfs(sequence_str, min_codons=min_codons)
+            protein_strs, proteins, tagged_proteins = self.get_proteins(orfs,
+                                                                        sequence_str,
+                                                                        add_tag=add_tag)
+            
+            sizes = [[len(y) for y in x] for x in protein_strs.values()]
+            maxsize = max([item for sublist in sizes for item in sublist])
+            
+            orf_keys = ['0','+1','+2','-1']
+            for i in range(4):
+                if maxsize in sizes[i]:
+                    frame = orf_keys[i]
+                    pindex = sizes[i].index(maxsize)
+                    
+            return proteins[frame][pindex]
+    
+    def seq_to_cds_obj(self, nucleotide_sequence_str, min_codons=80, add_tag=True):
+        '''
+        Convert a given nucleotide sequence string into a POI / protein of 
+        interest object.
+
+        Parameters
+        ----------
+        nucleotide_sequence_str : str
+            nucleotide sequence string to convert
+        min_codons : int, optional
+            min amount of codons to be considered a protein. The default is 80.
+        add_tag : bool, optional
+            Add the default T_FLAG 10X tag to the front? The default is True.
+
+        Returns
+        -------
+        proteins : dict
+            dictonary of protein (CDS) objects sorted by ORFs 0, +1, -1, or +2.
+
+        '''        
+        return self.seq_to_CDS_obj(nucleotide_sequence_str, min_codons=min_codons, add_tag=add_tag)
     
     def seq_to_CDS_obj(self, nucleotide_sequence_str, min_codons=80, add_tag=True):
         '''
@@ -250,8 +325,8 @@ class SequenceManipMethods(SequenceCore):
 
         Returns
         -------
-        proteins : TYPE
-            DESCRIPTION.
+        proteins : dict
+            dictonary of protein (CDS) objects sorted by ORFs 0, +1, -1, or +2.
 
         '''
         nucleotide_sequence_str = self.clean_seq(nucleotide_sequence_str).upper()
