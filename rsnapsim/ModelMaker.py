@@ -1098,10 +1098,9 @@ class ModelFactory():
             if os.path.exists(os.path.join(base, 'eigen3')):
                 eigen_paths.append(os.path.join(base,''))
         
-        print(eigen_paths)
         
         if len(eigen_paths) == 0:
-            raise custom_error.EigenMissingError('Eigen is missing, please provide a path'\
+            raise custom_err.EigenMissingError('Eigen is missing, please provide a path'\
                                     ' or if using a conda instillation, use'\
                                         ' conda install eigen')
         
@@ -1438,7 +1437,7 @@ class ModelFactory():
                 message = 'model folder by the name "%s" exists at %s already'\
                     ' exists, if you wish to overwrite '\
                         'use overwrite == True'% (model_name, folder_path)
-                raise ExistenceError(message)
+                raise custom_err.ExistenceError(message)
         
         print(model_file_path)
         print(new_model_file)
@@ -1463,7 +1462,7 @@ class ModelFactory():
                 message = 'model files: by the name "%s" exists at %s already'\
                     ' exists, if you wish to overwrite '\
                         'use overwrite == True'% (model_name, new_model_file)
-                raise ExistenceError(message)
+                raise custom_err.ExistenceError(message)
         time.sleep(.1)
         self.edit_setup_files(model_name, new_setup_file,
                               eigen_path=eigen_path)
@@ -1547,7 +1546,7 @@ class ModelFactory():
             msg = 'The model name requested is a reserved keyword and'\
                 ' cannot be used to build the model files, please rename'\
                     ' the model.'
-            raise ModelNameError(msg)
+            raise custom_err.ModelNameError(msg)
             
         if eigen_path == '':
             eigen_path = self.eigen_path
