@@ -41,6 +41,8 @@ import matplotlib.patches as mpatches
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path
 
+import json
+
 
 class TranslationModel:
     def __init__(self, mRNA, name, particle_size=9):
@@ -430,10 +432,81 @@ class TranslationModel:
             self.cmodel = importlib.import_module('rsnapsim.models.%s.%s'%(self.name,self.name))
 
     
-    def save(self):
+    def save(self, fname):
+        
+        save_dict = {}
+        for i, entry in enumerate(self.__dict__.items()):
+            key, value = entry
+            
+            if isinstance(self.__dict__[key], np.ndarray):
+                save_dict[key] = self.__dict__[key].tolist()
+                
+            elif key == '_propensities':
+                propensities_str_list = [y[0].replace('\n','') for y in [inspect.getsourcelines(x)[0] for x in self.__dict__[key]]]
+                propensity_names_list = [y[0].replace('\n','').split('=')[0].replace(' ','') for y in [inspect.getsourcelines(x)[0] for x in self.__dict__[key]]]
+                
+                
+                
+                propensity_function_list = ['='.join(y[0].replace('\n','').split('=')[1:]).replace('lambda k,t,p,ke,o,l,pr,s,r,nr: ','') for y in [inspect.getsourcelines(x)[0] for x in self.__dict__[key]]]
+                
+                save_dict['_propensities_str_list'] = propensities_str_list
+                save_dict['_propensity_names_list'] = propensity_names_list
+                save_dict['_propensity_function_list'] = propensity_function_list
+                
+                pass
+            
+            elif key == '_probe_function':
+                pf_str = [y[0].replace('\n','') for y in [inspect.getsourcelines(x)[0] for x in [self.__dict__[key] ] ]]
+                pf_name = [y[0].replace('\n','').split('=')[0].replace(' ','') for y in [inspect.getsourcelines(x)[0] for x in [self.__dict__[key]]]]
+                pf_function = ['='.join(y[0].replace('\n','').split('=')[1:]).replace('lambda k,t,p,ke,o,l,pr,s,r,nr: ','') for y in [inspect.getsourcelines(x)[0] for x in [self.__dict__[key]]]]
+                
+                save_dict['_probe_function_str'] = pf_str[0]
+                save_dict['_probe_function_name'] = pf_name[0]
+                save_dict['_probe_function_function'] = pf_function[0]
+                
+                
+            else:
+                save_dict[key] = self.__dict__[key]
+        with open(fname, 'w') as fp:
+            json.dump(save_dict, fp)
+        
         return
     
-    def load(self):
+    def load(self, fname):
+        
+        with open(fname, 'r') as fp:
+            load_dict = json.load(fp)
+        
+        propensities = []
+        for i in range(len(load_dict['_propensity_function_list'])):
+            propensities.append(load_dict['_propensity_function_list'][i])
+        propensities = [eval('lambda k,t,p,ke,o,l,pr,s,r,nr:' + x) for x in propensities]
+        
+        load_dict['_probe_function'] = eval("lambda k,t,p,ke,o,l,pr,s,r,nr:" + load_dict['_probe_function_function'])
+        
+        load_dict['_propensites'] = propensities
+        
+        del load_dict['_probe_function_name']
+        del load_dict['_probe_function_str']
+        del load_dict['_probe_function_function']
+        
+        del load_dict['_propensities_str_list']
+        del load_dict['_propensity_names_list']
+        del load_dict['_propensity_function_list']
+        
+        convert_to_array_list_int32 = ['_state_mat', '_resource_mat', '_probe_mat',
+                                       '_rxn_mat', '_rib_arr0', '_lattice_arr0', '_state_arr0',
+                                       '_resource_arr0', '_codon_mat']
+        for key in convert_to_array_list_int32:
+            load_dict[key] = np.array(load_dict[key], dtype=np.int32)
+        
+        convert_to_array_list_float = [ '_kelong_mat']
+
+        for key in convert_to_array_list_float:
+            load_dict[key] = np.array(load_dict[key], dtype=float)
+        
+        self.__dict__ = load_dict
+        
         return 
     
     def __get_mats(self):

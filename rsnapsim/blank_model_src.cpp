@@ -15,6 +15,37 @@ using Eigen::VectorXi;
 using namespace std;
 
 
+int min_int(int a, int b)
+{
+    if (a == b) {
+        return a;
+    }
+    if (a < b) {
+        return a;
+    } 
+    if (a > b){
+        return b;
+    }
+    return a;
+}
+
+
+double min_double(double a, double b)
+{
+    if (a == b) {
+        return a;
+    }
+    if (a < b) {
+        return a;
+    } 
+    if (a > b){
+        return b;
+    }
+    return a;
+}
+
+
+
 /*
 propensity here
 */

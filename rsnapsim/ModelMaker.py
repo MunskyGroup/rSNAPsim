@@ -525,7 +525,7 @@ class RuleConverterLambda():
             else:
                 f1,f2 = front, front + '+1' #[xx, yy:yy]
                 
-        istr = '.block('  + f1 + ',' + b1 + ',' +'std::min(' + f2 + '-' + f1 + ',' + max_row + '-' + f1 +')' + ',' +'std::min(' + b2 + '-' + b1 + ',' + max_col + '-' + b1 +'))'
+        istr = '.block('  + f1 + ',' + b1 + ',' +'min_int(' + f2 + '-' + f1 + ',' + max_row + '-' + f1 +')' + ',' +'min_int(' + b2 + '-' + b1 + ',' + max_col + '-' + b1 +'))'
         if istr == '.block(0,0,'+max_row+'-0,' + max_col + '-0)': # SPECIAL CASE [:,:] DELETE THIS ITS NOT NEEDED
             istr = ''
             
@@ -784,7 +784,7 @@ class RuleConverterLambda():
                     x=1 # PARSE NEGATIVE INDS TODO
                 if '-' in first_index:
                     x=1 # PARSE NEGATIVE INDS
-                newstr = vector_str + '(Eigen::seq(%s,std::min(%s, %s)))'%(first_index,second_index, max_row)
+                newstr = vector_str + '(Eigen::seq(%s,min_int(%s, %s)))'%(first_index,second_index, max_row)
                 substrings[ind] = newstr
             else:
                 substrings[ind] = vector_str + '[' + ind_str +  ']'

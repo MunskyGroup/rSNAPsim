@@ -153,8 +153,12 @@ model_pause_twostate._constant_reactions = [0,1,2,3,4]
 parameters = [ki, kout_frame0, kout_frame1, kon, koff, 1e6 ]
 model_pause_twostate.set_parameters(parameters)
 
-#model_pause_twostate.compile_model_c()
-model_pause_twostate.load_model_c('GagPol_twostate')
+
+
+1/0
+model_pause_twostate.compile_model_c()
+
+#model_pause_twostate.load_model_c('GagPol_twostate')
 
 
 n_model_runs = 1
