@@ -155,7 +155,6 @@ model_pause_twostate.set_parameters(parameters)
 
 
 
-1/0
 model_pause_twostate.compile_model_c()
 
 #model_pause_twostate.load_model_c('GagPol_twostate')

@@ -41,6 +41,8 @@ import matplotlib.patches as mpatches
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path
 
+import pathlib
+
 import json
 
 
@@ -430,6 +432,9 @@ class TranslationModel:
         
         if return_code == 0:
             self.cmodel = importlib.import_module('rsnapsim.models.%s.%s'%(self.name,self.name))
+            
+            # save a json copy of this model object along with the compiled model.
+            self.save(os.path.join('.','models',self.name))
 
     
     def save(self, fname):
