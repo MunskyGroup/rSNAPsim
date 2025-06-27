@@ -107,7 +107,7 @@ class RuleConverterLambda():
                 try:
                     bracket_dict[istart.pop()] = i
                 except:
-                    raise MisMatchedParenthesis('Missing "("  with closed '\
+                    raise custom_err.MisMatchedParenthesis('Missing "("  with closed '\
                                                 ' parenthesis at %i'%i)
 
         if len(istart) != 0:  # still a ( that cant be matched
@@ -147,11 +147,11 @@ class RuleConverterLambda():
                 try:
                     bracket_dict[istart.pop()] = i
                 except:
-                    raise MisMatchedBrackets('Missing "{"  with closed '\
+                    raise custom_err.MisMatchedBrackets('Missing "{"  with closed '\
                                              'parenthesis at %i'%i)
 
         if len(istart) != 0:  # still a ( that cant be matched
-            raise MisMatchedBrackets('Mismatched "}" ')
+            raise custom_err.MisMatchedBrackets('Mismatched "}" ')
         return list(bracket_dict.items())
 
 

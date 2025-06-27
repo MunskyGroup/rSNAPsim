@@ -321,12 +321,17 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
         event -=1;
 
     
-
+        /*
         if (event >= n_constant_reactions){ //if its a ribosome reaction, on which ribosome did it occur
             rib_ind = (event-n_constant_reactions)%NR ; // WHICH RIBOSOME IS THIS REACTION HAPPENING TOO
             event = ((event-n_constant_reactions)/NR) + n_constant_reactions; // WHICH REACTION IS HAPPENING
         }
+        */
+        if (event >= n_constant_reactions){ //if its a ribosome reaction, on which ribosome did it occur
+            rib_ind = ((event-n_constant_reactions)/n_ribosome_reactions); // WHICH REACTION IS HAPPENING
+            event = (event-n_constant_reactions)%n_ribosome_reactions + n_constant_reactions ; // WHICH RIBOSOME IS THIS REACTION HAPPENING TOO
 
+        }        
 
 
         event = rxn_ids[event]; // edit event to match rxn matrix since it can be in any order
@@ -358,7 +363,7 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
                 rib_ind = NR;
                 rib_ind += 1; // fill in the particle array
                 rib_arr(NR, 0) = rib_ind;
-                rib_arr(NR, 1) = rib_ind;
+                rib_arr(NR, 1) = 1; // exists? flag
                 rib_arr(NR, 2) += rxn_mat(event, 2);
                 rib_arr(NR, 3) += rxn_mat(event, 3);
                 rib_arr(NR, 4 + n_colors + event) += 1;

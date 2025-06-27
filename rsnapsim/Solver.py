@@ -450,10 +450,10 @@ class Solver():
             probe_mat = mRNA_model._probe_mat.astype(int)
             
             constant_props = [mRNA_model._propensities[i] for i in mRNA_model._constant_reactions]
-            constant_parameters = [mRNA_model._parameters[i] for i in mRNA_model._constant_reactions]
+            constant_parameters = [mRNA_model._parameters_full[i] for i in mRNA_model._constant_reactions]
     
             ribosome_props = [mRNA_model._propensities[i] for i in mRNA_model._ribosome_reactions]
-            ribosome_parameters = [mRNA_model._parameters[i] for i in mRNA_model._ribosome_reactions]
+            ribosome_parameters = [mRNA_model._parameters_full[i] for i in mRNA_model._ribosome_reactions]
             reaction_ids = mRNA_model._constant_reactions + mRNA_model._ribosome_reactions 
             probe_function = mRNA_model._probe_function
             probe_parameters = mRNA_model._probe_parameters

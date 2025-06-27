@@ -75,6 +75,7 @@ class TranslationModel:
 
         self._propensities = []
         self._parameters = []
+        
         self._prop_ids = []
         
         self._constant_rxn_bool = [] #whether a reaction is per ribosome or not
@@ -149,7 +150,7 @@ class TranslationModel:
         
         
     ## Everything that can happen in the model
-    def add_ribosome_reaction(self, propensity, parameters, rxn_name='', dexist = 0, dframe = 0, dloc = 0,
+    def add_ribosome_reaction(self, propensity, rxn_name='', dexist = 0, dframe = 0, dloc = 0,
                               dprobes=[], dprobe_inds=[],
                               dstates=[], dstate_inds=[],
                               dresources=[], dresource_inds=[]):
@@ -162,10 +163,10 @@ class TranslationModel:
             updates_states_resources = 1
 
         self.__make_rib_or_lattice_rxn(0, updates_states_resources, 0,0, dexist, dframe, dloc, dprobes, dprobe_inds, dstates, dstate_inds, dresources, dresource_inds)
-        self.__add_propensity(propensity, parameters, rxn_name=rxn_name)
+        self.__add_propensity(propensity, rxn_name=rxn_name)
         
         
-    def add_lattice_reaction(self, propensity, parameters, rxn_name='', frame=0, loc=0, dexist = 0, dframe = 0, dloc = 0,
+    def add_lattice_reaction(self, propensity, rxn_name='', frame=0, loc=0, dexist = 0, dframe = 0, dloc = 0,
                               dprobes=[], dprobe_inds=[],
                               dstates=[], dstate_inds=[],
                               dresources=[], dresource_inds=[]):
@@ -178,15 +179,15 @@ class TranslationModel:
             updates_states_resources = 1
             
         self.__make_rib_or_lattice_rxn(2, updates_states_resources, frame,loc, dexist, dframe, dloc, dprobes, dprobe_inds, dstates, dstate_inds, dresources, dresource_inds)
-        self.__add_propensity(propensity, parameters, rxn_name=rxn_name)
+        self.__add_propensity(propensity, rxn_name=rxn_name)
         
 
-    def add_state_reaction(self, propensity, parameters, rxn_name='', inds=[], dstates=[]):
+    def add_state_reaction(self, propensity, rxn_name='', inds=[], dstates=[]):
                 # if the user did not provide indexes, pad with zeros for right shape
         if len(inds) < len(dstates):
             change = dstates + [0,]*(len(dstates)-len(self._n_states))
             self.__add_rxn(1, [0, 0, 0, 0, 0, 0,] +   [0]*self._n_colors +  change  )
-            self.__add_propensity(propensity, parameters, rxn_name=rxn_name)
+            self.__add_propensity(propensity, rxn_name=rxn_name)
             return
             
         # if the user did  provide indexes, use them to build the reaction row
@@ -195,7 +196,7 @@ class TranslationModel:
             if i in inds:
                 change[i] = dstates[inds.index(i)]
         self.__add_rxn(1, [0, 0, 0, 0, 0, 0,] +  [0]*self._n_colors +  change   )
-        self.__add_propensity(propensity, parameters, rxn_name=rxn_name)
+        self.__add_propensity(propensity, rxn_name=rxn_name)
 
 
     def _x0(self):
@@ -242,13 +243,13 @@ class TranslationModel:
         self.__add_rxn(rtype, change1)
 
 
-    def add_resource_reaction(self, propensity, parameters, rxn_name='', dresources=[], inds=[] ):
+    def add_resource_reaction(self, propensity, rxn_name='', dresources=[], inds=[] ):
         
         # if the user did not provide indexes, pad with zeros for right shape
         if len(inds) < len(dresources):
             change = dresources + [0,]*(len(dresources)-len(self._n_resources))
             self.__add_rxn(3, [0, 0, 0, 0, 0, 0,] + [0]*self._n_colors+ [0]*self._n_states +  change )
-            self.__add_propensity(propensity, parameters, rxn_name=rxn_name)
+            self.__add_propensity(propensity, rxn_name=rxn_name)
             return
             
         # if the user did  provide indexes, use them to build the reaction row
@@ -258,13 +259,13 @@ class TranslationModel:
                 change[i] = dresources[inds.index(i)]
         
         self.__add_rxn(3, [0, 0, 0, 0, 0, 0,] + [0]*self._n_colors+ [0]*self._n_states +  change   )
-        self.__add_propensity(propensity, parameters, rxn_name=rxn_name)
+        self.__add_propensity(propensity, rxn_name=rxn_name)
 
-    def add_probe_reaction(self, propensity, parameters, rxn_name='', ind=0, dprobe=0):
+    def add_probe_reaction(self, propensity, rxn_name='', ind=0, dprobe=0):
         self.__add_rxn(4, [ind, dprobe],)
-        self.__add_propensity(propensity, parameters, rxn_name=rxn_name)
+        self.__add_propensity(propensity, rxn_name=rxn_name)
     
-    def add_probe_reaction(self, propensity, parameters, rxn_name='', inds=[], dprobes=[]):
+    def add_probe_reaction(self, propensity, rxn_name='', inds=[], dprobes=[]):
                 # if the user did not provide indexes, pad with zeros for right shape
         if len(inds) < len(dstates):
             change = dstates + [0,]*(len(dstates)-len(self._n_states))
@@ -280,23 +281,32 @@ class TranslationModel:
         self.__add_rxn(1, [0, 0, 0, 0, 0, 0,] +  [0]*self._n_colors +  change   )
         self.__add_propensity(propensity, parameters, rxn_name=rxn_name)
     
-    def add_global_reaction(self, propensity, parameters, rxn_name=''):
+    def add_global_reaction(self, propensity, rxn_name=''):
         self.__add_rxn(5, [],)
-        self.__add_propensity(propensity, parameters, rxn_name=rxn_name)
+        self.__add_propensity(propensity, rxn_name=rxn_name)
         
     def delete_reaction(self, row):
         self.__delete_rxn(row)
         
-    def __add_propensity(self, propensity_fun, parameters, rxn_id=-1, rxn_name=''):
+    def __add_propensity(self, propensity_fun, rxn_id=-1, rxn_name=''):
         if rxn_id == -1:
             try:
                 rxn_id = max(self._prop_ids)
             except:
                 rxn_id = 0
         self._propensities = self._propensities + [propensity_fun, ]
-        self._parameters = self._parameters + [parameters, ]
+        #self._parameters = self._parameters + [parameters, ]
         self._prop_ids = self._prop_ids + [rxn_id, ]
         self._rxn_names = self._rxn_names + [rxn_name]
+        
+    
+    def set_parameters(self,parameters):
+        self._parameters = parameters 
+        
+    @property
+    def _parameters_full(self):
+        return [self._parameters for x in range(len(self._rxn_names))]
+            
         
     def add_constant_propensities(self, constant_propensities, parameters, rxn_ids=None):
         self._constant_props = constant_propensities
