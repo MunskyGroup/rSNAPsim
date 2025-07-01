@@ -404,7 +404,7 @@ class TranslationModel:
 
         return id_str
 
-    def load_model_c(self, model_name):
+    def __load_model_c(self,):
         self.cmodel = importlib.import_module('rsnapsim.models.%s.%s'%(self.name,self.name))
         #if self.model_id != cmodel.__model_id:
            # print('error')
@@ -434,7 +434,8 @@ class TranslationModel:
             self.cmodel = importlib.import_module('rsnapsim.models.%s.%s'%(self.name,self.name))
             
             # save a json copy of this model object along with the compiled model.
-            self.save(os.path.join('.','models',self.name))
+
+            self.save(os.path.join(os.path.dirname(__file__),'models',self.name, self.name + '.json'))
 
     
     def save(self, fname):
@@ -469,15 +470,20 @@ class TranslationModel:
                 save_dict['_probe_function_name'] = pf_name[0]
                 save_dict['_probe_function_function'] = pf_function[0]
                 
+            elif key == 'cmodel':
+                pass
                 
             else:
                 save_dict[key] = self.__dict__[key]
+                
+        for key in save_dict.keys():
+            print(type(save_dict[key]))
         with open(fname, 'w') as fp:
             json.dump(save_dict, fp)
         
         return
     
-    def load(self, fname):
+    def load(self, fname,):
         
         with open(fname, 'r') as fp:
             load_dict = json.load(fp)
@@ -509,10 +515,19 @@ class TranslationModel:
 
         for key in convert_to_array_list_float:
             load_dict[key] = np.array(load_dict[key], dtype=float)
+            
+            
         
         self.__dict__ = load_dict
         
+        
         return 
+    
+
+    def load_saved_cmodel(self, c_model_name):
+        
+        self.load(os.path.join(os.path.dirname(__file__),'models',c_model_name, c_model_name + '.json'))
+        self.__load_model_c()
     
     def __get_mats(self):
         return self.kelong_mat, self.resource_mat, self.rxn_mat, self.state_mat, self.probe_mat
