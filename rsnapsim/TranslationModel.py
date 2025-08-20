@@ -47,13 +47,18 @@ import json
 
 
 class TranslationModel:
-    def __init__(self, mRNA, name, particle_size=9):
+    def __init__(self, name, mRNA=None, particle_size=9):
         self.name = name
         self.blank(mRNA, particle_size)
         
         
     def blank(self, mRNA, particle_size):
-        self._length = mRNA.total_length
+        
+        if mRNA is None:
+            self._length=0
+        else:
+            self._length = mRNA.total_length
+        
         self.particle_size = particle_size
         self.footprint = particle_size
         self._max_particles = int(self._length/particle_size+5)
@@ -66,14 +71,17 @@ class TranslationModel:
         #mRNA.generate_3frame_tags()
         k = 1
         used_tags = []
-        for i in range(3):
-            for key in mRNA.multiframe_epitopes[i]:
-                if key in used_tags:
-                    self._probe_mat[i,mRNA.multiframe_epitopes[i][key]] = used_tags.index(key)+1
-                else:
-                    self._probe_mat[i,mRNA.multiframe_epitopes[i][key]] = len(used_tags)+1    
-                    used_tags.append(key)
-                    
+        if mRNA is None:
+            pass
+        else:
+            for i in range(3):
+                for key in mRNA.multiframe_epitopes[i]:
+                    if key in used_tags:
+                        self._probe_mat[i,mRNA.multiframe_epitopes[i][key]] = used_tags.index(key)+1
+                    else:
+                        self._probe_mat[i,mRNA.multiframe_epitopes[i][key]] = len(used_tags)+1    
+                        used_tags.append(key)
+                        
         self._n_colors= int(np.max(self._probe_mat))
         self._resource_mat = np.zeros([], dtype=np.int32)
 
@@ -109,15 +117,22 @@ class TranslationModel:
         self._resource_arr0 = np.zeros([self._n_resources], dtype=int)
         self._rxn_names = []
         
-
         
-        codons  = [''.join(i) for i in product(['A','U','G','C'], repeat = 3)]
-        codon_ids = [[ codons.index(line.upper().replace('T','U')[i:i+3]) for i in range(0, len(line), 3)] for line in mRNA.multiframe_nt_seq]
         self._codon_mat = np.zeros([3, self._length], dtype=int)
-        self._codon_mat[0,:] = codon_ids[0]
-        self._codon_mat[1,:-1] = codon_ids[1]
-        self._codon_mat[2,:-1] = codon_ids[2]
         
+        if mRNA is None:
+            pass
+        else:
+        
+            codons  = [''.join(i) for i in product(['A','U','G','C'], repeat = 3)]
+            codon_ids = [[ codons.index(line.upper().replace('T','U')[i:i+3]) for i in range(0, len(line), 3)] for line in mRNA.multiframe_nt_seq]
+    
+            
+            
+            self._codon_mat[0,:] = codon_ids[0]
+            self._codon_mat[1,:-1] = codon_ids[1]
+            self._codon_mat[2,:-1] = codon_ids[2]
+            
         self._probe_function = lambda k,t,p,ke,o,l,pr,s,r,nr: 1
         self._probe_parameters = 0
 
