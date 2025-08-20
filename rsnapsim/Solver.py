@@ -1002,13 +1002,18 @@ class CustomSSASoln:
         
     @property
     def lattice_arr(self):
-        lattice_arr = np.zeros([self.n_traj, len(self.t), self.L ] ,dtype=int)
-        for i in range(self.n_traj):
-            for t in range(len(self.t)):
-                rtraj = self.ribosome_array[i,t,:,3][self.ribosome_array[i,t,:,1]==1]
-                if len(rtraj) > 0:
-                    lattice_arr[i,t,rtraj] = 1
-        return lattice_arr
+        try: 
+            return self._lattice_arr
+        except:
+                
+            lattice_arr = np.zeros([self.n_traj, len(self.t), self.L ] ,dtype=int)
+            for i in range(self.n_traj):
+                for t in range(len(self.t)):
+                    rtraj = self.ribosome_array[i,t,:,3][self.ribosome_array[i,t,:,1]==1]
+                    if len(rtraj) > 0:
+                        lattice_arr[i,t,rtraj.astype(int)] = 1
+            self._lattice_arr = lattice_arr
+            return lattice_arr
     
     @property
     def intensity_arr(self):
