@@ -82,7 +82,10 @@ class TranslationModel:
                         self._probe_mat[i,mRNA.multiframe_epitopes[i][key]] = len(used_tags)+1    
                         used_tags.append(key)
                         
-        self._n_colors= int(np.max(self._probe_mat))
+        if mRNA is None:
+            self._n_colors= 0
+        else:
+            self._n_colors= int(np.max(self._probe_mat))
         self._resource_mat = np.zeros([], dtype=np.int32)
 
         self._propensities = []
