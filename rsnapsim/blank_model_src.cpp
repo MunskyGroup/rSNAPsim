@@ -307,6 +307,8 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
             return;
         }
 
+		//check particle locations and error out 
+
         // Generate 2 random numbers.
         r1 =  unif(rng);
 

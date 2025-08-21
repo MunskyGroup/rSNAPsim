@@ -40,6 +40,17 @@ class SequenceManipMethods(SequenceCore):
         
 
 
+    def complement(self, nt_seq, reverse=True):
+        d = {'A':'T', 'T':'A', 'G':'C', 'C':'G', 'A':'U', 'U':'A',}
+        
+        seq = nt_seq.upper()
+        cseq = ''.join([d[s] for s in seq])
+        if reverse:
+            return cseq[::-1]
+        else:
+            return cseq
+        
+
     def open_seq_file(self, seqfile, min_codons=80, add_tag=True):
         """
         Opens a given sequence file (.txt, .fa, .gb, .dna) and reads sequence

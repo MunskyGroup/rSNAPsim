@@ -29,7 +29,7 @@ diffusion:
     simulate_z:                         # simulate intensity loss due to brownian motion in Z
         use: False
         method: gaussian                # gaussian curve of intensity loss, scaled by sigma and min dimming
-        parmaeters: [0.3]               # sigma of the gaussian curve, 
+        parameters: [0.3]               # sigma of the gaussian curve, 
                                         # 0.3 is a smooth scaling to the edge of the z plane, losing 95% of intensity at z plane edge. 
                                         # .1 is losing all intensity 20% from center
                                         # .2 is losing all intensity 60% from center
