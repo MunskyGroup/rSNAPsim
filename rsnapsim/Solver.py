@@ -1017,6 +1017,17 @@ class CustomSSASoln:
     
     @property
     def intensity_arr(self):
+        '''
+        Return the intensity values in n_probes for the trajectories over time.
+        
+        This is a function that sums up the ribosome arrays color columns
+
+        Returns
+        -------
+        intensity_array
+            np.ndarray of shape (n_traj, n_time_points, n_colors)
+
+        '''
         try:
             return self._I
         except:
@@ -1032,7 +1043,52 @@ class CustomSSASoln:
     
     @property
     def I(self):
+        '''
+        Return the intensity values in n_probes for the trajectories over time.
+        
+        This is a function that sums up the ribosome arrays color columns
+
+        Returns
+        -------
+        intensity_array
+            np.ndarray of shape (n_traj, n_time_points, n_colors)
+
+        '''
         return self.intensity_arr
+    
+    
+    
+    @property
+    def dwell_times(self):
+        '''
+        calculates the dwell times of all ribosomes in the ribosome array and stores
+        them in an array of shape n_traj by max_unique_ids.
+        
+        The max_unique_ids is the highest number of unique ribosomes per simulation trajectory and
+        the array is padded by zeros if a trajectory row doesnt reach this number of ribosomes.
+        Use _.dwell_times[np.nonzero(_.dwell_times)] if you want a list of all ribosomes dwell times
+        over all trajectories.
+        
+        ** WARNING ** this array includes the dwell times of actively elongating ribosomes, and those will be listed as
+        as many times points as they have been attached to the mRNA. You may want to parse these out when doing statistics.
+
+        Returns
+        -------
+        dwell_times
+            np.ndarray of shape (n_traj x max_unique_ids).
+
+        '''
+        try:
+            return self._dwell_times
+        except:        
+            max_id = int(np.max(np.unique(self.ribosome_array[:,:,:,0])))
+            dwell = np.zeros([self.ribosome_array.shape[0], max_id])
+            for i in range(self.ribosome_array.shape[0]):
+                for j in range(1,max_id):
+                    dwell[i,j-1] = self.t[np.sum(self.ribosome_array[i,:,:,0] == j)]
+                    
+            self._dwell_times = dwell
+        return dwell
 
     def condense_ribosome_array(self):
         '''

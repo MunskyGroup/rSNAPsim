@@ -124,6 +124,7 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
 
    int footprint = 9;           // PARTICLE SIZE
    int rib_ind = 0;             // ribosome that reactions are happening to
+   int unique_rib_ids = 0;      // ribosome id counter
 
    //int reaction_taken = 0; //
    //int dexist = 0;
@@ -395,7 +396,8 @@ void generic_ssa_cpp(int* particle_array, int* state_array, int* resource_array,
                 // set the ribosome id to 1+ current ribosome count
                 rib_ind = NR;
                 rib_ind += 1; // fill in the particle array
-                rib_arr(NR, 0) = rib_ind;
+                unique_rib_ids += 1;
+                rib_arr(NR, 0) = unique_rib_ids;
                 rib_arr(NR, 1) = 1; // exists? flag
                 rib_arr(NR, 2) += rxn_mat(event, 2);
                 rib_arr(NR, 3) += rxn_mat(event, 3);
